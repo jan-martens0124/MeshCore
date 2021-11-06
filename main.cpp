@@ -6,6 +6,7 @@
 #include <QtWidgets>
 #include <core/FileParser.h>
 #include "rendering/RenderWindow.h"
+#include <thread>
 
 [[noreturn]] void run(OpenGLRenderWidget* openGlRenderWidget);
 

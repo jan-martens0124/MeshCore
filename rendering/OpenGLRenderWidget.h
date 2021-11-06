@@ -73,9 +73,9 @@ public:
     void clearWorldSpaceMeshes();
 
 private slots:
-    [[maybe_unused]] void addOrUpdateWorldSpaceMeshSlot(const WorldSpaceMesh &worldSpaceMesh, const Color &color);
-    [[maybe_unused]] void removeWorldSpaceMeshSlot(const WorldSpaceMesh &worldSpaceMesh);
-    [[maybe_unused]] void clearWorldSpaceMeshesSlot();
+    void addOrUpdateWorldSpaceMeshSlot(const WorldSpaceMesh &worldSpaceMesh, const Color &color);
+    void removeWorldSpaceMeshSlot(const WorldSpaceMesh &worldSpaceMesh);
+    void clearWorldSpaceMeshesSlot();
 
 };
 

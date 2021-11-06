@@ -6,8 +6,9 @@
 #define MESHCORE2_FILEPARSER_H
 #include <string>
 #include "ModelSpaceMesh.h"
-#include "unordered_map"
-#include "mutex"
+#include <unordered_map>
+#include <mutex>
+#include <memory>
 
 class FileParser {
 public:
