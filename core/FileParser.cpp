@@ -28,6 +28,9 @@ std::mutex FileParser::cacheMapMutex{};
 }
 
 std::shared_ptr<ModelSpaceMesh> FileParser::parseFile(const std::string &filePath) {
+
+    std::locale::global(std::locale("en_US.UTF-8"));
+
     std::string extension = filePath.substr(filePath.find_last_of('.') + 1);
 
     if(!std::filesystem::exists(filePath)){
@@ -75,9 +78,9 @@ ModelSpaceMesh FileParser::parseFileOBJ(const std::string &filePath) {
             if(type == "v"){
                 auto whitespace0 = content.find_first_of(' ');
                 auto whitespace1 = content.find_last_of(' ');
-                float value0 = stof(content.substr(0, whitespace0));
-                float value1 = stof(content.substr(whitespace0 + 1, whitespace1 - whitespace0 - 1));
-                float value2 = stof(content.substr(whitespace1 + 1));
+                float value0 = std::stof(content.substr(0, whitespace0));
+                float value1 = std::stof(content.substr(whitespace0 + 1, whitespace1 - whitespace0 - 1));
+                float value2 = std::stof(content.substr(whitespace1 + 1));
                 vertices.emplace_back(Vertex(value0, value1, value2));
             }
             else if (type == "f"){
@@ -117,17 +120,17 @@ Vertex readASCIISTLVertexLine(std::ifstream& stream){
 
     while(line.find_first_of(' ') == 0) line = line.substr(1); // Remove leading whitespace
     auto floatIndex = line.find_first_of(' ');
-    float x = stof(line.substr(0, floatIndex));
+    float x = std::stof(line.substr(0, floatIndex));
     line = line.substr(floatIndex);
 
     while(line.find_first_of(' ') == 0) line = line.substr(1); // Remove leading whitespace
     floatIndex = line.find_first_of(' ');
-    float y = stof(line.substr(0, floatIndex));
+    float y = std::stof(line.substr(0, floatIndex));
     line = line.substr(floatIndex);
 
     while(line.find_first_of(' ') == 0) line = line.substr(1); // Remove leading whitespace
     floatIndex = line.find_first_of(' ');
-    float z = stof(line.substr(0, floatIndex));
+    float z = std::stof(line.substr(0, floatIndex));
 
     return Vertex(x,y,z);
 }
