@@ -36,13 +36,11 @@ int main(int argc, char *argv[]){
     std::cout << "Number of vertices: " << staticWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
     std::cout << "Number of vertices: " << dynamicWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
 
+    glm::vec3 position(100,0,0);
+    staticWorldSpaceMesh->getModelTransformation().setPosition(position);
+
     // Pas them to the renderer
     openGlRenderWidget->addOrUpdateWorldSpaceMesh(*staticWorldSpaceMesh, Color(0.8, 0.8, 0.8, 0.6));
     openGlRenderWidget->addOrUpdateWorldSpaceMesh(*dynamicWorldSpaceMesh, Color(0.75, 0.75, 0, 1));
 
-    while(true){
-        dynamicWorldSpaceMesh->getModelTransformation().deltaRotation(0.001f, 0.0047f, 0.0023f);
-        openGlRenderWidget->addOrUpdateWorldSpaceMesh(*dynamicWorldSpaceMesh, Color());
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-    }
 }
