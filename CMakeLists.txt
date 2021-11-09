@@ -25,6 +25,8 @@ add_definitions(-DGLEW_STATIC)
 include_directories(${GLEW_DIR}/include)
 link_libraries("${GLEW_DIR}/lib/Release/x64/glew32s.lib")
 
+#find_package(GLEW REQUIRED)
+
 
 file(GLOB SOURCES main.cpp core/*.cpp rendering/*.cpp)
 add_executable(Renderer ${SOURCES})
