@@ -4,7 +4,7 @@
 
 #include <array>
 #include "AABB.h"
-#include "../../intersection/Intersection.h"
+#include "VertexTriangle.h"
 
 AABB::AABB(glm::vec3 minimum, glm::vec3 maximum): minimum(minimum), maximum(maximum) {}
 

@@ -3,7 +3,6 @@
 //
 
 #include "Ray.h"
-#include "../../core/AABBTree.h"
 
 Ray::Ray(Vertex origin, Vertex direction):
 origin(origin),
