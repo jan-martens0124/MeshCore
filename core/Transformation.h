@@ -10,8 +10,6 @@
 #include <optional>
 #include "Vertex.h"
 
-class Ray;
-
 class Transformation {
 
 private:

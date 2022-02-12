@@ -12,8 +12,8 @@ std::ostream& operator<<(std::ostream& o, const Transformation& transformation) 
     o << "\tScale: " << transformation.scale << "\n";
     o << "\tPosition: " << transformation.position << "\n";
     o << "\tYaw: " << transformation.yaw << "\n";
-    o << "\tPitch: " << transformation.yaw << "\n";
-    o << "\tRoll: " << transformation.yaw << "\n";
+    o << "\tPitch: " << transformation.pitch << "\n";
+    o << "\tRoll: " << transformation.roll << "\n";
     glm::mat4 transform = transformation.getMatrix();
     o << "\n\t[" << transform.operator[](0) << "\n\t " << transform.operator[](1) << "\n\t " << transform.operator[](2) << "\n\t " << transform.operator[](3) << ']';
     return o;
