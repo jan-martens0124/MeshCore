@@ -5,7 +5,6 @@
 #include <iostream>
 #include "Transformation.h"
 #include <glm/gtx/euler_angles.hpp>
-#include "Ray.h"
 
 Transformation::Transformation(): position(), scale(1.0f), yaw(0.0f), roll(0.0f), pitch(0.0f) {}
 
@@ -20,7 +19,7 @@ std::ostream& operator<<(std::ostream& o, const Transformation& transformation) 
     return o;
 }
 
-glm::mat4& Transformation::getMatrix() const{
+glm::mat4 Transformation::getMatrix() const {
     if(!matrix.has_value()){
         glm::mat4 newModelTransformationMatrix(1.0f);
         newModelTransformationMatrix = glm::translate(newModelTransformationMatrix, position);
@@ -31,7 +30,7 @@ glm::mat4& Transformation::getMatrix() const{
     return matrix.value();
 }
 
-glm::mat4& Transformation::getInverseMatrix() const {
+glm::mat4 Transformation::getInverseMatrix() const {
     if(!inverse.has_value()){
         inverse = glm::inverse(this->getMatrix());
     }

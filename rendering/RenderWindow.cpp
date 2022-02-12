@@ -59,10 +59,14 @@ RenderWindow::RenderWindow() {
     toggleCulling->setChecked(true);
 
     QAction* toggleLightMode = viewMenu->addAction(QString("Enable Light mode"));
-    connect(toggleLightMode, &QAction::triggered, openGlRenderWidget, &OpenGLRenderWidget::toggleLightMode);
-    toggleLightMode->setShortcut(QKeySequence(QString("Ctrl+L")));
+    connect(toggleLightMode, &QAction::triggered, [=](bool enabled){
+        openGlRenderWidget->setLightMode(enabled);
+        openGlRenderWidget->update();
+    });
     toggleLightMode->setCheckable(true);
-    toggleLightMode->setChecked(false);
+    toggleLightMode->setChecked(openGlRenderWidget->isLightMode());
+
+
 
     QAction* aboutAction = helpMenu->addAction(QString("About Meshcore"));
     connect(aboutAction, &QAction::triggered, this, &RenderWindow::displayApplicationInfo);

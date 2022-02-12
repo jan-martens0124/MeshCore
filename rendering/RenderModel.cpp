@@ -11,14 +11,15 @@
 #include <QOpenGLShaderProgram>
 #include <utility>
 
-RenderModel::RenderModel(const WorldSpaceMesh& worldSpaceMesh, std::shared_ptr<QOpenGLShaderProgram> ambientShader, std::shared_ptr<QOpenGLShaderProgram> diffuseShader):
+RenderModel::RenderModel(const WorldSpaceMesh& worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, std::shared_ptr<QOpenGLShaderProgram> diffuseShader):
         color(1,1,1,1),
         vertexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::VertexBuffer)),
         indexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::IndexBuffer)),
         vertexArray(new QOpenGLVertexArrayObject()),
         transformation(worldSpaceMesh.getModelTransformation().getMatrix()),
-        ambientShader(std::move(ambientShader)),
-        diffuseShader(std::move(diffuseShader))
+        ambientShader(ambientShader),
+        diffuseShader(std::move(diffuseShader)),
+        boundingBox(worldSpaceMesh, ambientShader)
 {
     const std::vector<Vertex> vertices = worldSpaceMesh.getModelSpaceMesh()->getVertices();
     const std::vector<IndexTriangle> triangles = worldSpaceMesh.getModelSpaceMesh()->getTriangles();
@@ -86,6 +87,7 @@ void RenderModel::setWireframeEnabled(bool wireframeEnabled) {
 void RenderModel::draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) {
 
     if(this->visible){
+
         this->initializeOpenGLFunctions();
         this->vertexArray->bind();
         this->indexBuffer->bind();
@@ -134,6 +136,8 @@ void RenderModel::draw(const glm::mat4& viewMatrix, const glm::mat4& projectionM
         }
 
         GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int),  GL_UNSIGNED_INT, nullptr));
+
+        if(this->boundingBoxEnabled) boundingBox.draw(viewMatrix, projectionMatrix, lightMode);
     }
 }
 
@@ -155,6 +159,8 @@ RenderModel &RenderModel::operator=(RenderModel &&other) noexcept {
         this->ambientShader = other.ambientShader;
         this->diffuseShader = other.diffuseShader;
         this->visible = other.visible;
+        this->boundingBoxEnabled = other.boundingBoxEnabled;
+        this->boundingBox = std::move(other.boundingBox);
 
         other.indexBuffer = nullptr;
         other.vertexArray = nullptr;
@@ -165,18 +171,18 @@ RenderModel &RenderModel::operator=(RenderModel &&other) noexcept {
 
 RenderModel::RenderModel(RenderModel &&other) noexcept:
     color(other.color),
-    transformation(other.transformation)
+    transformation(other.transformation),
+    boundingBox(std::move(other.boundingBox))
 {
     this->indexBuffer = other.indexBuffer;
     this->vertexArray = other.vertexArray;
     this->vertexBuffer = other.vertexBuffer;
-    this->color = other.color;
-    this->transformation = other.transformation;
     this->cullingEnabled = other.cullingEnabled;
     this->wireframeEnabled = other.wireframeEnabled;
     this->ambientShader = other.ambientShader;
     this->diffuseShader = other.diffuseShader;
     this->visible = other.visible;
+    this->boundingBoxEnabled = other.boundingBoxEnabled;
 
     other.indexBuffer = nullptr;
     other.vertexArray = nullptr;
@@ -185,10 +191,12 @@ RenderModel::RenderModel(RenderModel &&other) noexcept:
 
 void RenderModel::setTransformationMatrix(const glm::mat4 &transformationMatrix) {
     RenderModel::transformation = transformationMatrix;
+    boundingBox.setTransformationMatrix(transformationMatrix);
 }
 
 void RenderModel::setColor(const Color &c){
     RenderModel::color = c;
+    this->boundingBox.setColor(Color(c.r, c.g, c.b, 1));
 }
 
 const Color &RenderModel::getColor() const {
@@ -201,4 +209,12 @@ bool RenderModel::isVisible() const {
 
 void RenderModel::setVisible(bool visible) {
     RenderModel::visible = visible;
+}
+
+bool RenderModel::isBoundingBoxEnabled() const {
+    return boundingBoxEnabled;
+}
+
+void RenderModel::setBoundingBoxEnabled(bool boundingBoxEnabled) {
+    RenderModel::boundingBoxEnabled = boundingBoxEnabled;
 }

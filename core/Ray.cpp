@@ -14,7 +14,11 @@ std::ostream &operator<<(std::ostream &os, const Ray &ray) {
 }
 
 Ray Ray::getTransformed(const Transformation &transformation) const {
-    Vertex transformedOrigin = transformation.getMatrix() * glm::vec4(this->origin, 1);
-    Vertex transformedDirection = transformation.getMatrix() * glm::vec4(this->origin, 0);
+    return this->getTransformed(transformation.getMatrix());
+}
+
+Ray Ray::getTransformed(const glm::mat4 &transformationMatrix) const {
+    Vertex transformedOrigin = transformationMatrix * glm::vec4(this->origin, 1);
+    glm::vec3 transformedDirection = transformationMatrix * glm::vec4(this->origin, 0);
     return Ray(transformedOrigin, transformedDirection);
 }

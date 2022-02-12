@@ -12,11 +12,10 @@
 
 void OpenGLRenderWidget::initializeGL() {
 
-    viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f,0.0f, - INITIAL_VIEW_DISTANCE));
+    this->resetView();
 
     initializeOpenGLFunctions();
 
-    lightMode = false;
     GL_CALL(glClearColor(0,0,0,1));
 
     GL_CALL(glEnable(GL_DEPTH_TEST));
@@ -25,11 +24,14 @@ void OpenGLRenderWidget::initializeGL() {
     GL_CALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     GL_CALL(glEnable(GL_MULTISAMPLE));
 
+    GL_CALL(glPixelStorei(GL_PACK_ALIGNMENT, 1));
+
     // Options (should be available in GUI, per model)
     GL_CALL(glEnable(GL_CULL_FACE));
     GL_CALL(glCullFace(GL_BACK));
 
     ShaderProgramSource diffuseShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/rendering/shaders/Diffuse.shader");
+//    ShaderProgramSource diffuseShaderProgramSource = ShaderProgramSource::parseShader("shaders/Diffuse.shader");
     diffuseShader = std::make_shared<QOpenGLShaderProgram>();
     diffuseShader->addShaderFromSourceCode(QOpenGLShader::Vertex, diffuseShaderProgramSource.VertexSource);
     diffuseShader->addShaderFromSourceCode(QOpenGLShader::Fragment, diffuseShaderProgramSource.FragmentSource);
@@ -38,6 +40,7 @@ void OpenGLRenderWidget::initializeGL() {
     diffuseShader->link();
 
     ShaderProgramSource basicShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/rendering/shaders/Ambient.shader");
+//    ShaderProgramSource basicShaderProgramSource = ShaderProgramSource::parseShader("shaders/Ambient.shader");
     ambientShader = std::make_shared<QOpenGLShaderProgram>();
     ambientShader->addShaderFromSourceCode(QOpenGLShader::Vertex, basicShaderProgramSource.VertexSource);
     ambientShader->addShaderFromSourceCode(QOpenGLShader::Fragment, basicShaderProgramSource.FragmentSource);
@@ -54,10 +57,27 @@ void OpenGLRenderWidget::resetView() {
 void OpenGLRenderWidget::resizeGL(int w, int h) {
     this->width = w;
     this->height = h;
-    projectionMatrix = glm::perspective(glm::radians(INITIAL_FOV), float(width)/float(height), 0.001f, 10000.0f);
+
+    this->calculateProjectionMatrix();
+}
+
+void OpenGLRenderWidget::calculateProjectionMatrix(){
+    if(this->usePerspective){
+        this->projectionMatrix = glm::perspective(glm::radians(INITIAL_FOV), float(width)/float(height), 0.001f, 10000.0f);
+    }
+    else{
+        float halfWidth = float(width)/20.0f;
+        float halfHeight = float(height)/20.0f;
+        this->projectionMatrix = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, -1000.0f, 1000.0f);
+    }
 }
 
 void OpenGLRenderWidget::paintGL() {
+
+    for (const auto &renderModel : this->renderModels){
+        renderModel->draw(viewMatrix, projectionMatrix, lightMode);
+    }
+
     for(auto& line: this->renderLines){
         line.draw(*ambientShader, viewMatrix, projectionMatrix);
     }
@@ -82,9 +102,12 @@ void OpenGLRenderWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void OpenGLRenderWidget::wheelEvent(QWheelEvent *event) {
-    auto factor = event->angleDelta().y() / 1200.0;
+    auto factor = float(event->angleDelta().y()) / 1200.0f;
     auto distance = glm::length(glm::vec3(viewMatrix[3]));
-    viewMatrix = glm::translate(viewMatrix, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(glm::vec3(0.0f, 0.0f, factor * distance), 0.0f)));
+//    viewMatrix = glm::translate(viewMatrix, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(glm::vec3(0.0f, 0.0f, factor * distance), 0.0f)));
+
+    viewMatrix = glm::scale(viewMatrix, glm::vec3(1 + factor));
+
     this->update();
 }
 
@@ -115,19 +138,18 @@ void OpenGLRenderWidget::keyPressEvent(QKeyEvent* event){
     const auto key = event->key();
     const auto distance = glm::length(glm::vec3(viewMatrix[3]));
     if(key == Qt::Key_Plus){
-        const auto zoomFactor = 0.1;
-        viewMatrix = glm::translate(viewMatrix, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(glm::vec3(0.0f, 0.0f, zoomFactor * distance), 0.0f)));
+        float zoomFactor = 0.1f;
+        viewMatrix = glm::scale(viewMatrix, glm::vec3(1 + zoomFactor));
         this->update();
     }
     if (key == Qt::Key_Minus) {
-        const auto zoomFactor = 0.1;
-        viewMatrix = glm::translate(viewMatrix, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(glm::vec3(0.0f, 0.0f, - zoomFactor * distance), 0.0f)));
+        float zoomFactor = 0.1f;
+        viewMatrix = glm::scale(viewMatrix, glm::vec3(1 - zoomFactor));
         this->update();
     }
     if (key == Qt::Key_Left) {
         const float rotationSpeed = 0.05f;
         const glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
-        const glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
         this->viewMatrix = glm::rotate(viewMatrix, - rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraUp,0.0f)));
         this->update();
     }
@@ -235,19 +257,26 @@ void OpenGLRenderWidget::toggleCullFace() {
     this->update();
 }
 
-void OpenGLRenderWidget::toggleLightMode() {
+void OpenGLRenderWidget::toggleBoundingBoxes() {
+    for(auto& entry: this->renderModelsMap){
+        entry.second->setBoundingBoxEnabled(!entry.second->isBoundingBoxEnabled());
+    }
+    this->update();
+}
+
+void OpenGLRenderWidget::setLightMode(bool lightMode){
+    this->lightMode = lightMode;
     this->makeCurrent();
     if(this->lightMode){
-        this->lightMode = false;
-        GL_CALL(glClearColor(0,0,0,1));
-    }
-    else{
-        this->lightMode = true;
         GL_CALL(glClearColor(1,1,1,1));
     }
+    else{
+        GL_CALL(glClearColor(0,0,0,1));
+    }
+
     for (const auto &item : this->renderModelsMap){
         if(item.second->getColor().a<1.0){
-            item.second->setCullingEnabled(lightMode);
+            item.second->setCullingEnabled(this->lightMode);
         }
     }
     this->parentWidget()->update();
@@ -270,7 +299,7 @@ void OpenGLRenderWidget::toggleLightMode() {
 
 void OpenGLRenderWidget::addRenderLine(Vertex vertexA, Vertex vertexB, const Color &color) {
     this->makeCurrent();
-    auto line = RenderLine(vertexA, vertexB, glm::mat4());
+    auto line = RenderLine(vertexA, vertexB, glm::mat4(1.0f));
     line.setColor(color);
     this->renderLines.emplace_back(std::move(line));
     this->update();
@@ -298,3 +327,33 @@ std::shared_ptr<RenderModel> OpenGLRenderWidget::getRenderModel(const WorldSpace
     }
     else return nullptr;
 }
+
+std::vector<std::shared_ptr<AbstractRenderModel>> &OpenGLRenderWidget::getRenderModels() {
+    return renderModels;
+}
+
+[[deprecated]]
+const std::shared_ptr<QOpenGLShaderProgram> &OpenGLRenderWidget::getAmbientShader() const {
+    return ambientShader;
+}
+
+void OpenGLRenderWidget::captureScene() {
+    this->makeCurrent();
+    auto capture = this->grabFramebuffer();;
+    QString fileName = QFileDialog::getSaveFileName(this, QString("Save screenshot"), "example", QString("Image Files (*.png *.jpg)"));
+    capture.save(fileName);
+}
+
+bool OpenGLRenderWidget::isUsePerspective() const {
+    return usePerspective;
+}
+
+void OpenGLRenderWidget::setUsePerspective(bool usePerspective) {
+    OpenGLRenderWidget::usePerspective = usePerspective;
+    this->calculateProjectionMatrix();
+}
+
+bool OpenGLRenderWidget::isLightMode() const {
+    return lightMode;
+}
+

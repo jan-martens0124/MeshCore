@@ -2,7 +2,6 @@
 // Created by Jonas on 7/10/2021.
 //
 
-#include <array>
 #include "AABB.h"
 #include "VertexTriangle.h"
 
@@ -49,6 +48,16 @@ AABB::AABB(const std::vector<VertexTriangle> &vertexTriangles) {
 AABB::AABB(const VertexTriangle &vertexTriangle):
     minimum(glm::min(vertexTriangle.vertex0, glm::min(vertexTriangle.vertex1, vertexTriangle.vertex2))),
     maximum(glm::max(vertexTriangle.vertex0, glm::max(vertexTriangle.vertex1, vertexTriangle.vertex2))) {}
+
+float AABB::getSurfaceArea() const {
+    auto delta = maximum - minimum;
+    return 2 * (delta.x * delta.y + delta.x * delta.z + delta.y * delta.z);
+}
+
+float AABB::getVolume() const {
+    auto delta = maximum - minimum;
+    return delta.x * delta.y * delta.z;
+}
 
 std::ostream & operator<<(std::ostream & os, const AABB& aabb){
     return os << "AABB[min" << aabb.getMinimum() << ";max" << aabb.getMaximum() << "]";

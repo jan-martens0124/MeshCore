@@ -20,7 +20,9 @@ public:
 public:
     Ray(Vertex origin, glm::vec3 direction);
     friend std::ostream & operator<<(std::ostream & os, const Ray& ray);
+
     [[nodiscard]] Ray getTransformed(const Transformation &transformation) const;
+    [[nodiscard]] Ray getTransformed(const glm::mat4 &transformationMatrix) const;
 };
 std::ostream & operator<<(std::ostream & os, const Ray& ray);
 

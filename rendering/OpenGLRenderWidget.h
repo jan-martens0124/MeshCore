@@ -7,6 +7,7 @@
 
 #include "RenderModel.h"
 #include "RenderLine.h"
+#include "AbstractRenderModel.h"
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QMouseEvent>
@@ -26,7 +27,8 @@ class OpenGLRenderWidget: public QOpenGLWidget, protected QOpenGLFunctions {
 Q_OBJECT
 private:
 
-    bool lightMode{};
+    bool lightMode = false;
+    bool usePerspective = true;
     int width{};
     int height{};
     QPoint lastMousePosition;
@@ -36,6 +38,8 @@ private:
 
     std::unordered_map<std::string, std::shared_ptr<RenderModel>> renderModelsMap;
     std::vector<std::shared_ptr<RenderModel>> sortedRenderModels;
+
+    std::vector<std::shared_ptr<AbstractRenderModel>> renderModels;
 
 private:
     std::vector<RenderLine> renderLines;
@@ -49,15 +53,24 @@ public:
     void resetView();
     void toggleWireframe();
     void toggleCullFace();
-    void toggleLightMode();
+    void toggleBoundingBoxes();
 
-public:
-    friend class ApplicationWindow;
+
+    [[nodiscard]] bool isUsePerspective() const;
+    [[nodiscard]] bool isLightMode() const;
+
+
+    void setUsePerspective(bool usePerspective);
+    void setLightMode(bool lightMode);
+
+    void captureScene();
 
 protected:
     void initializeGL() override;
     void resizeGL(int w, int h) override;
     void paintGL() override;
+
+    void calculateProjectionMatrix();
 
     void mouseMoveEvent(QMouseEvent *event) override;
     void wheelEvent(QWheelEvent* event) override;
@@ -76,6 +89,11 @@ private slots:
     void addOrUpdateWorldSpaceMeshSlot(const WorldSpaceMesh &worldSpaceMesh, const Color &color);
     void removeWorldSpaceMeshSlot(const WorldSpaceMesh &worldSpaceMesh);
     void clearWorldSpaceMeshesSlot();
+
+public:
+    std::vector<std::shared_ptr<AbstractRenderModel>> &getRenderModels();
+
+    const std::shared_ptr<QOpenGLShaderProgram> &getAmbientShader() const;
 
 };
 

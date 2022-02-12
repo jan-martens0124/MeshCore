@@ -82,7 +82,7 @@ RenderLine::RenderLine(Vertex vertex1, Vertex vertex2, glm::mat4 transformationM
         vertexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::VertexBuffer)),
         indexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::IndexBuffer)),
         vertexArray(new QOpenGLVertexArrayObject()),
-        transformation(transformation)
+        transformation(transformationMatrix)
         {
 
     std::vector<unsigned int> indices;

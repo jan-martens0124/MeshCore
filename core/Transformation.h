@@ -43,8 +43,8 @@ public:
     Vertex transformVertex(const Vertex& vertex) const;
     Vertex inverseTransformVertex(const Vertex& vertex) const;
 
-    glm::mat4& getMatrix() const;
-    glm::mat4& getInverseMatrix() const;
+    glm::mat4 getMatrix() const;
+    glm::mat4 getInverseMatrix() const;
 
     float getScale() const;
     void setScale(float newScale);

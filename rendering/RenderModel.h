@@ -12,6 +12,7 @@
 #include <QOpenGLShaderProgram>
 #include "../core/WorldSpaceMesh.h"
 #include "Exception.h"
+#include "RenderAABB.h"
 
 typedef glm::vec4 Color;
 
@@ -21,6 +22,7 @@ private:
     bool cullingEnabled = true;
     bool wireframeEnabled = false;
     bool visible = true;
+    bool boundingBoxEnabled = false;
 
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
     std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
@@ -30,6 +32,9 @@ private:
     QOpenGLVertexArrayObject* vertexArray;
     Color color;
     glm::mat4 transformation;
+
+    RenderAABB boundingBox;
+
 public:
     void setTransformationMatrix(const glm::mat4 &transformationMatrix);
 
@@ -40,7 +45,7 @@ public:
     ~RenderModel();
 
     RenderModel(const WorldSpaceMesh &worldSpaceMesh,
-                std::shared_ptr<QOpenGLShaderProgram> ambientShader,
+                const std::shared_ptr<QOpenGLShaderProgram>& ambientShader,
                 std::shared_ptr<QOpenGLShaderProgram> diffuseShader);
     void draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode);
 
@@ -48,11 +53,14 @@ public:
     [[nodiscard]] bool isCullingEnabled() const;
     [[nodiscard]] bool isVisible() const;
     [[nodiscard]] const Color &getColor() const;
+    [[nodiscard]] bool isBoundingBoxEnabled() const;
+
 
     void setWireframeEnabled(bool wireframeEnabled);
     void setCullingEnabled(bool cullingEnabled);
     void setVisible(bool visible);
     void setColor(const Color& c);
+    void setBoundingBoxEnabled(bool boundingBoxEnabled);
 
 };
 
