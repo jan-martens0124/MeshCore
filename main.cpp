@@ -27,17 +27,19 @@ int main(int argc, char *argv[]){
     /// Here is where you would start of your code
 
     // Load some problem meshes
-    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::parseFile("../../data/models/everton/banana.stl");
+    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::parseFile("../data/models/everton/banana.stl");
     std::shared_ptr<WorldSpaceMesh> staticWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh);
 
-    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh2 = FileParser::parseFile("../../data/models/everton/banana.stl");
+    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh2 = FileParser::parseFile("../data/models/everton/banana.stl");
     std::shared_ptr<WorldSpaceMesh> dynamicWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh2);
 
     std::cout << "Number of vertices: " << staticWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
     std::cout << "Number of vertices: " << dynamicWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
 
-    glm::vec3 position(100,0,0);
+    glm::vec3 position(100.0f,0,0);
+
     staticWorldSpaceMesh->getModelTransformation().setPosition(position);
+    staticWorldSpaceMesh->getModelTransformation().setYaw(1.0f);
 
     // Pas them to the renderer
     openGlRenderWidget->addOrUpdateWorldSpaceMesh(*staticWorldSpaceMesh, Color(0.8, 0.8, 0.8, 0.6));
