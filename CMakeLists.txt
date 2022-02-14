@@ -28,5 +28,5 @@ link_libraries("${GLEW_DIR}/lib/Release/x64/glew32s.lib")
 #find_package(GLEW REQUIRED)
 
 
-file(GLOB SOURCES main.cpp core/*.cpp rendering/*.cpp)
+file(GLOB SOURCES main.cpp utility/*.cpp core/*.cpp rendering/*.cpp)
 add_executable(Renderer ${SOURCES})

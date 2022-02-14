@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <QtWidgets>
-#include <core/FileParser.h>
+#include <utility/FileParser.h>
 #include "rendering/RenderWindow.h"
 #include <thread>
 
