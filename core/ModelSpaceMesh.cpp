@@ -6,11 +6,27 @@
 
 #include <utility>
 #include <unordered_set>
+#include <iostream>
 
 ModelSpaceMesh::ModelSpaceMesh(std::vector<Vertex> vertices, std::vector<IndexTriangle> triangles):
 vertices(std::move(vertices)),
-triangles(std::move(triangles))
-{}
+triangles(std::move(triangles)),
+bounds()
+{
+    assert(!this->vertices.empty());
+
+    auto minimum = this->vertices[0];
+    auto maximum = this->vertices[0];
+    for(auto iterator = this->vertices.begin()++; iterator < this->vertices.end(); iterator++){
+        minimum = glm::min(minimum, *iterator);
+        maximum = glm::max(maximum, *iterator);
+    }
+
+//    for (const auto &vertex : this->vertices){
+//        this->bounds.envelopVertex(vertex);
+//    }
+    this->bounds = AABB(minimum, maximum);
+}
 
 const std::vector<Vertex>& ModelSpaceMesh::getVertices() const {
     return vertices;
@@ -134,4 +150,8 @@ std::vector<IndexEdge> ModelSpaceMesh::getSufficientIntersectionEdges() const {
 
 #endif
     return returnVector;
+}
+
+const AABB &ModelSpaceMesh::getBounds() const {
+    return bounds;
 }

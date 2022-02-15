@@ -10,9 +10,11 @@
 #include "Vertex.h"
 #include "IndexTriangle.h"
 #include "IndexEdge.h"
+#include "AABB.h"
 
 class ModelSpaceMesh {
 private:
+    AABB bounds;
     std::vector<Vertex> vertices;
     std::vector<IndexTriangle> triangles;
     mutable std::optional<std::vector<IndexEdge>> edges;
@@ -26,6 +28,8 @@ public:
     [[nodiscard]] const std::vector<IndexTriangle>& getTriangles() const;
     [[nodiscard]] const std::vector<IndexEdge>& getEdges() const;
     [[nodiscard]] std::vector<IndexEdge> getSufficientIntersectionEdges() const;
+
+    const AABB &getBounds() const;
 };
 
 

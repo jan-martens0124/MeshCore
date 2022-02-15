@@ -120,6 +120,6 @@ RenderAABB::RenderAABB(const AABB &aabb, const glm::mat4& transformationMatrix, 
 }
 
 RenderAABB::RenderAABB(const WorldSpaceMesh &worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& shader):
-RenderAABB(AABB(worldSpaceMesh.getModelSpaceMesh()->getVertices()), worldSpaceMesh.getModelTransformation().getMatrix(), shader) {}
+RenderAABB(worldSpaceMesh.getModelSpaceMesh()->getBounds(), worldSpaceMesh.getModelTransformation().getMatrix(), shader) {}
 
 

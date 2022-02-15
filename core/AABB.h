@@ -5,29 +5,45 @@
 #ifndef MESHCORE_AABB_H
 #define MESHCORE_AABB_H
 
-
-#include <vector>
+#include "Core.h"
 #include "Vertex.h"
-#include "Ray.h"
-
-class VertexTriangle;
 
 /** Axis Aligned Bounding Box **/
 class AABB {
 private:
-    glm::vec3 minimum;
-    glm::vec3 maximum;
+    Vertex minimum;
+    Vertex maximum;
+
 public:
-    explicit AABB(const std::vector<Vertex>& vertices);
-    explicit AABB(const VertexTriangle& vertexTriangle);
-    explicit AABB(const std::vector<VertexTriangle>& vertexTriangles);
-    AABB(glm::vec3 minimum, glm::vec3 maximum);
-    [[nodiscard]] glm::vec3 getMinimum() const;
-    [[nodiscard]] glm::vec3 getMaximum() const;
-    [[nodiscard]] glm::vec3 getCenter() const;
-    [[nodiscard]] glm::vec3 getHalf() const;
-    [[nodiscard]] float getSurfaceArea() const;
-    [[nodiscard]] float getVolume() const;
+    MC_FUNC_QUALIFIER AABB(): minimum(), maximum(){};
+
+    MC_FUNC_QUALIFIER AABB(Vertex minimum, Vertex maximum): minimum(minimum), maximum(maximum) {}
+
+    MC_FUNC_QUALIFIER Vertex getMinimum() const {
+        return this->minimum;
+    }
+
+    MC_FUNC_QUALIFIER Vertex getMaximum() const {
+        return this->maximum;
+    }
+
+    MC_FUNC_QUALIFIER Vertex getCenter() const {
+        return (this->maximum + this->minimum)/2.0f;
+    }
+
+    MC_FUNC_QUALIFIER Vertex getHalf() const{
+        return (this->maximum - this->minimum)/2.0f;
+    }
+
+    MC_FUNC_QUALIFIER float getSurfaceArea() const {
+        auto delta = maximum - minimum;
+        return 2 * (delta.x * delta.y + delta.x * delta.z + delta.y * delta.z);
+    }
+
+    MC_FUNC_QUALIFIER float getVolume() const {
+        auto delta = maximum - minimum;
+        return delta.x * delta.y * delta.z;
+    }
 };
 
 #endif //MESHCORE_AABB_H
