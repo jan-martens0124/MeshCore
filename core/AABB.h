@@ -30,6 +30,4 @@ public:
     [[nodiscard]] float getVolume() const;
 };
 
-std::ostream & operator<<(std::ostream & os, const AABB& aabb);
-
 #endif //MESHCORE_AABB_H

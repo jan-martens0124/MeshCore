@@ -10,10 +10,6 @@
 
 class AABB;
 
-template<> struct std::hash<VertexTriangle> {
-    size_t operator()(const VertexTriangle& vertexTriangle) const;
-};
-
 class VertexTriangle{
 public:
     const Vertex vertex0, vertex1, vertex2;
@@ -28,9 +24,6 @@ public:
     [[nodiscard]] Vertex getClosestPoint(const Vertex& vertex) const;
 
     bool operator==(const VertexTriangle& other) const;
-
-    friend std::ostream& operator<<(std::ostream& o, const VertexTriangle& vertexTriangle);
-    friend struct std::hash<VertexTriangle>;
 };
 
 #endif //MESHCORE_VERTEXTRIANGLE_H

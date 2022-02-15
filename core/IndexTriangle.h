@@ -5,8 +5,6 @@
 #ifndef MESHCORE2_TRIANGLE_H
 #define MESHCORE2_TRIANGLE_H
 
-#include <iostream>
-
 struct IndexTriangle{
     const unsigned int vertexIndex0;
     const unsigned int vertexIndex1;

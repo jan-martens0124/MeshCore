@@ -3,7 +3,6 @@
 //
 
 #include "VertexTriangle.h"
-#include <glm/gtx/hash.hpp>
 
 VertexTriangle::VertexTriangle(Vertex vertex0, Vertex vertex1, Vertex vertex2):
     vertex0(vertex0),
@@ -21,15 +20,11 @@ VertexTriangle VertexTriangle::getTransformed(const glm::mat4& transformationMat
     Vertex rVertex0 = transformationMatrix * glm::vec4(this->vertex0, 1);
     Vertex rVertex1 = transformationMatrix * glm::vec4(this->vertex1, 1);
     Vertex rVertex2 = transformationMatrix * glm::vec4(this->vertex2, 1);
-    return VertexTriangle(rVertex0, rVertex1, rVertex2);
+    return {rVertex0, rVertex1, rVertex2};
 }
 
 VertexTriangle VertexTriangle::getTransformed(const Transformation& transformation) const {
     return this->getTransformed(transformation.getMatrix());
-}
-
-std::ostream& operator<<(std::ostream& o, const VertexTriangle& vertexTriangle) {
-    return o << "VertexTriangle(" << vertexTriangle.vertex0 << ", " << vertexTriangle.vertex1 << ", " << vertexTriangle.vertex2 << ")";
 }
 
 bool VertexTriangle::operator==(const VertexTriangle &other) const {
@@ -89,11 +84,4 @@ Vertex VertexTriangle::getClosestPoint(const Vertex &point) const {
     auto v = vb * denom;
     auto w = vc * denom;
     return vertex0 + ab*v + ac*w;
-}
-
-size_t std::hash<VertexTriangle>::operator()(const VertexTriangle &vertexTriangle) const {
-    return std::hash<Vertex>()(vertexTriangle.vertex0 + vertexTriangle.vertex1 + vertexTriangle.vertex2);
-//    return std::hash<float>()(vertexTriangle.vertex0.x +  vertexTriangle.vertex0.y + vertexTriangle.vertex0.z +
-//                              vertexTriangle.vertex1.x +  vertexTriangle.vertex1.y + vertexTriangle.vertex1.z +
-//                              vertexTriangle.vertex2.x +  vertexTriangle.vertex2.y + vertexTriangle.vertex2.z);
 }

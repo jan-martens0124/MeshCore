@@ -2,22 +2,10 @@
 // Created by Jonas on 10/12/2020.
 //
 
-#include <iostream>
 #include "Transformation.h"
 #include <glm/gtx/euler_angles.hpp>
 
 Transformation::Transformation(): position(), scale(1.0f), yaw(0.0f), roll(0.0f), pitch(0.0f) {}
-
-std::ostream& operator<<(std::ostream& o, const Transformation& transformation) {
-    o << "\tScale: " << transformation.scale << "\n";
-    o << "\tPosition: " << transformation.position << "\n";
-    o << "\tYaw: " << transformation.yaw << "\n";
-    o << "\tPitch: " << transformation.pitch << "\n";
-    o << "\tRoll: " << transformation.roll << "\n";
-    glm::mat4 transform = transformation.getMatrix();
-    o << "\n\t[" << transform.operator[](0) << "\n\t " << transform.operator[](1) << "\n\t " << transform.operator[](2) << "\n\t " << transform.operator[](3) << ']';
-    return o;
-}
 
 glm::mat4 Transformation::getMatrix() const {
     if(!matrix.has_value()){

@@ -58,7 +58,3 @@ float AABB::getVolume() const {
     auto delta = maximum - minimum;
     return delta.x * delta.y * delta.z;
 }
-
-std::ostream & operator<<(std::ostream & os, const AABB& aabb){
-    return os << "AABB[min" << aabb.getMinimum() << ";max" << aabb.getMaximum() << "]";
-}

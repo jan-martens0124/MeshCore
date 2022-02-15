@@ -29,7 +29,6 @@ public:
     Transformation(const Transformation& other) = default;
     bool operator==(const Transformation &other) const;
     bool operator!=(const Transformation &other) const;
-    friend std::ostream& operator<<(std::ostream& o, const Transformation& transform);
 
 private:
     void invalidateMatrices() const;
