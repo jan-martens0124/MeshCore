@@ -18,11 +18,11 @@ public:
 public:
     MC_FUNC_QUALIFIER Ray(Vertex origin, glm::vec3 direction): origin(origin), direction(direction), inverseDirection(1.0f/direction) {}
 
-    MC_FUNC_QUALIFIER Ray getTransformed(const Transformation &transformation) const {
+    MC_FUNC_QUALIFIER [[nodiscard]] Ray getTransformed(const Transformation &transformation) const {
         return this->getTransformed(transformation.getMatrix());
     }
 
-    MC_FUNC_QUALIFIER Ray getTransformed(const glm::mat4 &transformationMatrix) const {
+    MC_FUNC_QUALIFIER [[nodiscard]] Ray getTransformed(const glm::mat4 &transformationMatrix) const {
         Vertex transformedOrigin = transformationMatrix * glm::vec4(this->origin, 1);
         glm::vec3 transformedDirection = transformationMatrix * glm::vec4(this->origin, 0);
         return {transformedOrigin, transformedDirection};

@@ -7,6 +7,7 @@
 
 #include "Vertex.h"
 #include "AABB.h"
+#include "Transformation.h"
 
 class VertexTriangle{
 public:
@@ -29,18 +30,18 @@ public:
         return this->vertex0 == other.vertex0 && this->vertex1 == other.vertex1 && this->vertex2 == other.vertex2;
     }
 
-    MC_FUNC_QUALIFIER VertexTriangle getTransformed(const Transformation& transformation) const {
+    MC_FUNC_QUALIFIER [[nodiscard]] VertexTriangle getTransformed(const Transformation& transformation) const {
         return this->getTransformed(transformation.getMatrix());
     }
 
-    MC_FUNC_QUALIFIER VertexTriangle getTransformed(const glm::mat4& transformationMatrix) const{
+    MC_FUNC_QUALIFIER [[nodiscard]] VertexTriangle getTransformed(const glm::mat4& transformationMatrix) const{
         Vertex rVertex0 = transformationMatrix * glm::vec4(this->vertex0, 1);
         Vertex rVertex1 = transformationMatrix * glm::vec4(this->vertex1, 1);
         Vertex rVertex2 = transformationMatrix * glm::vec4(this->vertex2, 1);
         return {rVertex0, rVertex1, rVertex2};
     }
 
-    MC_FUNC_QUALIFIER Vertex getClosestPoint(const Vertex &point) const {
+    MC_FUNC_QUALIFIER [[nodiscard]] Vertex getClosestPoint(const Vertex &point) const {
 
         // As described in "Real-Time Collision Detection" by Christer Ericson
 

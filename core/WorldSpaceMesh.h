@@ -9,6 +9,7 @@
 #include "Transformation.h"
 #include <optional>
 #include <memory>
+#include <iostream>
 
 class WorldSpaceMesh {
 private:
