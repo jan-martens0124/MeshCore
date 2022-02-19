@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 ### CPP ###
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+endif()
 
 ### GLM ###
 find_package(glm REQUIRED)
