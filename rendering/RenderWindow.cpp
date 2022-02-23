@@ -3,7 +3,7 @@
 //
 
 #include "RenderWindow.h"
-#include "../meshcore/utility/FileParser.h"
+#include "../utility/FileParser.h"
 #include <QtWidgets>
 #include <iostream>
 #include <filesystem>

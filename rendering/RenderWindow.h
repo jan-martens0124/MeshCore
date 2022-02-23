@@ -7,8 +7,7 @@
 
 #include <QMainWindow>
 #include <QDialog>
-#include "../meshcore/rendering/OpenGLRenderWidget.h"
-
+#include "OpenGLRenderWidget.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;
