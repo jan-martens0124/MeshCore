@@ -24,7 +24,7 @@ public:
 
     MC_FUNC_QUALIFIER [[nodiscard]] Ray getTransformed(const glm::mat4 &transformationMatrix) const {
         Vertex transformedOrigin = transformationMatrix * glm::vec4(this->origin, 1);
-        glm::vec3 transformedDirection = transformationMatrix * glm::vec4(this->origin, 0);
+        glm::vec3 transformedDirection = transformationMatrix * glm::vec4(this->direction, 0);
         return {transformedOrigin, transformedDirection};
     }
 };
