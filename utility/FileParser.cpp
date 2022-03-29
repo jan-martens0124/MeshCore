@@ -281,12 +281,21 @@ std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& ve
         facetNormal.z += (vertexA.x - vertexB.x) * (vertexA.y + vertexB.y);
     }
 
+    facetNormal = glm::normalize(facetNormal);
+
     // Find the rotation for which the z-coordinates of all vertices are equal
     // (the rotation that maps the normal to the z-axis)
+
+
     glm::vec3 zAxis(0, 0, 1);
-    float angle = glm::angle(zAxis, glm::normalize(facetNormal));
-    glm::vec3 cross = glm::cross(glm::normalize(facetNormal), zAxis);
+    float angle = glm::angle(zAxis, facetNormal);
+    glm::vec3 cross = glm::cross(facetNormal, zAxis); // TODO what if cross => (0.0; 0.0; 0.0) if facet normal = (0.0,0.0,+-1) or
+    if(cross == glm::vec3()){
+        // Choose an arbitrary axis to rotate around
+        cross = glm::vec3(1,0,0);
+    }
     glm::mat4 transformation = glm::rotate(angle, cross);
+
 
     // Pass the projected vertices as 2D to the mapbox earcut heuristics
     std::vector<std::vector<std::array<float, 2>>> polygon;
