@@ -11,16 +11,20 @@
 #include "../../core/AABBTree.h"
 #include "RenderAABB.h"
 
-template <unsigned int Degree>
 class RenderAABBTree: public AbstractRenderModel {
 private:
     unsigned int renderDepth = 0;
     std::shared_ptr<QOpenGLShaderProgram> shader;
-    std::array<std::shared_ptr<RenderAABBTree<Degree>>, Degree> children;
+    std::vector<std::shared_ptr<RenderAABBTree>> children;
     RenderAABB renderAABB;
 
 public:
+    template <unsigned int Degree>
     RenderAABBTree(const AABBTree<Degree>& aabbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+
+    template <unsigned int Degree>
+    RenderAABBTree(const OBBTree<Degree>& obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+
     void draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
     void setTransformationMatrix(const glm::mat4 &transformation) override;
     void setRenderDepth(unsigned int newRenderDepth);
@@ -30,16 +34,14 @@ private:
     void drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth);
 };
 
-template<unsigned int Degree>
-void RenderAABBTree<Degree>::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
+void RenderAABBTree::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
     this->drawRecursive(viewMatrix, projectionMatrix, lightMode, renderDepth);
 }
 
-template<unsigned int Degree>
-void RenderAABBTree<Degree>::drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth) {
+void RenderAABBTree::drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth) {
     if(depth > 0){
         for (const auto &child : this->children){
-            if(child!=nullptr) child->drawRecursive(viewMatrix, projectionMatrix, lightMode, depth-1);
+            child->drawRecursive(viewMatrix, projectionMatrix, lightMode, depth-1);
         }
     }
     else if(depth == 0){
@@ -47,36 +49,43 @@ void RenderAABBTree<Degree>::drawRecursive(const glm::mat4 &viewMatrix, const gl
     }
 }
 
-template<unsigned int Degree>
-RenderAABBTree<Degree>::RenderAABBTree(const AABBTree<Degree> &aabbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformationMatrix),
+template <unsigned int Degree>
+RenderAABBTree::RenderAABBTree(const AABBTree<Degree> &aabbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformationMatrix),
         renderAABB(aabbTree.getBounds(), transformationMatrix, shader) {
         if(aabbTree.isSplit()){
-            for(int childIndex=0; childIndex<Degree; childIndex++){
-                auto child = aabbTree.getChildren()[childIndex];
-                if(!child->isEmpty()) children[childIndex] = std::make_shared<RenderAABBTree<Degree>>(*child, transformationMatrix, shader);
+            for (const auto &child : aabbTree.getChildren()){
+                if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderAABBTree>(*child, transformationMatrix, shader));
             }
         }
 }
 
-template<unsigned int Degree>
-void RenderAABBTree<Degree>::setTransformationMatrix(const glm::mat4 &transformation) {
-    AbstractRenderModel::setTransformationMatrix(transformation);
-    renderAABB.setTransformationMatrix(transformation);
-    for (const auto &child : this->children){
-        if(child!=nullptr) child->setTransformationMatrix(transformation);
+template <unsigned int Degree>
+RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader) {
+    this->transformationMatrix = transformationMatrix * obbTree.getBounds().getTransformation();
+    this->renderAABB = obbTree.getBounds();
+    if(obbTree.isSplit()){
+        for (const auto &child : obbTree.getChildren()){
+            if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderAABBTree>(*child, transformationMatrix, shader));
+        }
     }
 }
 
-template<unsigned int Degree>
-void RenderAABBTree<Degree>::setRenderDepth(unsigned int newRenderDepth) {
+void RenderAABBTree::setTransformationMatrix(const glm::mat4 &transformation) {
+    AbstractRenderModel::setTransformationMatrix(transformation);
+    renderAABB.setTransformationMatrix(transformation);
+    for (const auto &child : this->children){
+        child->setTransformationMatrix(transformation);
+    }
+}
+
+void RenderAABBTree::setRenderDepth(unsigned int newRenderDepth) {
     RenderAABBTree::renderDepth = newRenderDepth;
 }
 
-template<unsigned int Degree>
-unsigned int RenderAABBTree<Degree>::getDepth() {
+unsigned int RenderAABBTree::getDepth() {
     unsigned int depth = 0;
     for (const auto &child : this->children){
-        if(child!=nullptr) depth = std::max(depth, child->getDepth() + 1);
+        depth = std::max(depth, child->getDepth() + 1);
     }
     return depth;
 }

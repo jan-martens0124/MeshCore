@@ -28,21 +28,30 @@ public:
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getCenter() const {
-        return (this->maximum + this->minimum)/2.0f;
+        return (this->maximum + this->minimum) / 2.0f;
     }
 
-    MC_FUNC_QUALIFIER [[nodiscard]] Vertex getHalf() const{
-        return (this->maximum - this->minimum)/2.0f;
+    MC_FUNC_QUALIFIER [[nodiscard]] Vertex getHalf() const {
+        return (this->maximum - this->minimum) / 2.0f;
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getSurfaceArea() const {
-        auto delta = maximum - minimum;
+        auto delta = this->maximum - this->minimum;
         return 2 * (delta.x * delta.y + delta.x * delta.z + delta.y * delta.z);
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getVolume() const {
-        auto delta = maximum - minimum;
+        auto delta = this->maximum - this->minimum;
         return delta.x * delta.y * delta.z;
+    }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] bool containsPoint(Vertex point) const {
+        return glm::all(glm::greaterThanEqual(point, this->minimum)) &&
+               glm::all(glm::lessThanEqual(point, this->maximum));
+    }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] Vertex getClosestPoint(Vertex point) const {
+        return glm::clamp(point, this->getMinimum(), this->getMaximum());
     }
 };
 
