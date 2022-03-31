@@ -30,6 +30,8 @@ public:
     [[nodiscard]] std::vector<IndexEdge> getSufficientIntersectionEdges() const;
 
     const AABB &getBounds() const;
+
+    ModelSpaceMesh getConvexHull() const;
 };
 
 
