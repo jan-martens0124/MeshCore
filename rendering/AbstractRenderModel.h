@@ -37,7 +37,7 @@ public:
     [[nodiscard]] bool isVisible() const;
     void setVisible(bool visible);
     [[nodiscard]] const Color &getColor() const;
-    void setColor(const Color &newColor);
+    virtual void setColor(const Color &newColor);
     [[nodiscard]] const glm::mat4 &getTransformation() const;
     virtual void setTransformationMatrix(const glm::mat4 &newTransformationMatrix);
 

@@ -30,6 +30,7 @@ public:
     void setTransformationMatrix(const glm::mat4 &transformation) override;
     void setRenderDepth(unsigned int newRenderDepth);
     unsigned int getDepth();
+    void setColor(const Color &newColor) override;
 
 private:
     void drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth);
@@ -61,9 +62,9 @@ RenderAABBTree::RenderAABBTree(const AABBTree<Degree> &aabbTree, const glm::mat4
 }
 
 template <unsigned int Degree>
-RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader) {
-    this->transformationMatrix = transformationMatrix * obbTree.getBounds().getTransformation();
-    this->renderAABB = obbTree.getBounds();
+RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(obbTree.getBounds().getTransformation().getMatrix()), renderAABB(obbTree.getBounds().getAabb(), obbTree.getBounds().getTransformation().getMatrix(), shader){
+//    this->transformationMatrix = transformationMatrix * obbTree.getBounds().getTransformation().getMatrix(); // TODO check multiplication order
+//    this->renderAABB = obbTree.getBounds();
     if(obbTree.isSplit()){
         for (const auto &child : obbTree.getChildren()){
             if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderAABBTree>(*child, transformationMatrix, shader));
@@ -75,7 +76,7 @@ void RenderAABBTree::setTransformationMatrix(const glm::mat4 &transformation) {
     AbstractRenderModel::setTransformationMatrix(transformation);
     renderAABB.setTransformationMatrix(transformation);
     for (const auto &child : this->children){
-        child->setTransformationMatrix(transformation);
+        child->setTransformationMatrix(transformation); // TODO probably wrong for OBB, yes!
     }
 }
 
@@ -89,6 +90,14 @@ unsigned int RenderAABBTree::getDepth() {
         depth = std::max(depth, child->getDepth() + 1);
     }
     return depth;
+}
+
+void RenderAABBTree::setColor(const Color &newColor) {
+    AbstractRenderModel::setColor(newColor);
+    renderAABB.setColor(newColor);
+    for (const auto &child : this->children){
+        child->setColor(newColor);
+    }
 }
 
 

@@ -30,7 +30,9 @@ private:
 public:
     MC_FUNC_QUALIFIER Transformation(): position(), scale(1.0f), yaw(0.0f), roll(0.0f), pitch(0.0f),
                       matrix(), inverseMatrix(), rotationMatrix() {}
-    Transformation(const Transformation& other) = default;
+
+//    Transformation(const Transformation& other) = default;
+
     MC_FUNC_QUALIFIER bool operator==(const Transformation &other) const {
         return scale == other.scale &&
                yaw == other.yaw &&
