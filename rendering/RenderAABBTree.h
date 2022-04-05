@@ -9,6 +9,7 @@
 #include <QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
 #include "../../core/AABBTree.h"
+#include "../../core/OBBTree.h"
 #include "RenderAABB.h"
 
 class RenderAABBTree: public AbstractRenderModel {

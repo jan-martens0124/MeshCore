@@ -242,10 +242,14 @@ static std::vector<IndexTriangle> getConvexHullMcCormack(const std::vector<Verte
     return triangles;
 }
 
-ModelSpaceMesh ModelSpaceMesh::getConvexHull() const {
+std::optional<ModelSpaceMesh> ModelSpaceMesh::getConvexHull() const {
 
     // Get the triangles that should be part of the convex hull
     const auto indexTriangles = getConvexHullMcCormack(this->vertices);
+
+    if(indexTriangles.empty()){
+        return std::nullopt;
+    }
 
     // Create a new modelSpaceMesh that only contains vertices that are part of the outer hull
     std::vector<Vertex> hullVertices;
@@ -272,5 +276,5 @@ ModelSpaceMesh ModelSpaceMesh::getConvexHull() const {
         hullTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
     }
 
-    return{hullVertices, hullTriangles};
+    return ModelSpaceMesh{hullVertices, hullTriangles};
 }

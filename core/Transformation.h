@@ -161,6 +161,30 @@ public:
     MC_FUNC_QUALIFIER Vertex inverseTransformVertex(const Vertex& vertex) const {
         return this->getInverseMatrix() * glm::vec4(vertex, 1);
     }
+
+    MC_FUNC_QUALIFIER static Transformation fromRotationMatrix(const glm::mat3& rotationMatrix){
+        float pitch = glm::asin(rotationMatrix[2][0]);
+        float roll = glm::asin(-rotationMatrix[2][1]/glm::cos(pitch));
+        float roll_alternative = glm::acos(rotationMatrix[2][2]/glm::cos(pitch));
+
+        // Check if we chose the right pitch here, otherwise change
+        if(glm::abs(glm::abs(roll) - glm::abs(roll_alternative)) > 0.000001){
+            pitch = glm::pi<float>() - glm::asin(rotationMatrix[2][0]);
+            roll = glm::asin(-rotationMatrix[2][1]/glm::cos(pitch));
+        }
+
+        float yaw = glm::asin(-rotationMatrix[1][0]/glm::cos(pitch));
+        float m11_calculated = glm::cos(roll) * glm::cos(yaw) - glm::sin(roll) * glm::sin(pitch) * glm::sin(yaw);
+
+        // Check if we selected the right yaw here, otherwise change
+        if(glm::abs(rotationMatrix[1][1] - m11_calculated) > 0.000001){
+            yaw = glm::pi<float>() - yaw; // We chose the wrong yaw
+        }
+
+        Transformation returnObject;
+        returnObject.setRotation(yaw, pitch, roll);
+        return returnObject;
+    }
 };
 
 #endif //MESHCORE_TRANSFORMATION_H

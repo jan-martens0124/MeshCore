@@ -31,7 +31,7 @@ public:
 
     const AABB &getBounds() const;
 
-    ModelSpaceMesh getConvexHull() const;
+    std::optional<ModelSpaceMesh> getConvexHull() const;
 };
 
 

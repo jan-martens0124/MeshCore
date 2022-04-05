@@ -108,7 +108,32 @@ ModelSpaceMesh FileParser::parseFileOBJ(const std::string &filePath) {
             }
         }
     }
-    return ModelSpaceMesh(vertices, triangles);
+//    return {vertices, triangles};
+
+    // Remove unused vertices O(V) in time, O(V) in memory
+    std::vector<Vertex> finalVertices;
+    std::vector<IndexTriangle> finalTriangles;
+    std::vector<unsigned int> vertexMapping(vertices.size(), -1); // Element at position i contains the index of vertex i in the hullVertices vector, -1 if not present in hullVertices
+    auto addVertexIfNotPresent = [&](unsigned int index){
+        if(vertexMapping.at(index)==-1){
+            vertexMapping.at(index) = finalVertices.size();
+            finalVertices.emplace_back(vertices.at(index));
+        }
+    };
+
+    for (const auto &indexTriangle : triangles){
+        // Put the vertices in the hullVertices vector if not present yet
+        addVertexIfNotPresent(indexTriangle.vertexIndex0);
+        addVertexIfNotPresent(indexTriangle.vertexIndex1);
+        addVertexIfNotPresent(indexTriangle.vertexIndex2);
+
+        unsigned int newIndex0 = vertexMapping.at(indexTriangle.vertexIndex0);
+        unsigned int newIndex1 = vertexMapping.at(indexTriangle.vertexIndex1);
+        unsigned int newIndex2 = vertexMapping.at(indexTriangle.vertexIndex2);
+        finalTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
+    }
+
+    return {finalVertices, finalTriangles};
 }
 
 Vertex readASCIISTLVertexLine(std::ifstream& stream){
@@ -132,7 +157,7 @@ Vertex readASCIISTLVertexLine(std::ifstream& stream){
     floatIndex = line.find_first_of(' ');
     float z = std::stof(line.substr(0, floatIndex));
 
-    return Vertex(x,y,z);
+    return {x,y,z};
 }
 
 ModelSpaceMesh FileParser::parseFileSTL(const std::string &filePath) {
@@ -185,7 +210,7 @@ ModelSpaceMesh FileParser::parseFileSTL(const std::string &filePath) {
             assert(line.find("endfacet") != std::string::npos);
         }
     }
-    return ModelSpaceMesh(vertices, triangles);
+    return {vertices, triangles};
 }
 
 float readBinaryFloatLittleEndian(std::ifstream& stream){
@@ -202,7 +227,7 @@ Vertex readBinaryVertexLittleEndian(std::ifstream& stream){
     float x = readBinaryFloatLittleEndian(stream);
     float y = readBinaryFloatLittleEndian(stream);
     float z = readBinaryFloatLittleEndian(stream);
-    return Vertex(x,y,z);
+    return {x,y,z};
 }
 
 unsigned int readBinaryUnsignedIntegerLittleEndian(std::ifstream& stream){
@@ -252,7 +277,7 @@ ModelSpaceMesh FileParser::parseFileBinarySTL(const std::string &filePath) {
         triangles.emplace_back(IndexTriangle{indices[0], indices[1], indices[2]});
         stream.read(attributes, 2);
     }
-    return ModelSpaceMesh(vertices, triangles);
+    return {vertices, triangles};
 }
 
 std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) {
@@ -289,8 +314,8 @@ std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& ve
 
     glm::vec3 zAxis(0, 0, 1);
     float angle = glm::angle(zAxis, facetNormal);
-    glm::vec3 cross = glm::cross(facetNormal, zAxis); // TODO what if cross => (0.0; 0.0; 0.0) if facet normal = (0.0,0.0,+-1) or
-    if(cross == glm::vec3()){
+    glm::vec3 cross = glm::cross(facetNormal, zAxis);
+    if(cross == glm::vec3()){ // TODO should we compare with glm::epsilonEqual?
         // Choose an arbitrary axis to rotate around
         cross = glm::vec3(1,0,0);
     }
