@@ -6,8 +6,8 @@
 
 #include <utility>
 #include <unordered_set>
-#include <iostream>
 #include "../convexhull/convexhull.h"
+#include "../factories/AABBFactory.h"
 
 ModelSpaceMesh::ModelSpaceMesh(std::vector<Vertex> vertices, std::vector<IndexTriangle> triangles):
 vertices(std::move(vertices)),
@@ -15,18 +15,7 @@ triangles(std::move(triangles)),
 bounds()
 {
     assert(!this->vertices.empty());
-
-    auto minimum = this->vertices[0];
-    auto maximum = this->vertices[0];
-    for(auto iterator = this->vertices.begin()++; iterator < this->vertices.end(); iterator++){
-        minimum = glm::min(minimum, *iterator);
-        maximum = glm::max(maximum, *iterator);
-    }
-
-//    for (const auto &vertex : this->vertices){
-//        this->bounds.envelopVertex(vertex);
-//    }
-    this->bounds = AABB(minimum, maximum);
+    this->bounds = AABBFactory::createAABB(this->vertices);
 }
 
 const std::vector<Vertex>& ModelSpaceMesh::getVertices() const {

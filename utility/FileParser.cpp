@@ -53,7 +53,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFile(const std::string &filePat
         else{
             // Return empty mesh if file extension not supported
             std::cout << "Warning: Extension ." << extension << " of file " << filePath << " not supported!" << std::endl;
-            return std::make_shared<ModelSpaceMesh>(ModelSpaceMesh(std::vector<Vertex>(), std::vector<IndexTriangle>()));
+            return nullptr;
         }
         cacheMapMutex.lock();
         meshCacheMap[filePath] = returnModelSpaceMesh;
@@ -100,12 +100,15 @@ ModelSpaceMesh FileParser::parseFileOBJ(const std::string &filePath) {
                 }
 
             }
+#if !NDEBUG
             else if (type == "vp") {
                 std::cout << "vp strings in .obj files not supported" << std::endl;
             }
             else if (type == "l"){
                 std::cout << "l strings in .obj files not supported" << std::endl;
             }
+#endif
+
         }
     }
 //    return {vertices, triangles};
