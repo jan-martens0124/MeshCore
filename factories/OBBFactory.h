@@ -7,10 +7,11 @@
 
 #include "../core/ModelSpaceMesh.h"
 #include "../utility/hash.h"
+#include "../core/OBB.h"
 #include <gsl/gsl_eigen.h>
 #include <unordered_set>
 #include <glm/gtc/type_ptr.hpp>
-#include "../convexhull/convexhull.h"
+#include <memory>
 
 class OBBFactory{
 

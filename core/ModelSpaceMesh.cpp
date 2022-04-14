@@ -6,6 +6,7 @@
 
 #include <utility>
 #include <unordered_set>
+#include <iostream>
 #include "../convexhull/convexhull.h"
 #include "../factories/AABBFactory.h"
 
