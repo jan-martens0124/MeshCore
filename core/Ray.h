@@ -9,6 +9,7 @@
 #include "Vertex.h"
 #include "Transformation.h"
 #include "Core.h"
+#include "Quaternion.h"
 
 class Ray {
 public:
@@ -20,6 +21,12 @@ public:
 
     MC_FUNC_QUALIFIER [[nodiscard]] Ray getTransformed(const Transformation &transformation) const {
         return this->getTransformed(transformation.getMatrix());
+    }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] Ray getRotated(const Quaternion &quaternion) const {
+        Vertex rotatedOrigin = quaternion.rotateVertex(this->origin);
+        glm::vec3 rotatedDirection = quaternion.rotateVertex(this->direction);
+        return {rotatedOrigin, rotatedDirection};
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Ray getTransformed(const glm::mat4 &transformationMatrix) const {

@@ -8,6 +8,7 @@
 #include "Vertex.h"
 #include "AABB.h"
 #include "Transformation.h"
+#include "Quaternion.h"
 
 class VertexTriangle{
 public:
@@ -32,6 +33,13 @@ public:
 
     MC_FUNC_QUALIFIER [[nodiscard]] VertexTriangle getTransformed(const Transformation& transformation) const {
         return this->getTransformed(transformation.getMatrix());
+    }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] VertexTriangle getRotated(const Quaternion& quaternion) const {
+        Vertex rVertex0 = quaternion.rotateVertex(this->vertex0);
+        Vertex rVertex1 = quaternion.rotateVertex(this->vertex1);
+        Vertex rVertex2 = quaternion.rotateVertex(this->vertex2);
+        return {rVertex0, rVertex1, rVertex2};
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] VertexTriangle getTransformed(const glm::mat4& transformationMatrix) const{

@@ -54,6 +54,7 @@ private:
         this->invalidateMatrices();
     }
 
+public:
     MC_FUNC_QUALIFIER glm::mat4 getRotationMatrix() const {
         if(!validRotationMatrix){
             rotationMatrix = glm::eulerAngleXYZ(roll, pitch, yaw);

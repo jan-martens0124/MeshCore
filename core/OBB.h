@@ -6,56 +6,47 @@
 #define OPTIXMESHCORE_OBB_H
 
 #include "AABB.h"
-#include "Transformation.h"
+#include "Quaternion.h"
 
-/** OBB as an AABB in its own model space, defined by a transformation **/
+/** OBB as an AABB in its own model space, defined by a rotation only **/
 class OBB {
 private:
     AABB aabb;
-    Transformation transformation; // potential memory bottleneck, 224 bytes TODO store 2 glm::mat4x3 matrices instead (normal and inverse) or test low memory rotation class
-
-//    const glm::mat4x3 transformationMatrix;
-//    const glm::mat4x3 inverseTransformationMatrix;
+    Quaternion rotation;
 
 public:
+    MC_FUNC_QUALIFIER OBB(): aabb(), rotation(){};
 
-    MC_FUNC_QUALIFIER OBB(): aabb(), transformation(){};
-
-    MC_FUNC_QUALIFIER OBB(const AABB& aabb, const Transformation& transformation): aabb(aabb), transformation(transformation){}
+    MC_FUNC_QUALIFIER OBB(const AABB& aabb, const Quaternion& rotation): aabb(aabb), rotation(rotation){}
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getSurfaceArea() const {
-        // Assume the transformation is an affine transformation
-        return aabb.getSurfaceArea() * transformation.getScale();
+        return aabb.getSurfaceArea();
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getVolume() const {
-        // Assume the transformation is an affine transformation
-        auto scale = transformation.getScale();
-        return aabb.getVolume() * scale * scale * scale;
+        return aabb.getVolume();
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getCenter() const {
-        return transformation.transformVertex(aabb.getCenter());
+
+        return this->rotation.rotateVertex(aabb.getCenter());
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] const AABB &getAabb() const {
         return aabb;
     }
 
-    MC_FUNC_QUALIFIER [[nodiscard]] const Transformation &getTransformation() const {
-        return transformation;
-    }
-
     MC_FUNC_QUALIFIER [[nodiscard]] bool containsPoint(Vertex point) const {
-        auto transformedPoint = this->transformation.inverseTransformVertex(point);
-        return this->aabb.containsPoint(transformedPoint);
+        return this->aabb.containsPoint(this->rotation.inverseRotateVertex(point));
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getClosestPoint(Vertex point) const {
-        auto transformedPoint = this->transformation.inverseTransformVertex(point);
-        return this->aabb.getClosestPoint(point);
+        return this->aabb.getClosestPoint(this->rotation.inverseRotateVertex(point));
     }
 
+    MC_FUNC_QUALIFIER [[nodiscard]] const Quaternion &getRotation() const {
+        return rotation;
+    }
 };
 
 #endif //OPTIXMESHCORE_OBB_H

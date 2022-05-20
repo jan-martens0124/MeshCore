@@ -5,6 +5,7 @@
 #ifndef OPTIXMESHCORE_OBBFACTORY_H
 #define OPTIXMESHCORE_OBBFACTORY_H
 
+#include "../utility/hash.h"
 #include "../core/ModelSpaceMesh.h"
 #include "../utility/hash.h"
 #include "../core/OBB.h"
@@ -33,23 +34,26 @@ public:
     static OBB createOBB(const std::shared_ptr<ModelSpaceMesh>& modelSpaceMesh){
         auto vertices = modelSpaceMesh->getVertices();
 
+        // TODO
         // Try to create an optimal OBB if the number of vertices is limited
-        if(vertices.size()<=20){
-            // Find the optimal OBB using the convex hull
-            std::optional<OBB> optimalOBB = findOptimalOBB(*modelSpaceMesh->getConvexHull());
-            if(optimalOBB.has_value()){
-                return optimalOBB.value();
-            }
-        }
+//        if(vertices.size()<=20){
+//            // Find the optimal OBB using the convex hull
+//            std::optional<OBB> optimalOBB = findOptimalOBB(*modelSpaceMesh->getConvexHull());
+//            if(optimalOBB.has_value()){
+//                return optimalOBB.value();
+//            }
+//        }
 
         // If the number of vertices is too high, or the optimal OBB could not be found, use PCA
         auto pcaOBB = findPCAOBB(vertices.begin(), vertices.end());
+
+        // TODO test if we can improve heuristically
 
         // Compare with the AABB of the model space mesh that is present anyway, use it if the OBB is worse
         if(pcaOBB.getVolume() <= modelSpaceMesh->getBounds().getVolume()){
             return pcaOBB;
         }
-        else return {modelSpaceMesh->getBounds(), Transformation()};
+        else return {modelSpaceMesh->getBounds(), Quaternion(glm::mat3(Transformation().getRotationMatrix()))};
     }
 
 private:
@@ -58,19 +62,19 @@ private:
     static OBB createOBB(const Iter& first, const Iter& last, unsigned int numberOfVertices){
 
         // Try to create an optimal OBB if the number of vertices is limited
-        if(numberOfVertices<=20){
-
-            // Create the convex hull
-            std::vector<Vertex> vertices(first, last);
-            ModelSpaceMesh tempMesh(vertices, {});
-            auto convexHull = tempMesh.getConvexHull();
-
-            // Find the optimal OBB using this hull
-            std::optional<OBB> optimalOBB = findOptimalOBB(*convexHull);
-            if(optimalOBB.has_value()){
-                return optimalOBB.value();
-            }
-        }
+//        if(numberOfVertices<=20){
+//
+//            // Create the convex hull
+//            std::vector<Vertex> vertices(first, last);
+//            ModelSpaceMesh tempMesh(vertices, {});
+//            auto convexHull = tempMesh.getConvexHull();
+//
+//            // Find the optimal OBB using this hull
+//            std::optional<OBB> optimalOBB = findOptimalOBB(*convexHull);
+//            if(optimalOBB.has_value()){
+//                return optimalOBB.value();
+//            }
+//        }
 
         // If the number of vertices is too high, or the optimal OBB could not be found, use PCA
         return findPCAOBB(first, last);
@@ -151,18 +155,19 @@ private:
         if(!rightHanded){
             mat[2] *= -1;
         }
-        auto transformation = Transformation::fromRotationMatrix(mat);
+        Quaternion rotation(mat);
+//        auto transformation = Transformation::fromRotationMatrix(mat);
 
         // 4. Calculate the AABB bounds in this transformed space
-        auto minimum = transformation.inverseTransformVertex(*first);
+        auto minimum = rotation.inverseRotateVertex(*first);
         auto maximum = minimum;
         auto second = first; second++;
         for(auto iter = second;iter!=last; ++iter){
-            minimum = glm::min(minimum, transformation.inverseTransformVertex(*iter));
-            maximum = glm::max(maximum, transformation.inverseTransformVertex(*iter));
+            minimum = glm::min(minimum, rotation.inverseRotateVertex(*iter));
+            maximum = glm::max(maximum, rotation.inverseRotateVertex(*iter));
         }
 
-        return {AABB(minimum, maximum), transformation};
+        return {AABB(minimum, maximum), rotation};
     }
 };
 #endif //OPTIXMESHCORE_OBBFACTORY_H

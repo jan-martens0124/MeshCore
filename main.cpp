@@ -27,10 +27,10 @@ int main(int argc, char *argv[]){
     /// Here is where you would start of your code
 
     // Load some problem meshes
-    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::parseFile("../data/models/everton/banana.stl");
+    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::parseFile("../../data/models/Everton/banana.stl");
     std::shared_ptr<WorldSpaceMesh> staticWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh);
 
-    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh2 = FileParser::parseFile("../data/models/everton/banana.stl");
+    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh2 = FileParser::parseFile("../../data/models/Everton/banana.stl");
     std::shared_ptr<WorldSpaceMesh> dynamicWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh2);
 
     std::cout << "Number of vertices: " << staticWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;

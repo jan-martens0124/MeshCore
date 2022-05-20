@@ -62,7 +62,7 @@ RenderAABBTree::RenderAABBTree(const AABBTree<Degree> &aabbTree, const glm::mat4
 }
 
 template <unsigned int Degree>
-RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(obbTree.getBounds().getTransformation().getMatrix()), renderAABB(obbTree.getBounds().getAabb(), obbTree.getBounds().getTransformation().getMatrix(), shader){
+RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(obbTree.getBounds().getRotation().getMatrix()), renderAABB(obbTree.getBounds().getAabb(), obbTree.getBounds().getRotation().getMatrix(), shader){
 //    this->transformationMatrix = transformationMatrix * obbTree.getBounds().getTransformation().getMatrix(); // TODO check multiplication order
 //    this->renderAABB = obbTree.getBounds();
     if(obbTree.isSplit()){

@@ -62,6 +62,24 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFile(const std::string &filePat
     }
 }
 
+void FileParser::saveFile(const std::string &filePath, const std::shared_ptr<ModelSpaceMesh>& mesh) {
+    std::locale::global(std::locale("en_US.UTF-8"));
+
+    std::string extension = filePath.substr(filePath.find_last_of('.') + 1);
+
+    if(std::filesystem::exists(filePath)){
+        std::cout << "Warning: File " << filePath << " already exists!" << std::endl;
+        return;
+    }
+
+    if( extension == "obj") saveFileOBJ(filePath, mesh);
+    else{
+        // Return empty mesh if file extension not supported
+        std::cout << "Warning: Extension ." << extension << " for saving " << filePath << " not supported!" << std::endl;
+        return;
+    }
+}
+
 ModelSpaceMesh FileParser::parseFileOBJ(const std::string &filePath) {
 
     std::ifstream stream(filePath);
@@ -344,4 +362,23 @@ std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& ve
         triangles.emplace_back(IndexTriangle{indices[*iterator++], indices[*iterator++], indices[*iterator]});
     }
     return triangles;
+}
+
+void FileParser::saveFileOBJ(const std::string &filePath, const std::shared_ptr<ModelSpaceMesh> &mesh) {
+    std::ofstream basicOfstream(filePath);
+    if(!basicOfstream.is_open()){
+        throw std::runtime_error("Could not open file " + filePath);
+    }
+
+    // TODO think about saving precision
+    // Write vertices
+    for (const auto &vertex : mesh->getVertices()) {
+        basicOfstream << "v " << vertex.x << " " << vertex.y << " " << vertex.z << std::endl;
+    }
+
+    // Write triangles
+    for (const auto &triangle : mesh->getTriangles()) {
+        basicOfstream << "f " << triangle.vertexIndex0 + 1 << " " << triangle.vertexIndex1 + 1 << " " << triangle.vertexIndex2 + 1 << std::endl;
+    }
+    basicOfstream.close();
 }

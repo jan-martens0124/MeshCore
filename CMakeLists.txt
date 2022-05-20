@@ -12,6 +12,10 @@ endif()
 find_package(glm REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
+### Boost ###
+find_package(Boost REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
+
 ### QT ###
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
