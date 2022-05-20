@@ -15,15 +15,56 @@
 
 typedef glm::vec4 Color;
 
+class AbstractRenderModelListener{
+public:
+    virtual void notifyColorChanged(const Color& newColor) const = 0;
+    virtual void notifyVisibleChanged(bool visible) const = 0;
+};
+
+class RenderModelListener: public AbstractRenderModelListener {
+private:
+    std::function<void()> onChanged = {};
+    std::function<void(const Color& newColor)> onColorChanged = {};
+    std::function<void(bool visible)> onVisibleChanged = {};
+
+    void notifyColorChanged(const Color& newColor) const override {
+        if(this->onColorChanged) this->onColorChanged(newColor);
+        if(this->onChanged) this->onChanged();
+    }
+
+    void notifyVisibleChanged(bool visible) const override {
+        if(this->onVisibleChanged) this->onVisibleChanged(visible);
+        if(this->onChanged) this->onChanged();
+    }
+
+public:
+
+    [[maybe_unused]] void setOnChanged(const std::function<void()> &newOnChanged) {
+        this->onChanged = newOnChanged;
+    }
+
+    [[maybe_unused]] void setOnColorChanged(const std::function<void(const Color& newColor)> &newOnColorChanged) {
+        this->onColorChanged = newOnColorChanged;
+    }
+
+    [[maybe_unused]] void setOnVisibleChanged(const std::function<void(bool visible)> &newOnVisibleChanged) {
+        this->onVisibleChanged = newOnVisibleChanged;
+    }
+};
+
 class AbstractRenderModel: protected QOpenGLFunctions {
 
+private:
+    bool visible = true;
+    Color color = Color(1.0f);
 protected:
     QOpenGLBuffer* indexBuffer;
     QOpenGLBuffer* vertexBuffer;
     QOpenGLVertexArrayObject* vertexArray;
-    bool visible = true;
-    Color color;
+
     glm::mat4 transformationMatrix;
+
+    std::vector<std::shared_ptr<AbstractRenderModelListener>> listeners;
 
 public:
 //    AbstractRenderModel() = delete;
@@ -35,7 +76,7 @@ public:
     virtual void draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) = 0;
 
     [[nodiscard]] bool isVisible() const;
-    void setVisible(bool visible);
+    void setVisible(bool newVisible);
     [[nodiscard]] const Color &getColor() const;
     virtual void setColor(const Color &newColor);
     [[nodiscard]] const glm::mat4 &getTransformation() const;
@@ -68,6 +109,14 @@ public:
 
 
         contextMenu.exec(position);
+    }
+
+    void addListener(const std::shared_ptr<AbstractRenderModelListener> &listener) {
+        this->listeners.push_back(listener);
+    }
+
+    void removeListener(const std::shared_ptr<AbstractRenderModelListener> &listener) {
+        this->listeners.erase(std::remove(this->listeners.begin(), this->listeners.end(), listener), this->listeners.end());
     }
 };
 

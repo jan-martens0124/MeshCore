@@ -1,16 +1,16 @@
 //
-// Created by Jonas on 30/11/2020.
+// Created by Jonas on 18/05/2022.
 //
 
-#include "OpenGLRenderWidget.h"
+#include <qfiledialog.h>
+#include "OpenGLWidget.h"
 #include "ShaderProgramSource.h"
-#include <QOpenGLShaderProgram>
-#include <QPushButton>
-#include <QtWidgets>
+#include "RenderMesh.h"
+#include "RenderWidget.h"
 
-[[maybe_unused]] OpenGLRenderWidget::OpenGLRenderWidget(QWidget *parent): QOpenGLWidget(parent) {}
+[[maybe_unused]] OpenGLWidget::OpenGLWidget(QWidget *parent): QOpenGLWidget(parent) {}
 
-void OpenGLRenderWidget::initializeGL() {
+void OpenGLWidget::initializeGL() {
 
     this->resetView();
 
@@ -49,19 +49,19 @@ void OpenGLRenderWidget::initializeGL() {
     ambientShader->link();
 }
 
-void OpenGLRenderWidget::resetView() {
+void OpenGLWidget::resetView() {
     viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f,0.0f, - INITIAL_VIEW_DISTANCE));
     this->update();
 }
 
-void OpenGLRenderWidget::resizeGL(int w, int h) {
+void OpenGLWidget::resizeGL(int w, int h) {
     this->width = w;
     this->height = h;
 
     this->calculateProjectionMatrix();
 }
 
-void OpenGLRenderWidget::calculateProjectionMatrix(){
+void OpenGLWidget::calculateProjectionMatrix(){
     if(this->usePerspective){
         this->projectionMatrix = glm::perspective(glm::radians(INITIAL_FOV), float(width)/float(height), 0.001f, 10000.0f);
     }
@@ -72,22 +72,22 @@ void OpenGLRenderWidget::calculateProjectionMatrix(){
     }
 }
 
-void OpenGLRenderWidget::paintGL() {
+void OpenGLWidget::paintGL() {
 
-    for (const auto &renderModel : this->renderModels){
-        renderModel->draw(viewMatrix, projectionMatrix, lightMode);
+    // TODO use Sorted renderModels
+//    for(auto& renderModel: this->sortedRenderModels){
+//        renderModel->draw(viewMatrix, projectionMatrix, lightMode);
+//    }
+
+    for(const auto& [group, groupMap]: this->groupedRenderModelsMap){
+        for(const auto& [id, renderModel]: groupMap){
+            renderModel->draw(viewMatrix, projectionMatrix, lightMode);
+        }
     }
 
-    for(auto& line: this->renderLines){
-        line.draw(*ambientShader, viewMatrix, projectionMatrix);
-    }
-
-    for(auto& renderModel: this->sortedRenderModels){
-        renderModel->draw(viewMatrix, projectionMatrix, lightMode);
-    }
 }
 
-void OpenGLRenderWidget::mouseMoveEvent(QMouseEvent *event) {
+void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
     int dx = event->x() - lastMousePosition.x();
     int dy = event->y() - lastMousePosition.y();
     lastMousePosition = event->pos();
@@ -101,7 +101,7 @@ void OpenGLRenderWidget::mouseMoveEvent(QMouseEvent *event) {
     this->update();
 }
 
-void OpenGLRenderWidget::wheelEvent(QWheelEvent *event) {
+void OpenGLWidget::wheelEvent(QWheelEvent *event) {
     auto factor = float(event->angleDelta().y()) / 1200.0f;
     auto distance = glm::length(glm::vec3(viewMatrix[3]));
 //    viewMatrix = glm::translate(viewMatrix, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(glm::vec3(0.0f, 0.0f, factor * distance), 0.0f)));
@@ -111,13 +111,13 @@ void OpenGLRenderWidget::wheelEvent(QWheelEvent *event) {
     this->update();
 }
 
-void OpenGLRenderWidget::mousePressEvent(QMouseEvent *event) {
-     lastMousePosition = event->pos();
-     this->update();
-     this->setFocus();
+void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
+    lastMousePosition = event->pos();
+    this->update();
+    this->setFocus();
 }
 
-void OpenGLRenderWidget::mouseDoubleClickEvent(QMouseEvent *event) {
+void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton)
     {
         QWidget* window = this->parentWidget();
@@ -134,7 +134,7 @@ void OpenGLRenderWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     }
 }
 
-void OpenGLRenderWidget::keyPressEvent(QKeyEvent* event){
+void OpenGLWidget::keyPressEvent(QKeyEvent* event){
     const auto key = event->key();
     const auto distance = glm::length(glm::vec3(viewMatrix[3]));
     if(key == Qt::Key_Plus){
@@ -210,66 +210,45 @@ void OpenGLRenderWidget::keyPressEvent(QKeyEvent* event){
     }
 }
 
-[[maybe_unused]] void OpenGLRenderWidget::addOrUpdateWorldSpaceMeshSlot(const WorldSpaceMesh& worldSpaceMesh, const Color& color){
-    const std::string& id = worldSpaceMesh.getId();
-    auto iterator = renderModelsMap.find(id);
-    if(iterator != renderModelsMap.end()){
-        iterator->second->setTransformationMatrix(worldSpaceMesh.getModelTransformation().getMatrix());
-        this->update();
-    }
-    else{
-        this->makeCurrent();
-        auto model = std::make_shared<RenderModel>(RenderModel(worldSpaceMesh, ambientShader, diffuseShader));
-        model->setColor(color);
-        if(color.a<1.0){
-            model->setCullingEnabled(false); // Don't cull transparent models by default
-        }
-        renderModelsMap[worldSpaceMesh.getId()] = model;
-        sortedRenderModels.emplace_back(model);
-        struct {
-            bool operator()(const std::shared_ptr<RenderModel>& r1, const std::shared_ptr<RenderModel>& r2) const { return r1->getColor().a > r2->getColor().a; }
-        } comparator;
-        std::sort(sortedRenderModels.begin(), sortedRenderModels.end(), comparator);
-        this->update();
-    }
-}
-
-void OpenGLRenderWidget::captureSceneSlot(const QString& filePath){
-    this->captureSceneToFile(filePath);
-}
-
-void OpenGLRenderWidget::toggleWireframe() {
+void OpenGLWidget::toggleWireframe() {
 
     this->makeCurrent();
     GLint currentPolygonMode[2];
     GL_CALL(glGetIntegerv(GL_POLYGON_MODE, currentPolygonMode));
     bool wireframeDisabled = currentPolygonMode[0] == GL_FILL;
-    for(auto& entry: this->renderModelsMap){
-        entry.second->setWireframeEnabled(wireframeDisabled);
+    for(auto& groupEntry: this->groupedRenderModelsMap){
+        for (const auto &modelEntry: groupEntry.second){
+//            TODO
+//            if(auto render/mesh = std::dynamic_pointer_cast<RenderMesh>(modelEntry.second){
+//                renderMesh->setWireframeEnabled(wireframeDisabled);
+//            }
+        }
     }
     this->update();
     this->parentWidget()->update();
 }
 
-void OpenGLRenderWidget::toggleCullFace() {
+void OpenGLWidget::toggleCullFace() {
 
     this->makeCurrent();
     GL_CALL(GLboolean enabled = glIsEnabled(GL_CULL_FACE));
-    for(auto& entry: this->renderModelsMap){
-        entry.second->setCullingEnabled(!enabled);
-    }
+//    TODO
+//    for(auto& entry: this->renderModelsMap){
+//        entry.second->setCullingEnabled(!enabled);
+//    }
     this->update();
 }
 
-void OpenGLRenderWidget::toggleBoundingBoxes() {
-    for(auto& entry: this->renderModelsMap){
-        entry.second->setBoundingBoxEnabled(!entry.second->isBoundingBoxEnabled());
-    }
+void OpenGLWidget::toggleBoundingBoxes() {
+    // TODO
+//    for(auto& entry: this->renderModelsMap){
+//        entry.second->setBoundingBoxEnabled(!entry.second->isBoundingBoxEnabled());
+//    }
     this->update();
 }
 
-void OpenGLRenderWidget::setLightMode(bool lightMode){
-    this->lightMode = lightMode;
+void OpenGLWidget::setLightMode(bool newLightMode){
+    this->lightMode = newLightMode;
     this->makeCurrent();
     if(this->lightMode){
         GL_CALL(glClearColor(1,1,1,1));
@@ -278,70 +257,17 @@ void OpenGLRenderWidget::setLightMode(bool lightMode){
         GL_CALL(glClearColor(0,0,0,1));
     }
 
-    for (const auto &item : this->renderModelsMap){
-        if(item.second->getColor().a<1.0){
-            item.second->setCullingEnabled(this->lightMode);
-        }
+    for (const auto &groupEntry : this->groupedRenderModelsMap){
+//        TODO
+//        if(i0tem.second->getColor().a<1.0){
+//            item.second->setCullingEnabled(this->lightMode);
+//        }
     }
     this->parentWidget()->update();
     this->update();
 }
 
-[[maybe_unused]] void OpenGLRenderWidget::clearWorldSpaceMeshesSlot() {
-    this->renderModelsMap.clear();
-    this->sortedRenderModels.clear();
-}
-
-
-[[maybe_unused]] void OpenGLRenderWidget::removeWorldSpaceMeshSlot(const WorldSpaceMesh &worldSpaceMesh) {
-    auto iterator = renderModelsMap.find(worldSpaceMesh.getId());
-    if(iterator!=renderModelsMap.end()){
-        this->sortedRenderModels.erase(std::remove(this->sortedRenderModels.begin(), this->sortedRenderModels.end(), iterator->second), this->sortedRenderModels.end());
-        this->renderModelsMap.erase(iterator);
-    }
-}
-
-void OpenGLRenderWidget::addRenderLine(Vertex vertexA, Vertex vertexB, const Color &color) {
-    this->makeCurrent();
-    auto line = RenderLine(vertexA, vertexB, glm::mat4(1.0f));
-    line.setColor(color);
-    this->renderLines.emplace_back(std::move(line));
-    this->update();
-}
-
-[[maybe_unused]] void OpenGLRenderWidget::addOrUpdateWorldSpaceMesh(const WorldSpaceMesh &worldSpaceMesh, const Color &color) {
-    // This way we always execute this function on the application thread
-    QMetaObject::invokeMethod(this, "addOrUpdateWorldSpaceMeshSlot", Qt::AutoConnection, Q_ARG(WorldSpaceMesh, worldSpaceMesh), Q_ARG(Color, color));
-}
-
-[[maybe_unused]] void OpenGLRenderWidget::clearWorldSpaceMeshes() {
-    // This way we always execute this function on the application thread
-    QMetaObject::invokeMethod(this, "clearWorldSpaceMeshesSlot", Qt::AutoConnection);
-}
-
-[[maybe_unused]] void OpenGLRenderWidget::removeWorldSpaceMesh(const WorldSpaceMesh &worldSpaceMesh) {
-    // This way we always execute this function on the application thread
-    QMetaObject::invokeMethod(this, "removeWorldSpaceMeshSlot", Qt::AutoConnection, Q_ARG(WorldSpaceMesh, worldSpaceMesh));
-}
-
-std::shared_ptr<RenderModel> OpenGLRenderWidget::getRenderModel(const WorldSpaceMesh& worldSpaceMesh) {
-    auto iterator = renderModelsMap.find(worldSpaceMesh.getId());
-    if(iterator!=renderModelsMap.end()){
-        return iterator->second;
-    }
-    else return nullptr;
-}
-
-std::vector<std::shared_ptr<AbstractRenderModel>> &OpenGLRenderWidget::getRenderModels() {
-    return renderModels;
-}
-
-[[deprecated]]
-const std::shared_ptr<QOpenGLShaderProgram> &OpenGLRenderWidget::getAmbientShader() const {
-    return ambientShader;
-}
-
-void OpenGLRenderWidget::captureScene() {
+void OpenGLWidget::captureScene() {
     this->makeCurrent();
     auto capture = this->grabFramebuffer();
     QString fileName = QFileDialog::getSaveFileName(this, QString("Save screenshot"), "example", QString("Image Files (*.jpg)"));
@@ -349,22 +275,78 @@ void OpenGLRenderWidget::captureScene() {
     capture.save(fileName);
 }
 
-void OpenGLRenderWidget::captureSceneToFile(const QString& fileName) {
+void OpenGLWidget::captureSceneToFile(const QString& fileName) {
     this->makeCurrent();
     auto capture = this->grabFramebuffer();
     std::cout<< fileName.toStdString() << std::endl;
     capture.save(fileName, nullptr, 100);
 }
 
-bool OpenGLRenderWidget::isUsePerspective() const {
+bool OpenGLWidget::isUsePerspective() const {
     return usePerspective;
 }
 
-void OpenGLRenderWidget::setUsePerspective(bool usePerspective) {
-    OpenGLRenderWidget::usePerspective = usePerspective;
+void OpenGLWidget::setUsePerspective(bool newUsePerspective) {
+    OpenGLWidget::usePerspective = newUsePerspective;
     this->calculateProjectionMatrix();
 }
 
-bool OpenGLRenderWidget::isLightMode() const {
+bool OpenGLWidget::isLightMode() const {
     return lightMode;
+}
+
+std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>& OpenGLWidget::getOrInsertRenderModelsMap(const std::string& group) const {
+
+    // Find the group
+    auto iterator = groupedRenderModelsMap.find(group);
+
+    // Add new group if not found
+    if(iterator == groupedRenderModelsMap.end()){
+        iterator = groupedRenderModelsMap.insert({group, {}}).first;
+    }
+    return iterator->second;
+}
+
+void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color &color, RenderWidget* renderWidget){
+
+    // Find the group
+    auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
+
+    // Find the model in this group
+    auto modelIterator = renderModelsMap.find(worldSpaceMesh->getId());
+    if(modelIterator == renderModelsMap.end()){
+
+        // No entry present yet, create new render Model
+        auto renderMesh = std::make_shared<RenderMesh>(*worldSpaceMesh, this->ambientShader, this->diffuseShader);
+
+        // Insert it in the renderModelsMap
+        modelIterator = renderModelsMap.insert({worldSpaceMesh->getId(), renderMesh}).first;
+
+        // Add listener to redraw when mesh is changed
+        const auto listener = std::make_shared<RenderModelListener>();
+        listener->setOnChanged([this, renderMesh](){
+            this->update();
+        });
+        renderMesh->addListener(listener);
+
+        // Add control widget to the renderWidget
+        renderWidget->addControlWidget(group, renderMesh);
+
+    }
+
+    // Update the color
+    modelIterator->second->setColor(color);
+
+    // Update the transformation
+    modelIterator->second->setTransformationMatrix(worldSpaceMesh->getModelTransformation().getMatrix());
+}
+
+void OpenGLWidget::clear() {
+    this->groupedRenderModelsMap.clear();
+    this->update();
+}
+
+void OpenGLWidget::clearGroup(std::string &group) {
+    this->groupedRenderModelsMap.erase(group);
+    this->update();
 }

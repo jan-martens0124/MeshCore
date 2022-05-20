@@ -8,7 +8,7 @@
 
 void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
 
-    if(this->visible) {
+    if(this->isVisible()) {
 
         // Bind required buffers and shaders
         this->initializeOpenGLFunctions();
@@ -22,13 +22,14 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
 
         // Set color uniform
         QVector4D drawColor;
-        drawColor = QVector4D(this->color.r, this->color.g, this->color.b, this->color.a);
+        const auto color = this->getColor();
+        drawColor = QVector4D(color.r, color.g, color.b, color.a);
         if(lightMode){
-            if(glm::vec3(this->color) == glm::vec3(1,1,1)){
-                drawColor = QVector4D(0, 0, 0, this->color.a);
+            if(glm::vec3(color) == glm::vec3(1,1,1)){
+                drawColor = QVector4D(0, 0, 0, color.a);
             }
-            else if(glm::vec3(this->color) == glm::vec3(0,0,0)){
-                drawColor = QVector4D(1, 1, 1, this->color.a);
+            else if(glm::vec3(color) == glm::vec3(0,0,0)){
+                drawColor = QVector4D(1, 1, 1, color.a);
             }
         }
         this->shader->setUniformValue("u_Color", drawColor);
@@ -116,7 +117,7 @@ RenderAABB::RenderAABB(const AABB &aabb, const glm::mat4& transformationMatrix, 
 
     GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr));
 
-    this->color = Color(1);
+    this->setColor(Color(1));
 }
 
 RenderAABB::RenderAABB(const WorldSpaceMesh &worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& shader):

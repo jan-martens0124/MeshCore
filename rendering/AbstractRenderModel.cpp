@@ -3,13 +3,19 @@
 //
 
 #include "AbstractRenderModel.h"
+#include <iostream>
 
 bool AbstractRenderModel::isVisible() const {
     return visible;
 }
 
-void AbstractRenderModel::setVisible(bool visible) {
-    AbstractRenderModel::visible = visible;
+void AbstractRenderModel::setVisible(bool newVisible) {
+    std::cout << std::boolalpha;
+    std::cout << "Setting visible from " << visible << " to " << newVisible << std::endl;
+    this->visible = newVisible;
+    for (const auto &listener: this->listeners){
+        listener->notifyVisibleChanged(this->visible);
+    }
 }
 
 const Color &AbstractRenderModel::getColor() const {
@@ -17,7 +23,10 @@ const Color &AbstractRenderModel::getColor() const {
 }
 
 void AbstractRenderModel::setColor(const Color &newColor) {
-    AbstractRenderModel::color = newColor;
+    this->color = newColor;
+    for (const auto &listener: this->listeners){
+        listener->notifyColorChanged(this->color);
+    }
 }
 
 const glm::mat4 &AbstractRenderModel::getTransformation() const {

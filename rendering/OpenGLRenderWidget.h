@@ -64,6 +64,7 @@ public:
     void setLightMode(bool lightMode);
 
     void captureScene();
+    void captureSceneToFile(const QString& fileName);
 
 protected:
     void initializeGL() override;
@@ -86,6 +87,7 @@ public:
     void clearWorldSpaceMeshes();
 
 private slots:
+    void captureSceneSlot(const QString& fileName);
     void addOrUpdateWorldSpaceMeshSlot(const WorldSpaceMesh &worldSpaceMesh, const Color &color);
     void removeWorldSpaceMeshSlot(const WorldSpaceMesh &worldSpaceMesh);
     void clearWorldSpaceMeshesSlot();
