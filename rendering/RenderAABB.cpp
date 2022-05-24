@@ -14,11 +14,11 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
         this->initializeOpenGLFunctions();
         this->vertexArray->bind();
         this->indexBuffer->bind();
-        this->shader->bind();
+        this->ambientShader->bind();
 
         // Set MVP matrix uniform
         const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->transformationMatrix;
-        this->shader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+        this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
 
         // Set color uniform
         QVector4D drawColor;
@@ -32,7 +32,7 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
                 drawColor = QVector4D(1, 1, 1, color.a);
             }
         }
-        this->shader->setUniformValue("u_Color", drawColor);
+        this->ambientShader->setUniformValue("u_Color", drawColor);
 
 
         GL_CALL(glDrawElements(GL_LINES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
@@ -40,8 +40,9 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
 }
 
 RenderAABB::RenderAABB(const AABB &aabb, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader):
-    AbstractRenderModel(transformationMatrix),
-    shader(shader){
+        AbstractRenderModel(transformationMatrix),
+        ambientShader(shader){
+
     std::vector<unsigned int> indices;
     std::vector<Vertex> vertices;
     std::vector<float> vertexData;

@@ -49,7 +49,6 @@ public:
     void resetView();
     void toggleWireframe();
     void toggleCullFace();
-    void toggleBoundingBoxes();
 
 
     [[nodiscard]] bool isUsePerspective() const;
@@ -77,7 +76,7 @@ protected:
 
 private slots:
     void clear();
-    void clearGroup(std::string &group);
+    void clearGroup(const std::string &group);
     void renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color &color, RenderWidget* renderWidget);
 
 

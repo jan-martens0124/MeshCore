@@ -25,7 +25,7 @@ OpenGLWidget *RenderWidget::getOpenGLWidget() const {
 void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh,  const Color& color = Color(1.0f)) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderWorldSpaceMeshSlot",
                               Qt::AutoConnection,
-                              Q_ARG(const std::string&, group),
+                              Q_ARG(std::string, group),
                               Q_ARG(std::shared_ptr<WorldSpaceMesh>, worldSpaceMesh),
                               Q_ARG(Color, color),
                               Q_ARG(RenderWidget*, this));
@@ -61,13 +61,17 @@ void RenderWidget::clearGroup(const std::string &group) {
             delete item->widget();
             delete item;
         }
-        while((item = this->ui->objectsVerticalLayout->takeAt(0))!=nullptr) {
+        int i = 0;
+        while((item = this->ui->objectsVerticalLayout->takeAt(i))!=nullptr) {
             if(item->widget()!=nullptr && item->widget()->objectName().toStdString() == group) {
                 delete item->widget();
                 delete item;
             }
+            else{
+                i++;
+            }
         }
-        QMetaObject::invokeMethod(this->getOpenGLWidget(), "clearGroup", Qt::AutoConnection, Q_ARG(const std::string&, group));
+        QMetaObject::invokeMethod(this->getOpenGLWidget(), "clearGroup", Qt::AutoConnection, Q_ARG(std::string, group));
     });
 }
 

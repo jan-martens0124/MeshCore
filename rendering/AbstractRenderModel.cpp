@@ -10,8 +10,6 @@ bool AbstractRenderModel::isVisible() const {
 }
 
 void AbstractRenderModel::setVisible(bool newVisible) {
-    std::cout << std::boolalpha;
-    std::cout << "Setting visible from " << visible << " to " << newVisible << std::endl;
     this->visible = newVisible;
     for (const auto &listener: this->listeners){
         listener->notifyVisibleChanged(this->visible);

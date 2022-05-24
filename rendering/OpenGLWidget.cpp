@@ -10,11 +10,21 @@
 
 [[maybe_unused]] OpenGLWidget::OpenGLWidget(QWidget *parent): QOpenGLWidget(parent) {}
 
+Q_DECLARE_METATYPE(Color);
+Q_DECLARE_METATYPE(std::string)
+Q_DECLARE_METATYPE(std::shared_ptr<WorldSpaceMesh>)
+Q_DECLARE_METATYPE(RenderWidget*)
+
 void OpenGLWidget::initializeGL() {
 
     this->resetView();
 
     initializeOpenGLFunctions();
+
+    qRegisterMetaType<Color>();
+    qRegisterMetaType<std::string>();
+    qRegisterMetaType<std::shared_ptr<WorldSpaceMesh>>();
+    qRegisterMetaType<RenderWidget*>();
 
     GL_CALL(glClearColor(0,0,0,1));
 
@@ -74,7 +84,7 @@ void OpenGLWidget::calculateProjectionMatrix(){
 
 void OpenGLWidget::paintGL() {
 
-    // TODO use Sorted renderModels
+    // TODO use Sorted renderModels, for transparency sake
 //    for(auto& renderModel: this->sortedRenderModels){
 //        renderModel->draw(viewMatrix, projectionMatrix, lightMode);
 //    }
@@ -211,39 +221,30 @@ void OpenGLWidget::keyPressEvent(QKeyEvent* event){
 }
 
 void OpenGLWidget::toggleWireframe() {
-
     this->makeCurrent();
     GLint currentPolygonMode[2];
     GL_CALL(glGetIntegerv(GL_POLYGON_MODE, currentPolygonMode));
     bool wireframeDisabled = currentPolygonMode[0] == GL_FILL;
     for(auto& groupEntry: this->groupedRenderModelsMap){
         for (const auto &modelEntry: groupEntry.second){
-//            TODO
-//            if(auto render/mesh = std::dynamic_pointer_cast<RenderMesh>(modelEntry.second){
-//                renderMesh->setWireframeEnabled(wireframeDisabled);
-//            }
+            if(auto renderMesh = std::dynamic_pointer_cast<RenderMesh>(modelEntry.second)){
+                renderMesh->setWireframeEnabled(wireframeDisabled);
+            }
         }
     }
     this->update();
-    this->parentWidget()->update();
 }
 
 void OpenGLWidget::toggleCullFace() {
-
     this->makeCurrent();
-    GL_CALL(GLboolean enabled = glIsEnabled(GL_CULL_FACE));
-//    TODO
-//    for(auto& entry: this->renderModelsMap){
-//        entry.second->setCullingEnabled(!enabled);
-//    }
-    this->update();
-}
-
-void OpenGLWidget::toggleBoundingBoxes() {
-    // TODO
-//    for(auto& entry: this->renderModelsMap){
-//        entry.second->setBoundingBoxEnabled(!entry.second->isBoundingBoxEnabled());
-//    }
+    GL_CALL(GLboolean cullingEnabled = glIsEnabled(GL_CULL_FACE));
+    for(auto& groupEntry: this->groupedRenderModelsMap){
+        for (const auto &modelEntry: groupEntry.second){
+            if(auto renderMesh = std::dynamic_pointer_cast<RenderMesh>(modelEntry.second)){
+                renderMesh->setCullingEnabled(!cullingEnabled);
+            }
+        }
+    }
     this->update();
 }
 
@@ -258,10 +259,13 @@ void OpenGLWidget::setLightMode(bool newLightMode){
     }
 
     for (const auto &groupEntry : this->groupedRenderModelsMap){
-//        TODO
-//        if(i0tem.second->getColor().a<1.0){
-//            item.second->setCullingEnabled(this->lightMode);
-//        }
+        for (const auto &modelEntry: groupEntry.second){
+            if(auto renderMesh = std::dynamic_pointer_cast<RenderMesh>(modelEntry.second)){
+                if(renderMesh->getColor().a<1.0){
+                    renderMesh->setCullingEnabled(this->lightMode);
+                }
+            }
+        }
     }
     this->parentWidget()->update();
     this->update();
@@ -316,6 +320,8 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
     auto modelIterator = renderModelsMap.find(worldSpaceMesh->getId());
     if(modelIterator == renderModelsMap.end()){
 
+        this->makeCurrent();
+
         // No entry present yet, create new render Model
         auto renderMesh = std::make_shared<RenderMesh>(*worldSpaceMesh, this->ambientShader, this->diffuseShader);
 
@@ -339,6 +345,8 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
 
     // Update the transformation
     modelIterator->second->setTransformationMatrix(worldSpaceMesh->getModelTransformation().getMatrix());
+
+    this->update();
 }
 
 void OpenGLWidget::clear() {
@@ -346,7 +354,7 @@ void OpenGLWidget::clear() {
     this->update();
 }
 
-void OpenGLWidget::clearGroup(std::string &group) {
+void OpenGLWidget::clearGroup(const std::string &group) {
     this->groupedRenderModelsMap.erase(group);
     this->update();
 }

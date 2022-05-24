@@ -12,15 +12,13 @@
 #include <QOpenGLShaderProgram>
 #include <utility>
 
-RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, std::shared_ptr<QOpenGLShaderProgram> diffuseShader):
+RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader):
         AbstractRenderModel(worldSpaceMesh.getModelTransformation().getMatrix()),
-        vertexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::VertexBuffer)),
-        indexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::IndexBuffer)),
-        vertexArray(new QOpenGLVertexArrayObject()),
         ambientShader(ambientShader),
-        diffuseShader(std::move(diffuseShader)),
+        diffuseShader(diffuseShader),
         boundingBox(worldSpaceMesh, ambientShader)
 {
+
     const std::vector<Vertex> vertices = worldSpaceMesh.getModelSpaceMesh()->getVertices();
     const std::vector<IndexTriangle> triangles = worldSpaceMesh.getModelSpaceMesh()->getTriangles();
 
@@ -167,29 +165,68 @@ RenderMesh &RenderMesh::operator=(RenderMesh &&other) noexcept {
     return *this;
 }
 
-//RenderMesh::RenderMesh(RenderMesh &&other) noexcept:
-//AbstractRenderModel(other),
-//        boundingBox(std::move(other.boundingBox))
-//{
-//    this->indexBuffer = other.indexBuffer;
-//    this->vertexArray = other.vertexArray;
-//    this->vertexBuffer = other.vertexBuffer;
-//    this->cullingEnabled = other.cullingEnabled;
-//    this->wireframeEnabled = other.wireframeEnabled;
-//    this->ambientShader = other.ambientShader;
-//    this->diffuseShader = other.diffuseShader;
-//    this->boundingBoxEnabled = other.boundingBoxEnabled;
-//
-//    other.indexBuffer = nullptr;
-//    other.vertexArray = nullptr;
-//    other.vertexBuffer = nullptr;
-//}
-
-
 bool RenderMesh::isBoundingBoxEnabled() const {
     return boundingBoxEnabled;
 }
 
 void RenderMesh::setBoundingBoxEnabled(bool newBoundingBoxEnabled) {
     RenderMesh::boundingBoxEnabled = newBoundingBoxEnabled;
+}
+
+void RenderMesh::showContextMenu(const QPoint &position) {
+    QMenu contextMenu(QString("Context menu"));
+
+    QAction* visibleAction = contextMenu.addAction(QString("Visible"));
+    QObject::connect(visibleAction, &QAction::triggered, [=](bool enabled){
+        this->setVisible(enabled);
+    });
+    visibleAction->setCheckable(true);
+    visibleAction->setChecked(this->isVisible());
+    contextMenu.addAction(visibleAction);
+
+    QAction* wireframeAction = contextMenu.addAction(QString("Wireframe"));
+    QObject::connect(wireframeAction, &QAction::triggered, [=](bool enabled){
+        this->setWireframeEnabled(enabled);
+    });
+    wireframeAction->setCheckable(true);
+    wireframeAction->setChecked(this->isWireframeEnabled());
+    contextMenu.addAction(wireframeAction);
+
+    QAction* cullingAction = contextMenu.addAction(QString("Culling"));
+    QObject::connect(cullingAction, &QAction::triggered, [=](bool enabled){
+        this->setCullingEnabled(enabled);
+    });
+    cullingAction->setCheckable(true);
+    cullingAction->setChecked(this->isCullingEnabled());
+    contextMenu.addAction(cullingAction);
+
+    QAction* boundingBoxAction = contextMenu.addAction(QString("Bounding box"));
+    QObject::connect(boundingBoxAction, &QAction::triggered, [=](bool enabled){
+        this->setBoundingBoxEnabled(enabled);
+    });
+    boundingBoxAction->setCheckable(true);
+    boundingBoxAction->setChecked(this->isBoundingBoxEnabled());
+    contextMenu.addAction(boundingBoxAction);
+
+    QAction* colorAction = contextMenu.addAction(QString("Change Color..."));
+    QObject::connect(colorAction, &QAction::triggered, [=](){
+        auto initialColor = this->getColor();
+        auto resultColor = QColorDialog::getColor(QColor(255.f*initialColor.r, 255.f*initialColor.g, 255.f*initialColor.b, 255.f*initialColor.a), nullptr, QString(), QColorDialog::ShowAlphaChannel);
+        if(resultColor.isValid()){
+            this->setColor(Color(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f));
+        }
+    });
+    contextMenu.addAction(colorAction);
+
+    contextMenu.exec(position);
+}
+
+void RenderMesh::setColor(const Color &newColor) {
+    AbstractRenderModel::setColor(newColor);
+    this->boundingBox.setColor(Color(newColor.r, newColor.g, newColor.b, 1.0f));
+}
+
+void RenderMesh::setTransformationMatrix(const glm::mat4 &newTransformationMatrix) {
+    AbstractRenderModel::setTransformationMatrix(newTransformationMatrix);
+    this->boundingBox.setTransformationMatrix(newTransformationMatrix);
 }

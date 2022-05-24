@@ -2,6 +2,8 @@
 // Created by Jonas on 19/05/2022.
 //
 
+#include <qinputdialog.h>
+#include <iostream>
 #include "RenderModelControlWidget.h"
 #include "forms/ui_RenderModelControlWidget.h"
 
@@ -25,6 +27,8 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
         this->ui->visibleCheckBox->setChecked(visible);
     });
 
+    this->renderModel->addListener(listener);
+
     connect(ui->visibleCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->renderModel->setVisible(enabled);
     });
@@ -36,9 +40,15 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
             this->renderModel->setColor(Color(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f));
         }
     });
+
+    // Context menu on right click
+    this->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, &QLabel::customContextMenuRequested, [&](const QPoint &pos) {
+        this->renderModel->showContextMenu(this->mapToGlobal(pos));
+    });
 }
 
 RenderModelControlWidget::~RenderModelControlWidget() {
-    renderModel->removeListener(listener);
+    this->renderModel->removeListener(listener);
     delete ui;
 }

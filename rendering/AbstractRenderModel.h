@@ -87,10 +87,10 @@ public:
 
         QAction* visibleAction = contextMenu.addAction(QString("Visible"));
         QObject::connect(visibleAction, &QAction::triggered, [=](bool enabled){
-            this->visible = enabled;
-        }); // TODO openGLWidget should update, how?
+            this->setVisible(enabled);
+        });
         visibleAction->setCheckable(true);
-        visibleAction->setChecked(this->visible);
+        visibleAction->setChecked(this->isVisible());
         contextMenu.addAction(visibleAction);
 
         QAction* colorAction = contextMenu.addAction(QString("Color"));
@@ -99,8 +99,6 @@ public:
             auto resultColor = QColorDialog::getColor(QColor(255.f*initialColor.r, 255.f*initialColor.g, 255.f*initialColor.b, 255.f*initialColor.a), nullptr, QString(), QColorDialog::ShowAlphaChannel);
             if(resultColor.isValid()){
                 this->setColor(Color(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f));
-
-//                taskWidget->getOpenGLRenderWidget()->update();         // TODO openGLWidget should update, how?
             }
         });
 

@@ -12,7 +12,7 @@
 
 class RenderAABB: public AbstractRenderModel {
 private:
-    std::shared_ptr<QOpenGLShaderProgram> shader;
+    std::shared_ptr<QOpenGLShaderProgram> ambientShader;
 public:
 
     RenderAABB(const AABB &aabb, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);

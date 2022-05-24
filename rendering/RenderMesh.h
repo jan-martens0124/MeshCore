@@ -20,9 +20,9 @@ private:
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
     std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
 
-    QOpenGLBuffer* indexBuffer;
-    QOpenGLBuffer* vertexBuffer;
-    QOpenGLVertexArrayObject* vertexArray;
+//    QOpenGLBuffer* indexBuffer;
+//    QOpenGLBuffer* vertexBuffer;
+//    QOpenGLVertexArrayObject* vertexArray;
 
     RenderAABB boundingBox;
 
@@ -36,8 +36,8 @@ public:
 
     RenderMesh(const WorldSpaceMesh &worldSpaceMesh,
                 const std::shared_ptr<QOpenGLShaderProgram>& ambientShader,
-                std::shared_ptr<QOpenGLShaderProgram> diffuseShader);
-    void draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode);
+                const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader);
+    void draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) override;
 
     [[nodiscard]] bool isWireframeEnabled() const;
     [[nodiscard]] bool isCullingEnabled() const;
@@ -47,6 +47,12 @@ public:
     void setWireframeEnabled(bool newWireframeEnabled);
     void setCullingEnabled(bool newCullingEnabled);
     void setBoundingBoxEnabled(bool newBoundingBoxEnabled);
+
+    void showContextMenu(const QPoint &position) override;
+
+    void setColor(const Color &newColor) override;
+
+    void setTransformationMatrix(const glm::mat4 &newTransformationMatrix) override;
 
 };
 
