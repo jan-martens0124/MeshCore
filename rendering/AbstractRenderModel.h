@@ -55,6 +55,12 @@ public:
 class AbstractRenderModel: protected QOpenGLFunctions {
 
 private:
+    std::string name;
+public:
+    [[nodiscard]] const std::string &getName() const;
+    void setName(const std::string &newName);
+
+private:
     bool visible = true;
     Color color = Color(1.0f);
 protected:
@@ -68,7 +74,7 @@ protected:
 
 public:
 //    AbstractRenderModel() = delete;
-    explicit AbstractRenderModel(const glm::mat4& transformation);
+    explicit AbstractRenderModel(const glm::mat4& transformation, const std::string& name);
     AbstractRenderModel(AbstractRenderModel&& other) noexcept;
     AbstractRenderModel& operator=(AbstractRenderModel&& other) noexcept;
     virtual ~AbstractRenderModel();
@@ -82,7 +88,13 @@ public:
     [[nodiscard]] const glm::mat4 &getTransformation() const;
     virtual void setTransformationMatrix(const glm::mat4 &newTransformationMatrix);
 
+    virtual void showSettingsPanel(){
+        // TODO replace with getSettingsPanel, that can be extended with more settings
+    };
+
     virtual void showContextMenu(const QPoint &position){
+
+        // TODO replace with getContextMenu, that can be extended with more actions
         QMenu contextMenu(QString("Context menu"));
 
         QAction* visibleAction = contextMenu.addAction(QString("Visible"));

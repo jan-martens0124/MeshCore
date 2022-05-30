@@ -40,7 +40,7 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
 }
 
 RenderAABB::RenderAABB(const AABB &aabb, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader):
-        AbstractRenderModel(transformationMatrix),
+        AbstractRenderModel(transformationMatrix, "AABB"),
         ambientShader(shader){
 
     std::vector<unsigned int> indices;

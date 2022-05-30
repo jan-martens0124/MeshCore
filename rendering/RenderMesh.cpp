@@ -13,7 +13,7 @@
 #include <utility>
 
 RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader):
-        AbstractRenderModel(worldSpaceMesh.getModelTransformation().getMatrix()),
+        AbstractRenderModel(worldSpaceMesh.getModelTransformation().getMatrix(), worldSpaceMesh.getModelSpaceMesh()->getName()),
         ambientShader(ambientShader),
         diffuseShader(diffuseShader),
         boundingBox(worldSpaceMesh, ambientShader)

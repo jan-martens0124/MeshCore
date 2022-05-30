@@ -31,6 +31,16 @@ void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::sha
                               Q_ARG(RenderWidget*, this));
 }
 
+//template <unsigned int Degree>
+//void RenderWidget::renderAABBTree(const std::string &group, const std::shared_ptr<AABBTree<Degree>> &aabbTree, const Color& color = Color(1.0f)) {
+//    QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderAABBTreeSlot",
+//                              Qt::AutoConnection,
+//                              Q_ARG(std::string, group),
+//                              Q_ARG(std::shared_ptr<AABBTree>, aabbTree),
+//                              Q_ARG(Color, color),
+//                              Q_ARG(RenderWidget*, this));
+//}
+
 void RenderWidget::addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel) {
     this->getOrAddGroupLayout(group)->addWidget(new RenderModelControlWidget(renderModel));
 }
@@ -45,11 +55,20 @@ void RenderWidget::clear() {
                 delete item;
             }
         }
+        groupLayouts.clear();
         QLayoutItem* item;
         while((item = this->ui->objectsVerticalLayout->takeAt(0))!=nullptr) {
-            delete item->widget();
-            delete item;
+            if(item->widget()){
+                delete item->widget();
+                delete item;
+            }
+            else if(item->layout()){
+                delete item->layout();
+            }
         }
+
+        this->ui->objectsVerticalLayout->update();
+
         QMetaObject::invokeMethod(this->getOpenGLWidget(), "clear", Qt::AutoConnection);
     });
 }
@@ -57,37 +76,47 @@ void RenderWidget::clear() {
 void RenderWidget::clearGroup(const std::string &group) {
     QMetaObject::invokeMethod(this, [&, group] {
         QLayoutItem* item;
-        while((item = getOrAddGroupLayout(group)->takeAt(0))!=nullptr) {
+
+        // Clear the items from the group layout
+        auto groupLayout = this->getOrAddGroupLayout(group);
+        while((item = groupLayout->takeAt(0))!=nullptr) {
             delete item->widget();
             delete item;
         }
+        groupLayouts.erase(group);
+
         int i = 0;
-        while((item = this->ui->objectsVerticalLayout->takeAt(i))!=nullptr) {
-            if(item->widget()!=nullptr && item->widget()->objectName().toStdString() == group) {
+        // Delete the groups title and horizontal line
+        while((item = this->ui->objectsVerticalLayout->itemAt(i))!=nullptr) {
+            if (item->widget()!=nullptr && item->widget()->objectName() == QString::fromStdString(group)) {
+                item = this->ui->objectsVerticalLayout->takeAt(i);
                 delete item->widget();
                 delete item;
+            }
+            else if(item->layout()!=nullptr && item->layout()->objectName() == QString::fromStdString(group)) {
+                item = this->ui->objectsVerticalLayout->takeAt(i);
+                delete item->layout();
             }
             else{
                 i++;
             }
         }
+
+        this->ui->objectsVerticalLayout->update();
+
         QMetaObject::invokeMethod(this->getOpenGLWidget(), "clearGroup", Qt::AutoConnection, Q_ARG(std::string, group));
     });
 }
 
 QVBoxLayout *RenderWidget::getOrAddGroupLayout(const std::string &group) {
+
     // Find the group
     auto iterator = groupLayouts.find(group);
 
     // Add new group if not found
     if(iterator == groupLayouts.end()){
         const auto layout = new QVBoxLayout();
-
-        auto line = new QFrame(this);
-        line->setFrameShape(QFrame::HLine);
-        line->setObjectName(QString::fromStdString(group));
-        line->setFrameShadow(QFrame::Sunken);
-        this->ui->objectsVerticalLayout->addWidget(line);
+        layout->setObjectName(QString::fromStdString(group));
 
         auto titleLabel = new QLabel(this);
         titleLabel->setText(QString::fromStdString(group));
@@ -98,6 +127,12 @@ QVBoxLayout *RenderWidget::getOrAddGroupLayout(const std::string &group) {
 
         iterator = groupLayouts.insert({group, layout}).first;
         this->ui->objectsVerticalLayout->addLayout(layout);
+
+        auto line = new QFrame(this);
+        line->setFrameShape(QFrame::HLine);
+        line->setObjectName(QString::fromStdString(group));
+        line->setFrameShadow(QFrame::Sunken);
+        this->ui->objectsVerticalLayout->addWidget(line);
     }
     return iterator->second;
 }

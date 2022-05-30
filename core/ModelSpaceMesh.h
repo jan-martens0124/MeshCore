@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <optional>
+#include <string>
 #include "Vertex.h"
 #include "IndexTriangle.h"
 #include "IndexEdge.h"
@@ -14,6 +15,7 @@
 
 class ModelSpaceMesh {
 private:
+    std::string name;
     AABB bounds;
     std::vector<Vertex> vertices;
     std::vector<IndexTriangle> triangles;
@@ -32,6 +34,9 @@ public:
     const AABB &getBounds() const;
 
     std::optional<ModelSpaceMesh> getConvexHull() const;
+
+    const std::string &getName() const;
+    void setName(const std::string &newName);
 };
 
 

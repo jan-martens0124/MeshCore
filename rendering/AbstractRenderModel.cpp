@@ -35,12 +35,20 @@ void AbstractRenderModel::setTransformationMatrix(const glm::mat4 &newTransforma
     AbstractRenderModel::transformationMatrix = newTransformationMatrix;
 }
 
-AbstractRenderModel::AbstractRenderModel(const glm::mat4& transformation):
+AbstractRenderModel::AbstractRenderModel(const glm::mat4& transformation, const std::string& name):
         color(Color(1)),
         vertexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::VertexBuffer)),
         indexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::IndexBuffer)),
         vertexArray(new QOpenGLVertexArrayObject()),
-        transformationMatrix(transformation){}
+        transformationMatrix(transformation)
+{
+    this->name = name;
+    if(name.size() > 0){
+        this->name[0] = std::toupper(name[0]);
+    }
+
+
+}
 
 AbstractRenderModel::~AbstractRenderModel() {
     delete vertexArray;
@@ -56,6 +64,7 @@ AbstractRenderModel::AbstractRenderModel(AbstractRenderModel &&other) noexcept:
     this->vertexArray = other.vertexArray;
     this->vertexBuffer = other.vertexBuffer;
     this->visible = other.visible;
+    this->name = other.name;
 
     other.indexBuffer = nullptr;
     other.vertexArray = nullptr;
@@ -70,10 +79,19 @@ AbstractRenderModel &AbstractRenderModel::operator=(AbstractRenderModel &&other)
         this->color = other.color;
         this->transformationMatrix = other.transformationMatrix;
         this->visible = other.visible;
+        this->name = other.name;
 
         other.indexBuffer = nullptr;
         other.vertexArray = nullptr;
         other.vertexBuffer = nullptr;
     }
     return *this;
+}
+
+const std::string &AbstractRenderModel::getName() const {
+    return name;
+}
+
+void AbstractRenderModel::setName(const std::string &newName) {
+    AbstractRenderModel::name = newName;
 }

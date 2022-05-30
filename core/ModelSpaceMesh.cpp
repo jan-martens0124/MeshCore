@@ -268,3 +268,11 @@ std::optional<ModelSpaceMesh> ModelSpaceMesh::getConvexHull() const {
 
     return ModelSpaceMesh{hullVertices, hullTriangles};
 }
+
+const std::string &ModelSpaceMesh::getName() const {
+    return name;
+}
+
+void ModelSpaceMesh::setName(const std::string &newName) {
+    ModelSpaceMesh::name = newName;
+}

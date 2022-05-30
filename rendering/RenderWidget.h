@@ -13,8 +13,6 @@
 #include "OpenGLWidget.h"
 #include <QWidget>
 
-//class OpenGLWidget;
-
 QT_BEGIN_NAMESPACE
 namespace Ui { class RenderWidget; }
 QT_END_NAMESPACE

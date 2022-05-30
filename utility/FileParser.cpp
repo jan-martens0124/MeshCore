@@ -38,6 +38,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFile(const std::string &filePat
         return std::make_shared<ModelSpaceMesh>(ModelSpaceMesh(std::vector<Vertex>(), std::vector<IndexTriangle>()));
     }
 
+
     cacheMapMutex.lock();
     std::unordered_map<std::string, std::shared_ptr<ModelSpaceMesh>> meshCacheMap{};
     const auto cacheIterator = meshCacheMap.find(filePath);
@@ -58,6 +59,9 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFile(const std::string &filePat
         cacheMapMutex.lock();
         meshCacheMap[filePath] = returnModelSpaceMesh;
         cacheMapMutex.unlock();
+
+        std::filesystem::path p(filePath);
+        returnModelSpaceMesh->setName(p.stem().string());
         return returnModelSpaceMesh;
     }
 }

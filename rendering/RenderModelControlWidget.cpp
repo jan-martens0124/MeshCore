@@ -14,7 +14,7 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
 
     ui->setupUi(this);
 
-    ui->nameLabel->setText("TestName");
+    ui->nameLabel->setText(QString::fromStdString(this->renderModel->getName()));
     ui->visibleCheckBox->setChecked(this->renderModel->isVisible());
     const auto &color = this->renderModel->getColor();
     ui->colorPushButton->setStyleSheet("background-color: " + QColor(color.r*255, color.g*255, color.b*255, color.a*255).name());
@@ -39,6 +39,10 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
         if(resultColor.isValid()){
             this->renderModel->setColor(Color(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f));
         }
+    });
+
+    connect(ui->settingsPushButton, &QPushButton::clicked, [=](){
+        this->renderModel->showSettingsPanel();
     });
 
     // Context menu on right click

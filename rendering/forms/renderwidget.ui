@@ -139,18 +139,18 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="objectsVerticalLayout">
-       <property name="sizeConstraint">
-        <enum>QLayout::SetDefaultConstraint</enum>
-       </property>
-      </layout>
-     </item>
-     <item>
       <widget class="Line" name="line">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
       </widget>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="objectsVerticalLayout">
+       <property name="sizeConstraint">
+        <enum>QLayout::SetDefaultConstraint</enum>
+       </property>
+      </layout>
      </item>
      <item>
       <spacer name="bottomVerticalSpacer">
