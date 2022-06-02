@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
     std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::parseFile("../../data/models/Everton/banana.stl");
     std::shared_ptr<WorldSpaceMesh> staticWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh);
 
-    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh2 = FileParser::parseFile("../../data/models/Everton/banana.stl");
+    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh2 = FileParser::parseFile("../../data/models/rocks/rock_008k.obj");
     std::shared_ptr<WorldSpaceMesh> dynamicWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh2);
 
     std::cout << "Number of vertices: " << staticWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;

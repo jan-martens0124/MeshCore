@@ -8,7 +8,7 @@
 
 #include <QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
-#include "../../core/AABBTree.h"
+#include "acceleration/AABBTree.h"
 #include "../../core/OBBTree.h"
 #include "RenderAABB.h"
 
