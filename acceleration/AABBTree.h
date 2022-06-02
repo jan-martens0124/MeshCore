@@ -5,11 +5,11 @@
 #ifndef MESHCORE_AABBTREE_H
 #define MESHCORE_AABBTREE_H
 
-#include "core/Vertex.h"
-#include "core/Ray.h"
-#include "core/AABB.h"
-#include "core/VertexTriangle.h"
-#include "utility/hash.h"
+#include "../core/Vertex.h"
+#include "../core/Ray.h"
+#include "../core/AABB.h"
+#include "../core/VertexTriangle.h"
+#include "../utility/hash.h"
 #include "../geometric/Intersection.h"
 #include <vector>
 #include <glm/gtc/type_ptr.hpp>

@@ -3,7 +3,7 @@
 //
 
 #include "AABBVolumeHierarchy.h"
-#include "factories/AABBFactory.h"
+#include "../factories/AABBFactory.h"
 
 AABBVolumeHierarchy::AABBVolumeHierarchy(const std::shared_ptr<ModelSpaceMesh>& modelSpaceMesh, unsigned int maxDepth, unsigned int maxTrianglesPerNode):
     AABBTree<2u>(modelSpaceMesh->getBounds(), 0){

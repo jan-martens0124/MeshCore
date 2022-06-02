@@ -7,8 +7,8 @@
 
 #define EPSILON 0.00000001f
 
-#include "core/Ray.h"
-#include "core/VertexTriangle.h"
+#include "../core/Ray.h"
+#include "../core/VertexTriangle.h"
 #include "Intersection.h"
 
 namespace Intersection {

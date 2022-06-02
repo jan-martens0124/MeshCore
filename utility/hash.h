@@ -5,7 +5,7 @@
 #ifndef OPTIXMESHCORE_HASH_H
 #define OPTIXMESHCORE_HASH_H
 
-#include "../meshcore/core/VertexTriangle.h"
+#include "../core/VertexTriangle.h"
 
 #if GLM_HAS_CXX11_STL
     #include <glm/gtx/hash.hpp>

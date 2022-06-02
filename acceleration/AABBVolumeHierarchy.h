@@ -5,8 +5,8 @@
 #ifndef MESHCORE_AABBVOLUMEHIERARCHY_H
 #define MESHCORE_AABBVOLUMEHIERARCHY_H
 
-#include "acceleration/AABBTree.h"
-#include "core/ModelSpaceMesh.h"
+#include "AABBTree.h"
+#include "../core/ModelSpaceMesh.h"
 
 class AABBVolumeHierarchy final: public AABBTree<2u> {
 

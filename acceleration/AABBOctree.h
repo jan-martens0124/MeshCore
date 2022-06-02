@@ -6,7 +6,7 @@
 #define MESHCORE_AABBOCTREE_H
 
 #include "AABBTree.h"
-#include "core/ModelSpaceMesh.h"
+#include "../core/ModelSpaceMesh.h"
 
 class AABBOctree final : public AABBTree<8u> {
     void doSplit();

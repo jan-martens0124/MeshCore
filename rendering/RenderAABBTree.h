@@ -8,7 +8,7 @@
 
 #include <QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
-#include "acceleration/AABBTree.h"
+#include "../meshcore/acceleration/AABBTree.h"
 #include "../../core/OBBTree.h"
 #include "RenderAABB.h"
 
@@ -52,7 +52,7 @@ void RenderAABBTree::drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 
 }
 
 template <unsigned int Degree>
-RenderAABBTree::RenderAABBTree(const AABBTree<Degree> &aabbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformationMatrix),
+RenderAABBTree::RenderAABBTree(const AABBTree<Degree> &aabbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformationMatrix, "aabbTree"),
         renderAABB(aabbTree.getBounds(), transformationMatrix, shader) {
         if(aabbTree.isSplit()){
             for (const auto &child : aabbTree.getChildren()){
@@ -62,7 +62,7 @@ RenderAABBTree::RenderAABBTree(const AABBTree<Degree> &aabbTree, const glm::mat4
 }
 
 template <unsigned int Degree>
-RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(obbTree.getBounds().getRotation().getMatrix()), renderAABB(obbTree.getBounds().getAabb(), obbTree.getBounds().getRotation().getMatrix(), shader){
+RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(obbTree.getBounds().getRotation().getMatrix(), "obbTree"), renderAABB(obbTree.getBounds().getAabb(), obbTree.getBounds().getRotation().getMatrix(), shader){
 //    this->transformationMatrix = transformationMatrix * obbTree.getBounds().getTransformation().getMatrix(); // TODO check multiplication order
 //    this->renderAABB = obbTree.getBounds();
     if(obbTree.isSplit()){

@@ -5,10 +5,10 @@
 #ifndef OPTIXMESHCORE_INTERSECTION_H
 #define OPTIXMESHCORE_INTERSECTION_H
 
-#include "core/Ray.h"
-#include "core/VertexTriangle.h"
-#include "core/WorldSpaceMesh.h"
-#include "core/OBB.h"
+#include "../core/Ray.h"
+#include "../core/VertexTriangle.h"
+#include "../core/WorldSpaceMesh.h"
+#include "../core/OBB.h"
 
 namespace Intersection{
 

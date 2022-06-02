@@ -30,7 +30,7 @@
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "acceleration/AABBOctree.h"
+#include "../acceleration/AABBOctree.h"
 
 
 #define CROSS(dest,v1,v2) \
