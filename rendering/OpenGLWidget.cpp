@@ -83,18 +83,9 @@ void OpenGLWidget::calculateProjectionMatrix(){
 }
 
 void OpenGLWidget::paintGL() {
-
-    // TODO use Sorted renderModels, for transparency sake
-//    for(auto& renderModel: this->sortedRenderModels){
-//        renderModel->draw(viewMatrix, projectionMatrix, lightMode);
-//    }
-
-    for(const auto& [group, groupMap]: this->groupedRenderModelsMap){
-        for(const auto& [id, renderModel]: groupMap){
-            renderModel->draw(viewMatrix, projectionMatrix, lightMode);
-        }
+    for(auto& renderModel: this->sortedRenderModels){
+        renderModel->draw(viewMatrix, projectionMatrix, lightMode);
     }
-
 }
 
 void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
@@ -329,7 +320,13 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
         modelIterator = renderModelsMap.insert({worldSpaceMesh->getId(), renderMesh}).first;
 
         // Add listener to redraw when mesh is changed
-        const auto listener = std::make_shared<RenderModelListener>();
+        const auto listener = std::make_shared<SimpleRenderModelListener>();
+        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
+            if(oldColor.a!=newColor.a){
+                this->updateSortedRenderModels();
+            }
+        });
+
         listener->setOnChanged([this](){
             this->update();
         });
@@ -340,6 +337,8 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
 
         // Set the color
         modelIterator->second->setColor(color);
+
+        this->updateSortedRenderModels();
     }
 
     // Update the transformation
@@ -350,10 +349,29 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
 
 void OpenGLWidget::clear() {
     this->groupedRenderModelsMap.clear();
+    this->updateSortedRenderModels();
     this->update();
 }
 
 void OpenGLWidget::clearGroup(const std::string &group) {
     this->groupedRenderModelsMap.erase(group);
+    this->updateSortedRenderModels();
     this->update();
+}
+
+
+void OpenGLWidget::updateSortedRenderModels(){
+
+    // Add all models to the vector
+    this->sortedRenderModels.clear();
+    for(auto& groupEntry: this->groupedRenderModelsMap){
+        for (const auto &renderModelEntry: groupEntry.second){
+            this->sortedRenderModels.emplace_back(renderModelEntry.second);
+        }
+    }
+
+    // Sort them by transparency
+    std::sort(this->sortedRenderModels.begin(), this->sortedRenderModels.end(), [](const std::shared_ptr<AbstractRenderModel>& a, const std::shared_ptr<AbstractRenderModel>& b){
+        return a->getColor().a > b->getColor().a;
+    });
 }

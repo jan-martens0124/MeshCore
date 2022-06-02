@@ -22,7 +22,7 @@ public:
 private:
     Ui::RenderModelControlWidget *ui;
     std::shared_ptr<AbstractRenderModel> renderModel;
-    std::shared_ptr<RenderModelListener> listener;
+    std::shared_ptr<SimpleRenderModelListener> listener;
 };
 
 

@@ -10,9 +10,10 @@ bool AbstractRenderModel::isVisible() const {
 }
 
 void AbstractRenderModel::setVisible(bool newVisible) {
+    const auto oldValue = this->visible;
     this->visible = newVisible;
     for (const auto &listener: this->listeners){
-        listener->notifyVisibleChanged(this->visible);
+        listener->notifyVisibleChanged(oldValue, this->visible);
     }
 }
 
@@ -21,9 +22,10 @@ const Color &AbstractRenderModel::getColor() const {
 }
 
 void AbstractRenderModel::setColor(const Color &newColor) {
+    const auto oldValue = this->color;
     this->color = newColor;
     for (const auto &listener: this->listeners){
-        listener->notifyColorChanged(this->color);
+        listener->notifyColorChanged(oldValue, this->color);
     }
 }
 
@@ -97,9 +99,10 @@ const std::string &AbstractRenderModel::getName() const {
 }
 
 void AbstractRenderModel::setName(const std::string &newName) {
+    const auto oldValue = this->name;
     this->name = newName;
     for (const auto &listener: this->listeners){
-        listener->notifyNameChanged(this->name);
+        listener->notifyNameChanged(oldValue, this->name);
     }
 }
 

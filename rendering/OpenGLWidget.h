@@ -35,7 +35,7 @@ private:
     glm::mat4 projectionMatrix{};
 
     mutable std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>> groupedRenderModelsMap;
-//    std::vector<std::shared_ptr<RenderModel>> sortedRenderModels;
+    std::vector<std::shared_ptr<AbstractRenderModel>> sortedRenderModels;
 
 private:
     std::vector<RenderLine> renderLines;
@@ -83,6 +83,7 @@ private slots:
 
 private:
     std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>& getOrInsertRenderModelsMap(const std::string &group) const;
+    void updateSortedRenderModels();
 };
 
 

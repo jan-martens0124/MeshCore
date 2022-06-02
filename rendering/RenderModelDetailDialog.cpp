@@ -15,15 +15,15 @@ RenderModelDetailDialog::~RenderModelDetailDialog() {
 RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderModel):
     ui(new Ui::RenderModelDetailDialog),
     renderModel(renderModel),
-    listener(std::make_shared<RenderModelListener>()){
+    listener(std::make_shared<SimpleRenderModelListener>()){
 
     ui->setupUi(this);
 
 
     this->ui->nameLineEdit->setText(QString::fromStdString(renderModel->getName()));
-    listener->setOnNameChanged([this](const std::string& name){
+    listener->setOnNameChanged([this](const std::string& oldName, const std::string& newName){
         QMetaObject::invokeMethod(this, [&]{
-            this->ui->nameLineEdit->setText(QString::fromStdString(name));
+            this->ui->nameLineEdit->setText(QString::fromStdString(newName));
         });
     });
     connect(this->ui->nameLineEdit, &QLineEdit::textChanged, [=](const QString& text){

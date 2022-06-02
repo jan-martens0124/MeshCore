@@ -18,30 +18,30 @@ typedef glm::vec4 Color;
 
 class AbstractRenderModelListener{
 public:
-    virtual void notifyNameChanged(const std::string& name) const = 0;
-    virtual void notifyColorChanged(const Color& newColor) const = 0;
-    virtual void notifyVisibleChanged(bool visible) const = 0;
+    virtual void notifyNameChanged(const std::string& oldName, const std::string& newName) const = 0;
+    virtual void notifyColorChanged(const Color& oldColor, const Color& newColor) const = 0;
+    virtual void notifyVisibleChanged(bool oldVisible, bool newVisible) const = 0;
 };
 
-class RenderModelListener: public AbstractRenderModelListener {
+class SimpleRenderModelListener: public AbstractRenderModelListener {
 private:
     std::function<void()> onChanged = {};
-    std::function<void(const std::string& newName)> onNameChanged = {};
-    std::function<void(const Color& newColor)> onColorChanged = {};
-    std::function<void(bool visible)> onVisibleChanged = {};
+    std::function<void(const std::string& oldName, const std::string& newName)> onNameChanged = {};
+    std::function<void(const Color& oldColor, const Color& newColor)> onColorChanged = {};
+    std::function<void(bool oldVisible, bool newVisible)> onVisibleChanged = {};
 
-    void notifyColorChanged(const Color& newColor) const override {
-        if(this->onColorChanged) this->onColorChanged(newColor);
+    void notifyColorChanged(const Color& oldColor, const Color& newColor) const override {
+        if(this->onColorChanged) this->onColorChanged(oldColor, newColor);
         if(this->onChanged) this->onChanged();
     }
 
-    void notifyVisibleChanged(bool visible) const override {
-        if(this->onVisibleChanged) this->onVisibleChanged(visible);
+    void notifyVisibleChanged(bool oldVisible, bool newVisible) const override {
+        if(this->onVisibleChanged) this->onVisibleChanged(oldVisible, newVisible);
         if(this->onChanged) this->onChanged();
     }
 
-    void notifyNameChanged(const std::string& name) const override {
-        if(this->onNameChanged) this->onNameChanged(name);
+    void notifyNameChanged(const std::string& oldName, const std::string& newName) const override {
+        if(this->onNameChanged) this->onNameChanged(oldName, newName);
         if(this->onChanged) this->onChanged();
     }
 
@@ -51,15 +51,15 @@ public:
         this->onChanged = newOnChanged;
     }
 
-    [[maybe_unused]] void setOnColorChanged(const std::function<void(const Color& newColor)> &newOnColorChanged) {
+    [[maybe_unused]] void setOnColorChanged(const std::function<void(const Color& oldColor, const Color& newColor)> &newOnColorChanged) {
         this->onColorChanged = newOnColorChanged;
     }
 
-    [[maybe_unused]] void setOnVisibleChanged(const std::function<void(bool visible)> &newOnVisibleChanged) {
+    [[maybe_unused]] void setOnVisibleChanged(const std::function<void(bool oldVisible, bool newVisible)> &newOnVisibleChanged) {
         this->onVisibleChanged = newOnVisibleChanged;
     }
 
-    [[maybe_unused]] void setOnNameChanged(const std::function<void(const std::string& name)> &newOnNameChanged) {
+    [[maybe_unused]] void setOnNameChanged(const std::function<void(const std::string& oldName, const std::string& newName)> &newOnNameChanged) {
         this->onNameChanged = newOnNameChanged;
     }
 };

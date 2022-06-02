@@ -13,7 +13,7 @@ namespace Ui {
     class RenderModelDetailDialog;
 }
 class AbstractRenderModel;
-class RenderModelListener;
+class SimpleRenderModelListener;
 
 class RenderModelDetailDialog: public QDialog {
 Q_OBJECT
@@ -29,7 +29,7 @@ public:
 private:
     Ui::RenderModelDetailDialog *ui;
     AbstractRenderModel* renderModel;
-    std::shared_ptr<RenderModelListener> listener;
+    std::shared_ptr<SimpleRenderModelListener> listener;
 
 private:
     void applyChanges();

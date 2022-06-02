@@ -10,7 +10,7 @@
 RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<AbstractRenderModel>& renderModel):
         ui(new Ui::RenderModelControlWidget),
         renderModel(renderModel),
-        listener(std::make_shared<RenderModelListener>()) {
+        listener(std::make_shared<SimpleRenderModelListener>()) {
 
     ui->setupUi(this);
 
@@ -19,16 +19,16 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
     const auto &color = this->renderModel->getColor();
     ui->colorPushButton->setStyleSheet("background-color: " + QColor(color.r*255, color.g*255, color.b*255, color.a*255).name());
 
-    listener->setOnColorChanged([&](const Color &newColor) {
+    listener->setOnColorChanged([&](const Color& oldColor, const Color& newColor) {
         this->ui->colorPushButton->setStyleSheet("background-color: " + QColor(newColor.r*255, newColor.g*255, newColor.b*255, newColor.a*255).name());
     });
 
-    listener->setOnVisibleChanged([&](bool visible) {
-        this->ui->visibleCheckBox->setChecked(visible);
+    listener->setOnVisibleChanged([&](bool oldVisible, bool newVisible) {
+        this->ui->visibleCheckBox->setChecked(newVisible);
     });
 
-    listener->setOnNameChanged([&](const std::string &name) {
-        this->ui->nameLabel->setText(QString::fromStdString(name));
+    listener->setOnNameChanged([&](const std::string& oldName, const std::string& newName) {
+        this->ui->nameLabel->setText(QString::fromStdString(newName));
     });
 
     this->renderModel->addListener(listener);
