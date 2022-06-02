@@ -27,6 +27,10 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
         this->ui->visibleCheckBox->setChecked(visible);
     });
 
+    listener->setOnNameChanged([&](const std::string &name) {
+        this->ui->nameLabel->setText(QString::fromStdString(name));
+    });
+
     this->renderModel->addListener(listener);
 
     connect(ui->visibleCheckBox, &QCheckBox::clicked, [&](bool enabled) {
@@ -42,13 +46,14 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
     });
 
     connect(ui->settingsPushButton, &QPushButton::clicked, [=](){
-        this->renderModel->showSettingsPanel();
+        this->renderModel->getDetailsDialog()->show();
     });
 
     // Context menu on right click
     this->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, &QLabel::customContextMenuRequested, [&](const QPoint &pos) {
-        this->renderModel->showContextMenu(this->mapToGlobal(pos));
+        auto menu = this->renderModel->getContextMenu();
+        menu->exec(this->mapToGlobal(pos));
     });
 }
 

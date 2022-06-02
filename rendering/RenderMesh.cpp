@@ -11,6 +11,8 @@
 #include "ShaderProgramSource.h"
 #include <QOpenGLShaderProgram>
 #include <utility>
+#include <QLabel>
+#include <QFrame>
 
 RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader):
         AbstractRenderModel(worldSpaceMesh.getModelTransformation().getMatrix(), worldSpaceMesh.getModelSpaceMesh()->getName()),
@@ -140,12 +142,6 @@ void RenderMesh::draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMa
     }
 }
 
-RenderMesh::~RenderMesh() {
-    delete indexBuffer;
-    delete vertexBuffer;
-    delete vertexArray;
-}
-
 RenderMesh &RenderMesh::operator=(RenderMesh &&other) noexcept {
     if(this != &other){
         this->indexBuffer = other.indexBuffer;
@@ -173,52 +169,36 @@ void RenderMesh::setBoundingBoxEnabled(bool newBoundingBoxEnabled) {
     RenderMesh::boundingBoxEnabled = newBoundingBoxEnabled;
 }
 
-void RenderMesh::showContextMenu(const QPoint &position) {
-    QMenu contextMenu(QString("Context menu"));
+QMenu* RenderMesh::getContextMenu() {
 
-    QAction* visibleAction = contextMenu.addAction(QString("Visible"));
-    QObject::connect(visibleAction, &QAction::triggered, [=](bool enabled){
-        this->setVisible(enabled);
-    });
-    visibleAction->setCheckable(true);
-    visibleAction->setChecked(this->isVisible());
-    contextMenu.addAction(visibleAction);
+    auto* contextMenu = AbstractRenderModel::getContextMenu();
 
-    QAction* wireframeAction = contextMenu.addAction(QString("Wireframe"));
+    contextMenu->addSeparator();
+
+    QAction* wireframeAction = contextMenu->addAction(QString("Wireframe"));
     QObject::connect(wireframeAction, &QAction::triggered, [=](bool enabled){
         this->setWireframeEnabled(enabled);
     });
     wireframeAction->setCheckable(true);
     wireframeAction->setChecked(this->isWireframeEnabled());
-    contextMenu.addAction(wireframeAction);
+    contextMenu->addAction(wireframeAction);
 
-    QAction* cullingAction = contextMenu.addAction(QString("Culling"));
+    QAction* cullingAction = contextMenu->addAction(QString("Culling"));
     QObject::connect(cullingAction, &QAction::triggered, [=](bool enabled){
         this->setCullingEnabled(enabled);
     });
     cullingAction->setCheckable(true);
     cullingAction->setChecked(this->isCullingEnabled());
-    contextMenu.addAction(cullingAction);
+    contextMenu->addAction(cullingAction);
 
-    QAction* boundingBoxAction = contextMenu.addAction(QString("Bounding box"));
+    QAction* boundingBoxAction = contextMenu->addAction(QString("Bounding box"));
     QObject::connect(boundingBoxAction, &QAction::triggered, [=](bool enabled){
         this->setBoundingBoxEnabled(enabled);
     });
     boundingBoxAction->setCheckable(true);
     boundingBoxAction->setChecked(this->isBoundingBoxEnabled());
-    contextMenu.addAction(boundingBoxAction);
-
-    QAction* colorAction = contextMenu.addAction(QString("Change Color..."));
-    QObject::connect(colorAction, &QAction::triggered, [=](){
-        auto initialColor = this->getColor();
-        auto resultColor = QColorDialog::getColor(QColor(255.f*initialColor.r, 255.f*initialColor.g, 255.f*initialColor.b, 255.f*initialColor.a), nullptr, QString(), QColorDialog::ShowAlphaChannel);
-        if(resultColor.isValid()){
-            this->setColor(Color(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f));
-        }
-    });
-    contextMenu.addAction(colorAction);
-
-    contextMenu.exec(position);
+    contextMenu->addAction(boundingBoxAction);
+    return contextMenu;
 }
 
 void RenderMesh::setColor(const Color &newColor) {
@@ -229,4 +209,21 @@ void RenderMesh::setColor(const Color &newColor) {
 void RenderMesh::setTransformationMatrix(const glm::mat4 &newTransformationMatrix) {
     AbstractRenderModel::setTransformationMatrix(newTransformationMatrix);
     this->boundingBox.setTransformationMatrix(newTransformationMatrix);
+}
+
+RenderModelDetailDialog *RenderMesh::getDetailsDialog() {
+    auto dialog = AbstractRenderModel::getDetailsDialog();
+
+    auto* line = new QFrame();
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    dialog->addWidget(line);
+
+    auto* layout = new QGridLayout();
+    layout->addWidget(new QLabel("Number of vertices: 0"), 0, 0);
+    layout->addWidget(new QLabel("Number of triangles: 0"), 1, 0);
+
+
+    dialog->addLayout(layout);
+    return dialog;
 }

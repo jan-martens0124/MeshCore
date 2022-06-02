@@ -26,7 +26,7 @@ void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::sha
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderWorldSpaceMeshSlot",
                               Qt::AutoConnection,
                               Q_ARG(std::string, group),
-                              Q_ARG(std::shared_ptr<WorldSpaceMesh>, worldSpaceMesh),
+                              Q_ARG(std::shared_ptr<WorldSpaceMesh>, std::make_shared<WorldSpaceMesh>(*worldSpaceMesh)), // We should copy the actual worldSpaceMesh object here, otherwise the transformation could change before the render thread reads it
                               Q_ARG(Color, color),
                               Q_ARG(RenderWidget*, this));
 }

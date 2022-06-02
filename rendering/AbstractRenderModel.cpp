@@ -43,17 +43,21 @@ AbstractRenderModel::AbstractRenderModel(const glm::mat4& transformation, const 
         transformationMatrix(transformation)
 {
     this->name = name;
-    if(name.size() > 0){
+    if(!name.empty()){
         this->name[0] = std::toupper(name[0]);
     }
-
-
 }
 
 AbstractRenderModel::~AbstractRenderModel() {
+
     delete vertexArray;
     delete indexBuffer;
     delete vertexBuffer;
+
+    if(this->detailDialog != nullptr){
+        this->detailDialog->close();
+        delete this->detailDialog;
+    }
 }
 
 AbstractRenderModel::AbstractRenderModel(AbstractRenderModel &&other) noexcept:
@@ -93,5 +97,34 @@ const std::string &AbstractRenderModel::getName() const {
 }
 
 void AbstractRenderModel::setName(const std::string &newName) {
-    AbstractRenderModel::name = newName;
+    this->name = newName;
+    for (const auto &listener: this->listeners){
+        listener->notifyNameChanged(this->name);
+    }
+}
+
+QMenu* AbstractRenderModel::getContextMenu(){
+
+    auto contextMenu = new QMenu(QString("Context menu"));
+
+    QAction* visibleAction = contextMenu->addAction(QString("Visible"));
+    QObject::connect(visibleAction, &QAction::triggered, [=](bool enabled){
+        this->setVisible(enabled);
+    });
+    visibleAction->setCheckable(true);
+    visibleAction->setChecked(this->isVisible());
+    contextMenu->addAction(visibleAction);
+
+    QAction* colorAction = contextMenu->addAction(QString("Change Color..."));
+    QObject::connect(colorAction, &QAction::triggered, [=](){
+        auto initialColor = this->getColor();
+        auto resultColor = QColorDialog::getColor(QColor(255.f*initialColor.r, 255.f*initialColor.g, 255.f*initialColor.b, 255.f*initialColor.a), nullptr, QString(), QColorDialog::ShowAlphaChannel);
+        if(resultColor.isValid()){
+            this->setColor(Color(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f));
+        }
+    });
+
+    contextMenu->addAction(colorAction);
+
+    return contextMenu;
 }

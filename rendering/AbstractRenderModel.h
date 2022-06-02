@@ -12,11 +12,13 @@
 #include <qmenu.h>
 #include <qaction.h>
 #include <qcolordialog.h>
+#include "RenderModelDetailDialog.h"
 
 typedef glm::vec4 Color;
 
 class AbstractRenderModelListener{
 public:
+    virtual void notifyNameChanged(const std::string& name) const = 0;
     virtual void notifyColorChanged(const Color& newColor) const = 0;
     virtual void notifyVisibleChanged(bool visible) const = 0;
 };
@@ -24,6 +26,7 @@ public:
 class RenderModelListener: public AbstractRenderModelListener {
 private:
     std::function<void()> onChanged = {};
+    std::function<void(const std::string& newName)> onNameChanged = {};
     std::function<void(const Color& newColor)> onColorChanged = {};
     std::function<void(bool visible)> onVisibleChanged = {};
 
@@ -34,6 +37,11 @@ private:
 
     void notifyVisibleChanged(bool visible) const override {
         if(this->onVisibleChanged) this->onVisibleChanged(visible);
+        if(this->onChanged) this->onChanged();
+    }
+
+    void notifyNameChanged(const std::string& name) const override {
+        if(this->onNameChanged) this->onNameChanged(name);
         if(this->onChanged) this->onChanged();
     }
 
@@ -50,26 +58,27 @@ public:
     [[maybe_unused]] void setOnVisibleChanged(const std::function<void(bool visible)> &newOnVisibleChanged) {
         this->onVisibleChanged = newOnVisibleChanged;
     }
+
+    [[maybe_unused]] void setOnNameChanged(const std::function<void(const std::string& name)> &newOnNameChanged) {
+        this->onNameChanged = newOnNameChanged;
+    }
 };
 
 class AbstractRenderModel: protected QOpenGLFunctions {
 
 private:
     std::string name;
-public:
-    [[nodiscard]] const std::string &getName() const;
-    void setName(const std::string &newName);
+    RenderModelDetailDialog* detailDialog = nullptr;
 
 private:
     bool visible = true;
     Color color = Color(1.0f);
+
 protected:
     QOpenGLBuffer* indexBuffer;
     QOpenGLBuffer* vertexBuffer;
     QOpenGLVertexArrayObject* vertexArray;
-
     glm::mat4 transformationMatrix;
-
     std::vector<std::shared_ptr<AbstractRenderModelListener>> listeners;
 
 public:
@@ -81,6 +90,9 @@ public:
 
     virtual void draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) = 0;
 
+public:
+    [[nodiscard]] const std::string &getName() const;
+    void setName(const std::string &newName);
     [[nodiscard]] bool isVisible() const;
     void setVisible(bool newVisible);
     [[nodiscard]] const Color &getColor() const;
@@ -88,38 +100,15 @@ public:
     [[nodiscard]] const glm::mat4 &getTransformation() const;
     virtual void setTransformationMatrix(const glm::mat4 &newTransformationMatrix);
 
-    virtual void showSettingsPanel(){
-        // TODO replace with getSettingsPanel, that can be extended with more settings
+    virtual RenderModelDetailDialog* getDetailsDialog(){
+        // Show existing dialog if already exists
+        if(this->detailDialog==nullptr){
+            this->detailDialog = new RenderModelDetailDialog(this);
+        }
+        return this->detailDialog;
     };
 
-    virtual void showContextMenu(const QPoint &position){
-
-        // TODO replace with getContextMenu, that can be extended with more actions
-        QMenu contextMenu(QString("Context menu"));
-
-        QAction* visibleAction = contextMenu.addAction(QString("Visible"));
-        QObject::connect(visibleAction, &QAction::triggered, [=](bool enabled){
-            this->setVisible(enabled);
-        });
-        visibleAction->setCheckable(true);
-        visibleAction->setChecked(this->isVisible());
-        contextMenu.addAction(visibleAction);
-
-        QAction* colorAction = contextMenu.addAction(QString("Color"));
-        QObject::connect(colorAction, &QAction::triggered, [=](){
-            auto initialColor = this->getColor();
-            auto resultColor = QColorDialog::getColor(QColor(255.f*initialColor.r, 255.f*initialColor.g, 255.f*initialColor.b, 255.f*initialColor.a), nullptr, QString(), QColorDialog::ShowAlphaChannel);
-            if(resultColor.isValid()){
-                this->setColor(Color(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f));
-            }
-        });
-
-        contextMenu.addAction(colorAction);
-
-
-
-        contextMenu.exec(position);
-    }
+    virtual QMenu* getContextMenu();
 
     void addListener(const std::shared_ptr<AbstractRenderModelListener> &listener) {
         this->listeners.push_back(listener);

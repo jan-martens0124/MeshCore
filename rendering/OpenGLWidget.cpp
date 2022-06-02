@@ -330,7 +330,7 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
 
         // Add listener to redraw when mesh is changed
         const auto listener = std::make_shared<RenderModelListener>();
-        listener->setOnChanged([this, renderMesh](){
+        listener->setOnChanged([this](){
             this->update();
         });
         renderMesh->addListener(listener);
@@ -338,10 +338,9 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
         // Add control widget to the renderWidget
         renderWidget->addControlWidget(group, renderMesh);
 
+        // Set the color
+        modelIterator->second->setColor(color);
     }
-
-    // Update the color
-    modelIterator->second->setColor(color);
 
     // Update the transformation
     modelIterator->second->setTransformationMatrix(worldSpaceMesh->getModelTransformation().getMatrix());

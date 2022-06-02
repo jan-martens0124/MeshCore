@@ -20,19 +20,14 @@ private:
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
     std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
 
-//    QOpenGLBuffer* indexBuffer;
-//    QOpenGLBuffer* vertexBuffer;
-//    QOpenGLVertexArrayObject* vertexArray;
-
     RenderAABB boundingBox;
 
 public:
-
 //    RenderModel();
 //    RenderModel(const RenderModel& other);
 //    RenderMesh(RenderMesh&& other) noexcept;
     RenderMesh& operator=(RenderMesh&& other) noexcept;
-    ~RenderMesh() override;
+    ~RenderMesh() override = default;
 
     RenderMesh(const WorldSpaceMesh &worldSpaceMesh,
                 const std::shared_ptr<QOpenGLShaderProgram>& ambientShader,
@@ -48,7 +43,9 @@ public:
     void setCullingEnabled(bool newCullingEnabled);
     void setBoundingBoxEnabled(bool newBoundingBoxEnabled);
 
-    void showContextMenu(const QPoint &position) override;
+    QMenu* getContextMenu() override;
+
+    RenderModelDetailDialog* getDetailsDialog() override;
 
     void setColor(const Color &newColor) override;
 
