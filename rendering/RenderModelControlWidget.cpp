@@ -5,7 +5,7 @@
 #include <qinputdialog.h>
 #include <iostream>
 #include "RenderModelControlWidget.h"
-#include "forms/ui_RenderModelControlWidget.h"
+#include "forms/ui_rendermodelcontrolwidget.h"
 
 RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<AbstractRenderModel>& renderModel):
         ui(new Ui::RenderModelControlWidget),

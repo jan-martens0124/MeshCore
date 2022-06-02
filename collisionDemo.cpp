@@ -32,7 +32,7 @@ void run(RenderWidget* renderWidget){
 
     containerWorldSpaceMesh->getModelTransformation().factorScale(10.0f);
 
-    containerWorldSpaceMesh->getModelTransformation().deltaPosition(-10f*containerWorldSpaceMesh->getModelSpaceMesh()->getBounds().getCenter()); // Put the container in the center of the world
+    containerWorldSpaceMesh->getModelTransformation().deltaPosition(-10.0f*containerWorldSpaceMesh->getModelSpaceMesh()->getBounds().getCenter()); // Put the container in the center of the world
 
     // Make the item small enough to fit inside the container
     itemWorldSpaceMesh->getModelTransformation().setScale(0.5f);
@@ -106,4 +106,6 @@ void run(RenderWidget* renderWidget){
         renderWidget->renderWorldSpaceMesh("Items", itemWorldSpaceMesh, Color(1,1,0,1));
 
     }
+
+    std::cout << "Finished" << std::endl;
 }

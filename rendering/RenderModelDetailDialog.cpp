@@ -4,7 +4,7 @@
 
 #include <QtGui>
 #include "RenderModelDetailDialog.h"
-#include "forms/ui_RenderModelDetailDialog.h"
+#include "forms/ui_rendermodeldetaildialog.h"
 
 #include "AbstractRenderModel.h"
 
