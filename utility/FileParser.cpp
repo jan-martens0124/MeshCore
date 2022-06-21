@@ -16,6 +16,7 @@
 #include <cstring>
 
 std::mutex FileParser::cacheMapMutex{};
+std::unordered_map<std::string, std::shared_ptr<ModelSpaceMesh>> FileParser::meshCacheMap{};
 
 [[maybe_unused]] std::vector<std::shared_ptr<ModelSpaceMesh>> FileParser::parseFolder(const std::string &folderPath) {
 
@@ -38,13 +39,11 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFile(const std::string &filePat
         return std::make_shared<ModelSpaceMesh>(ModelSpaceMesh(std::vector<Vertex>(), std::vector<IndexTriangle>()));
     }
 
-
     cacheMapMutex.lock();
-    std::unordered_map<std::string, std::shared_ptr<ModelSpaceMesh>> meshCacheMap{};
     const auto cacheIterator = meshCacheMap.find(filePath);
     cacheMapMutex.unlock();
     if(cacheIterator != meshCacheMap.end()){
-        std::cout << "Fileparser cache map hit for file " << filePath << std::endl;
+        std::cout << "FileParser cache map hit for file " << filePath << std::endl;
         return cacheIterator->second;
     }
     else{

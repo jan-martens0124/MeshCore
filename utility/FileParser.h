@@ -19,6 +19,7 @@ public:
 private:
 
     static std::mutex cacheMapMutex;
+    static std::unordered_map<std::string, std::shared_ptr<ModelSpaceMesh>> meshCacheMap;
 
     static ModelSpaceMesh parseFileSTL(const std::string& filePath);
     static ModelSpaceMesh parseFileOBJ(const std::string& filePath);
