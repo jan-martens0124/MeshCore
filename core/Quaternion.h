@@ -11,11 +11,13 @@
 class Quaternion: public glm::fquat{
 public:
 
-    MC_FUNC_QUALIFIER Quaternion(): glm::fquat(){};
+    MC_FUNC_QUALIFIER Quaternion() = default;
 
     MC_FUNC_QUALIFIER explicit Quaternion(const glm::fquat &quaternion): qua(quaternion){}
 
     MC_FUNC_QUALIFIER explicit Quaternion(const glm::mat3 rotationMatrix): qua(glm::quat_cast(rotationMatrix)){}
+
+    MC_FUNC_QUALIFIER explicit Quaternion(const glm::mat4 rotationMatrix): qua(glm::quat_cast(rotationMatrix)){}
 
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex rotateVertex(const glm::vec3& vertex) const{
         return (*this)*vertex; // glm quaternion multiplication does what we need

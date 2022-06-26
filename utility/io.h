@@ -11,6 +11,7 @@
 #include "../core/Transformation.h"
 #include "../core/AABB.h"
 #include "../core/VertexTriangle.h"
+#include "../core/OBB.h"
 
 
 static std::ostream &operator<<(std::ostream &os, const Vertex &v) {
@@ -34,6 +35,10 @@ static std::ostream& operator<<(std::ostream& o, const Transformation& transform
 
 static std::ostream & operator<<(std::ostream & os, const AABB& aabb){
     return os << "AABB[min" << aabb.getMinimum() << ";max" << aabb.getMaximum() << "]";
+}
+
+static std::ostream & operator<<(std::ostream & os, const OBB& obb){
+    return os << "OBB[AABB[" << obb.getAabb() << "]; Quaternion[" << obb.getRotation().x << "," << obb.getRotation().y << "," << obb.getRotation().z << "," << obb.getRotation().w << "]]";
 }
 
 static std::ostream& operator<<(std::ostream& o, const VertexTriangle& vertexTriangle) {
