@@ -165,6 +165,13 @@ public:
         return this->getInverseMatrix() * glm::vec4(vertex, 1);
     }
 
+    MC_FUNC_QUALIFIER Vertex transformVector(const Vertex &vertex) const {
+        return this->getMatrix() * glm::vec4(vertex, 0);
+    }
+    MC_FUNC_QUALIFIER Vertex inverseTransformVector(const Vertex& vertex) const {
+        return this->getInverseMatrix() * glm::vec4(vertex, 0);
+    }
+
     MC_FUNC_QUALIFIER static Transformation fromRotationMatrix(const glm::mat3& rotationMatrix){
         float pitch = glm::asin(rotationMatrix[2][0]);
         float roll = glm::asin(-rotationMatrix[2][1]/glm::cos(pitch));

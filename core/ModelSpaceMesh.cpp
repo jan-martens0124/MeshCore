@@ -10,6 +10,8 @@
 #include "../convexhull/convexhull.h"
 #include "../factories/AABBFactory.h"
 
+#define EPSILON 1e-4
+
 ModelSpaceMesh::ModelSpaceMesh(std::vector<Vertex> vertices, std::vector<IndexTriangle> triangles):
 vertices(std::move(vertices)),
 triangles(std::move(triangles)),
@@ -232,12 +234,25 @@ static std::vector<IndexTriangle> getConvexHullMcCormack(const std::vector<Verte
     return triangles;
 }
 
-std::optional<ModelSpaceMesh> ModelSpaceMesh::getConvexHull() const {
+std::optional<std::shared_ptr<ModelSpaceMesh>> ModelSpaceMesh::getConvexHull() const {
+
+    // Return the value if already calculated before
+    if(convexHull.has_value()){
+
+        // If previously no mesh was found, return empty optional
+        if(convexHull.value() == nullptr) return std::nullopt;
+        return convexHull.value();
+    }
+
+    // TODO should we return the mesh itself if it is convex?
+//    if(this.is);
+
 
     // Get the triangles that should be part of the convex hull
     const auto indexTriangles = getConvexHullMcCormack(this->vertices);
 
     if(indexTriangles.empty()){
+        convexHull = nullptr;
         return std::nullopt;
     }
 
@@ -266,7 +281,11 @@ std::optional<ModelSpaceMesh> ModelSpaceMesh::getConvexHull() const {
         hullTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
     }
 
-    return ModelSpaceMesh{hullVertices, hullTriangles};
+    assert(!convexHull.has_value() && "This shouldn't be calculated again if a value was present already");
+    auto hull = std::make_shared<ModelSpaceMesh>(hullVertices, hullTriangles);
+    convexHull.value()->setName("Convex hull of " + this->getName());
+    convexHull = hull;
+    return hull;
 }
 
 const std::string &ModelSpaceMesh::getName() const {
@@ -275,4 +294,63 @@ const std::string &ModelSpaceMesh::getName() const {
 
 void ModelSpaceMesh::setName(const std::string &newName) {
     ModelSpaceMesh::name = newName;
+}
+
+float ModelSpaceMesh::getVolume() {
+    if(!volume.has_value()){
+
+        float vol = 0.0f;
+
+        for (const auto &indexTriangle: this->triangles){
+            const auto v0 = this->vertices.at(indexTriangle.vertexIndex0);
+            const auto v1 = this->vertices.at(indexTriangle.vertexIndex1);
+            const auto v2 = this->vertices.at(indexTriangle.vertexIndex2);
+
+            auto v210 = v2.x * v1.y * v0.z;
+            auto v120 = v1.x * v2.y * v0.z;
+            auto v201 = v2.x * v0.y * v1.z;
+            auto v021 = v0.x * v2.y * v1.z;
+            auto v102 = v1.x * v0.y * v2.z;
+            auto v012 = v0.x * v1.y * v2.z;
+
+            vol += (1.0f/6.0f)*(-v210 + v120 + v201 - v021 - v102 + v012);
+        }
+
+        assert(vol <= this->getBounds().getVolume() && "Volume of mesh should be smaller than volume of its bounding box");
+        volume = vol;
+    }
+    return volume.value();
+}
+
+bool ModelSpaceMesh::isConvex() {
+
+    // Return the value if already calculated before
+    if(convex.has_value()){
+        return convex.value();
+    }
+
+    // Calculate the convexity
+    for (const auto &indexTriangle: this->triangles){
+
+        Vertex vertex0 = this->vertices.at(indexTriangle.vertexIndex0);
+        Vertex vertex1 = this->vertices.at(indexTriangle.vertexIndex1);
+        Vertex vertex2 = this->vertices.at(indexTriangle.vertexIndex2);
+
+        VertexTriangle triangle({vertex0, vertex1, vertex2});
+
+        for (const auto &vertex : this->vertices){
+
+            // The dot product between the triangle's normal and the vector from the triangle to the vertex should be negative
+            auto normal = glm::normalize(triangle.normal);
+            auto delta = glm::normalize(vertex - vertex0);
+            auto dot = glm::dot(normal, delta);
+
+            if(dot > EPSILON){
+                convex = false;
+                return false;
+            }
+        }
+    }
+    convex = true;
+    return true;
 }

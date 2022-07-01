@@ -6,6 +6,7 @@
 #define MESHCORE_MODELSPACEMESH_H
 
 #include <vector>
+#include <memory>
 #include <optional>
 #include <string>
 #include "Vertex.h"
@@ -19,7 +20,14 @@ private:
     AABB bounds;
     std::vector<Vertex> vertices;
     std::vector<IndexTriangle> triangles;
+
+    // Cached data
     mutable std::optional<std::vector<IndexEdge>> edges;
+    mutable std::optional<bool> convex;
+    mutable std::optional<float> volume;
+    mutable std::optional<std::shared_ptr<ModelSpaceMesh>> convexHull;
+//    mutable std::optional<GJKMesh> gjkMesh;
+    // TODO add AABB bounds as well?
 public:
     ModelSpaceMesh() = default;
     ModelSpaceMesh(std::vector<Vertex> vertices, std::vector<IndexTriangle> triangles);
@@ -33,7 +41,9 @@ public:
 
     const AABB &getBounds() const;
 
-    std::optional<ModelSpaceMesh> getConvexHull() const;
+    std::optional<std::shared_ptr<ModelSpaceMesh>> getConvexHull() const;
+    bool isConvex();
+    float getVolume();
 
     const std::string &getName() const;
     void setName(const std::string &newName);
