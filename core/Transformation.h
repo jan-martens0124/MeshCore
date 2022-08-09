@@ -9,6 +9,7 @@
 #include <glm/gtx/euler_angles.hpp>
 #include "Vertex.h"
 #include "Core.h"
+#include "Quaternion.h"
 
 class Transformation {
 
@@ -173,27 +174,47 @@ public:
     }
 
     MC_FUNC_QUALIFIER static Transformation fromRotationMatrix(const glm::mat3& rotationMatrix){
-        float pitch = glm::asin(rotationMatrix[2][0]);
-        float roll = glm::asin(-rotationMatrix[2][1]/glm::cos(pitch));
-        float roll_alternative = glm::acos(rotationMatrix[2][2]/glm::cos(pitch));
 
-        // Check if we chose the right pitch here, otherwise change
-        if(glm::abs(glm::abs(roll) - glm::abs(roll_alternative)) > 0.000001){
-            pitch = glm::pi<float>() - glm::asin(rotationMatrix[2][0]);
-            roll = glm::asin(-rotationMatrix[2][1]/glm::cos(pitch));
+        Transformation returnObject;
+        {
+            float pitch = glm::asin(glm::clamp(rotationMatrix[2][0], -1.0f, 1.0f)); // pitch?
+
+            float roll;
+            float yaw;
+
+            if(glm::abs(rotationMatrix[2][0]) < (1-1e-8)){
+                roll = std::atan2(-rotationMatrix[2][1], rotationMatrix[2][2]);
+                yaw = std::atan2(-rotationMatrix[1][0], rotationMatrix[0][0]);
+            }
+            else{
+                yaw = 0.0f;
+                roll = std::atan2(rotationMatrix[1][2], rotationMatrix[1][1]);
+            }
+
+            returnObject.setRotation(yaw, pitch, roll);
         }
 
-        float yaw = glm::asin(-rotationMatrix[1][0]/glm::cos(pitch));
-        float m11_calculated = glm::cos(roll) * glm::cos(yaw) - glm::sin(roll) * glm::sin(pitch) * glm::sin(yaw);
+#if !NDEBUG
 
-        // Check if we selected the right yaw here, otherwise change
-        if(glm::abs(rotationMatrix[1][1] - m11_calculated) > 0.000001){
-            yaw = glm::pi<float>() - yaw; // We chose the wrong yaw
-        }
+        // Assert the matrices are equal, with at least a limited level of accuracy
+        auto testRotationMatrix = glm::mat3(returnObject.getRotationMatrix());
 
+        assert(glm::all(glm::epsilonEqual(testRotationMatrix[0],rotationMatrix[0], 0.0001f)));
+        assert(glm::all(glm::epsilonEqual(testRotationMatrix[1],rotationMatrix[1], 0.0001f)));
+        assert(glm::all(glm::epsilonEqual(testRotationMatrix[2],rotationMatrix[2], 0.0001f)));
+#endif
+
+        return returnObject;
+    }
+
+    MC_FUNC_QUALIFIER static Transformation fromEulerAngles(float pitch, float yaw, float roll) {
         Transformation returnObject;
         returnObject.setRotation(yaw, pitch, roll);
         return returnObject;
+    }
+
+    MC_FUNC_QUALIFIER static Transformation fromQuaternion(const Quaternion& quaternion){
+        return Transformation::fromRotationMatrix(quaternion.getMatrix());
     }
 };
 
