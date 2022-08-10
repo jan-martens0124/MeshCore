@@ -7,6 +7,7 @@
 #include "ShaderProgramSource.h"
 #include "RenderMesh.h"
 #include "RenderWidget.h"
+#include "Exception.h"
 
 [[maybe_unused]] OpenGLWidget::OpenGLWidget(QWidget *parent): QOpenGLWidget(parent) {}
 
@@ -14,6 +15,8 @@ Q_DECLARE_METATYPE(Color);
 Q_DECLARE_METATYPE(std::string)
 Q_DECLARE_METATYPE(std::shared_ptr<WorldSpaceMesh>)
 Q_DECLARE_METATYPE(RenderWidget*)
+Q_DECLARE_METATYPE(AABB)
+Q_DECLARE_METATYPE(Transformation)
 
 void OpenGLWidget::initializeGL() {
 
@@ -25,6 +28,8 @@ void OpenGLWidget::initializeGL() {
     qRegisterMetaType<std::string>();
     qRegisterMetaType<std::shared_ptr<WorldSpaceMesh>>();
     qRegisterMetaType<RenderWidget*>();
+    qRegisterMetaType<AABB>();
+    qRegisterMetaType<Transformation>();
 
     GL_CALL(glClearColor(0,0,0,1));
 
@@ -262,7 +267,7 @@ void OpenGLWidget::setLightMode(bool newLightMode){
     this->update();
 }
 
-void OpenGLWidget::captureScene() {
+void OpenGLWidget::captureSceneSlot() {
     this->makeCurrent();
     auto capture = this->grabFramebuffer();
     QString fileName = QFileDialog::getSaveFileName(this, QString("Save screenshot"), "example", QString("Image Files (*.jpg)"));
@@ -270,7 +275,7 @@ void OpenGLWidget::captureScene() {
     capture.save(fileName);
 }
 
-void OpenGLWidget::captureSceneToFile(const QString& fileName) {
+void OpenGLWidget::captureSceneToFileSlot(const QString& fileName) {
     this->makeCurrent();
     auto capture = this->grabFramebuffer();
     std::cout<< fileName.toStdString() << std::endl;
@@ -342,7 +347,7 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
     }
 
     // Update the transformation
-    modelIterator->second->setTransformationMatrix(worldSpaceMesh->getModelTransformation().getMatrix());
+    modelIterator->second->setTransformation(worldSpaceMesh->getModelTransformation());
 
     this->update();
 }
@@ -374,4 +379,94 @@ void OpenGLWidget::updateSortedRenderModels(){
     std::sort(this->sortedRenderModels.begin(), this->sortedRenderModels.end(), [](const std::shared_ptr<AbstractRenderModel>& a, const std::shared_ptr<AbstractRenderModel>& b){
         return a->getColor().a > b->getColor().a;
     });
+}
+
+void OpenGLWidget::renderBoxSlot(const std::string &group, const AABB &aabb, const Transformation& transformation, RenderWidget *renderWidget) {
+    // Find the group
+    auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
+
+    // Find the model in this group
+    auto renderId = std::to_string(std::hash<AABB>{}(aabb));
+    auto modelIterator = renderModelsMap.find(renderId);
+
+    if(modelIterator == renderModelsMap.end()){
+
+        this->makeCurrent();
+
+        // No entry present yet, create new render Model
+        auto renderAABB = std::make_shared<RenderAABB>(aabb, transformation, this->ambientShader);
+
+        // Insert it in the renderModelsMap
+        modelIterator = renderModelsMap.insert({renderId, renderAABB}).first;
+
+        // Add listener to redraw when mesh is changed
+        const auto listener = std::make_shared<SimpleRenderModelListener>();
+        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
+            if(oldColor.a!=newColor.a){
+                this->updateSortedRenderModels();
+            }
+        });
+
+        listener->setOnChanged([this](){
+            this->update();
+        });
+        renderAABB->addListener(listener);
+
+        // Add control widget to the renderWidget
+        renderWidget->addControlWidget(group, renderAABB);
+
+        // Set the color
+        modelIterator->second->setColor(Color(1,1,1,1));
+
+        this->updateSortedRenderModels();
+    }
+
+    // Update the transformation
+    modelIterator->second->setTransformation(transformation);
+
+    this->update();
+
+}
+
+const std::shared_ptr<QOpenGLShaderProgram> &OpenGLWidget::getAmbientShader() const {
+    return ambientShader;
+}
+
+const std::shared_ptr<QOpenGLShaderProgram> &OpenGLWidget::getDiffuseShader() const {
+    return diffuseShader;
+}
+
+void OpenGLWidget::addOrUpdateRenderModelSlot(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> renderModel, RenderWidget* renderWidget) {
+    // Find the group
+    auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
+
+    // Find the model in this group
+    auto modelIterator = renderModelsMap.find(id);
+    if(modelIterator == renderModelsMap.end()){
+
+        this->makeCurrent();
+
+        // No entry present yet, insert new renderModel it in the renderModelsMap
+        modelIterator = renderModelsMap.insert({id, renderModel}).first;
+
+        // Add listener to redraw when mesh is changed
+        const auto listener = std::make_shared<SimpleRenderModelListener>();
+        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
+            if(oldColor.a!=newColor.a){
+                this->updateSortedRenderModels();
+            }
+        });
+
+        listener->setOnChanged([this](){
+            this->update();
+        });
+        renderModel->addListener(listener);
+
+        // Add control widget to the renderWidget
+        renderWidget->addControlWidget(group, renderModel);
+
+        this->updateSortedRenderModels();
+    }
+
+    this->update();
 }

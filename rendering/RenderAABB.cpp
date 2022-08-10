@@ -5,6 +5,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "RenderAABB.h"
 #include "Exception.h"
+#include <QGridLayout>
+#include <QLabel>
 
 void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
 
@@ -17,7 +19,7 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
         this->ambientShader->bind();
 
         // Set MVP matrix uniform
-        const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->transformationMatrix;
+        const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
         this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
 
         // Set color uniform
@@ -39,13 +41,42 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
     }
 }
 
-RenderAABB::RenderAABB(const AABB &aabb, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader):
-        AbstractRenderModel(transformationMatrix, "AABB"),
+void RenderAABB::updateBounds(const AABB &aabb) {
+
+    std::vector<Vertex> vertices;
+    std::vector<float> vertexData;
+    Vertex min = aabb.getMinimum();
+    Vertex max = aabb.getMaximum();
+
+    vertices.emplace_back(min.x, min.y, min.z);
+    vertices.emplace_back(min.x, min.y, max.z);
+    vertices.emplace_back(min.x, max.y, min.z);
+    vertices.emplace_back(min.x, max.y, max.z);
+    vertices.emplace_back(max.x, min.y, min.z);
+    vertices.emplace_back(max.x, min.y, max.z);
+    vertices.emplace_back(max.x, max.y, min.z);
+    vertices.emplace_back(max.x, max.y, max.z);
+
+    for (const auto &vertex : vertices){
+        vertexData.emplace_back(vertex.x);
+        vertexData.emplace_back(vertex.y);
+        vertexData.emplace_back(vertex.z);
+    }
+
+    this->vertexBuffer->bind();
+    this->vertexBuffer->allocate(&vertexData.front(), vertexData.size() * sizeof(float));
+}
+
+RenderAABB::RenderAABB(const AABB &aabb, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader):
+        AbstractRenderModel(transformation, "AABB"),
         ambientShader(shader){
 
     std::vector<unsigned int> indices;
     std::vector<Vertex> vertices;
     std::vector<float> vertexData;
+
+    this->unscaledVolume = aabb.getVolume();
+    this->unscaledSurfaceArea = aabb.getSurfaceArea();
 
     Vertex min = aabb.getMinimum();
     Vertex max = aabb.getMaximum();
@@ -122,6 +153,24 @@ RenderAABB::RenderAABB(const AABB &aabb, const glm::mat4& transformationMatrix, 
 }
 
 RenderAABB::RenderAABB(const WorldSpaceMesh &worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& shader):
-RenderAABB(worldSpaceMesh.getModelSpaceMesh()->getBounds(), worldSpaceMesh.getModelTransformation().getMatrix(), shader) {}
+RenderAABB(worldSpaceMesh.getModelSpaceMesh()->getBounds(), worldSpaceMesh.getModelTransformation(), shader) {}
+
+RenderModelDetailDialog *RenderAABB::createRenderModelDetailDialog(QWidget* parent) {
+    auto dialog = AbstractRenderModel::createRenderModelDetailDialog(parent);
+
+    auto* detailsLayout = new QGridLayout();
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled surface area: " + std::to_string(unscaledSurfaceArea))), 0, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled volume: " + std::to_string(unscaledVolume))), 1, 0);
+
+    const auto scale = this->getTransformation().getScale();
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Surface area: " + std::to_string(unscaledSurfaceArea * scale * scale))), 2, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Volume: " + std::to_string(unscaledVolume * scale * scale * scale))), 3, 0);
+
+    auto* detailsWidget = new QWidget();
+    detailsWidget->setLayout(detailsLayout);
+    dialog->addTab(detailsWidget, QString("Details"));
+
+    return dialog;
+}
 
 

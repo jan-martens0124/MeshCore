@@ -103,6 +103,10 @@ public:
         auto w = vc * denom;
         return vertex0 + ab*v + ac*w;
     }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] float getSurfaceArea() const {
+        return glm::length(glm::cross(edge0, edge1)) / 2.0f;
+    }
 };
 
 #endif //MESHCORE_VERTEXTRIANGLE_H

@@ -35,6 +35,6 @@ link_libraries("${GLEW_DIR}/lib/Release/x64/glew32s.lib")
 #find_package(GLEW REQUIRED)
 
 
-file(GLOB SOURCES  utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp)
+file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp)
 add_executable(RenderDemo renderDemo.cpp ${SOURCES})
 add_executable(CollisionDemo collisionDemo.cpp ${SOURCES})

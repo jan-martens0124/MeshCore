@@ -12,13 +12,13 @@ RenderModelDetailDialog::~RenderModelDetailDialog() {
     delete ui;
 }
 
-RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderModel):
+RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderModel, QWidget* parent): QDialog(parent),
     ui(new Ui::RenderModelDetailDialog),
     renderModel(renderModel),
     listener(std::make_shared<SimpleRenderModelListener>()){
 
     ui->setupUi(this);
-
+    setWindowFlag(Qt::WindowStaysOnTopHint);
 
     this->ui->nameLineEdit->setText(QString::fromStdString(renderModel->getName()));
     listener->setOnNameChanged([this](const std::string& oldName, const std::string& newName){
@@ -26,19 +26,47 @@ RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderMode
             this->ui->nameLineEdit->setText(QString::fromStdString(newName));
         });
     });
-    connect(this->ui->nameLineEdit, &QLineEdit::textChanged, [=](const QString& text){
+    connect(this->ui->nameLineEdit, &QLineEdit::textEdited, [=](const QString& text){
         renderModel->setName(text.toStdString());
     });
 
-//    this->ui->scaleLineEdit->setText(QString::number(renderModel->getTransformation().getScale()));
+//    this->ui->scaleLineEdit->setValidator(new QDoubleValidator(this));
+//    this->ui->xLineEdit->setValidator(new QDoubleValidator(this));
+//    this->ui->yLineEdit->setValidator(new QDoubleValidator(this));
+//    this->ui->zLineEdit->setValidator(new QDoubleValidator(this));
 
-    this->ui->scaleLineEdit->setValidator(new QDoubleValidator(this));
-    this->ui->xLineEdit->setValidator(new QDoubleValidator(this));
-    this->ui->yLineEdit->setValidator(new QDoubleValidator(this));
-    this->ui->zLineEdit->setValidator(new QDoubleValidator(this));
+    this->ui->scaleLineEdit->setReadOnly(true);
+    this->ui->xLineEdit->setReadOnly(true);
+    this->ui->yLineEdit->setReadOnly(true);
+    this->ui->zLineEdit->setReadOnly(true);
+    this->ui->yawLineEdit->setReadOnly(true);
+    this->ui->pitchLineEdit->setReadOnly(true);
+    this->ui->rollLineEdit->setReadOnly(true);
+
+    // Add a listener to change the transformation values
+    listener->setOnTransformationChanged([this](const Transformation& oldTransformation, const Transformation& newTransformation){
+        QMetaObject::invokeMethod(this, [&]{
+            this->ui->scaleLineEdit->setText(QString::number(newTransformation.getScale()));
+            this->ui->xLineEdit->setText(QString::number(newTransformation.getPosition().x));
+            this->ui->yLineEdit->setText(QString::number(newTransformation.getPosition().y));
+            this->ui->zLineEdit->setText(QString::number(newTransformation.getPosition().z));
+            this->ui->yawLineEdit->setText(QString::number(newTransformation.getYaw()));
+            this->ui->pitchLineEdit->setText(QString::number(newTransformation.getPitch()));
+            this->ui->rollLineEdit->setText(QString::number(newTransformation.getRoll()));
+        });
+    });
+
+    // We have to set the initial transformation as well
+    this->ui->scaleLineEdit->setText(QString::number(renderModel->getTransformation().getScale()));
+    this->ui->xLineEdit->setText(QString::number(renderModel->getTransformation().getPosition().x));
+    this->ui->yLineEdit->setText(QString::number(renderModel->getTransformation().getPosition().y));
+    this->ui->zLineEdit->setText(QString::number(renderModel->getTransformation().getPosition().z));
+    this->ui->yawLineEdit->setText(QString::number(renderModel->getTransformation().getYaw()));
+    this->ui->pitchLineEdit->setText(QString::number(renderModel->getTransformation().getPitch()));
+    this->ui->rollLineEdit->setText(QString::number(renderModel->getTransformation().getRoll()));
 
 
-    renderModel->addListener(listener);
+    this->renderModel->addListener(listener);
 
     this->ui->applyButton->setEnabled(false);
 
@@ -57,14 +85,18 @@ RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderMode
 }
 
 void RenderModelDetailDialog::applyChanges() {
-    // TODO :)
+    // TODO :) (do we even want to be able to make changes through the ui?)
 }
 
-void RenderModelDetailDialog::addLayout(QLayout *layout) {
-    this->ui->verticalLayout->addLayout(layout);
-}
+//void RenderModelDetailDialog::addLayout(QLayout *layout) {
+//    this->ui->verticalLayout->addLayout(layout);
+//}
+//
+//void RenderModelDetailDialog::addWidget(QWidget *widget) {
+//    this->ui->verticalLayout->addWidget(widget);
+//}
 
-void RenderModelDetailDialog::addWidget(QWidget *widget) {
-    this->ui->verticalLayout->addWidget(widget);
+void RenderModelDetailDialog::addTab(QWidget *widget, const QString &label) {
+    this->ui->verticalTabWidget->addTab(widget, label);
 }
 

@@ -33,10 +33,10 @@ std::shared_ptr<ModelSpaceMesh> WorldSpaceMesh::getModelSpaceMesh() const {
     return modelSpaceMesh;
 }
 
-WorldSpaceMesh WorldSpaceMesh::clone() const{
-    WorldSpaceMesh returnWorldSpaceMesh(*this);
-    returnWorldSpaceMesh.modelTransformation = this->modelTransformation;
-    returnWorldSpaceMesh.id = std::to_string(nextId++);
+std::shared_ptr<WorldSpaceMesh> WorldSpaceMesh::clone() const{
+    std::shared_ptr<WorldSpaceMesh> returnWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(*this);
+    returnWorldSpaceMesh->modelTransformation = this->modelTransformation;
+    returnWorldSpaceMesh->id = std::to_string(nextId++);
     return returnWorldSpaceMesh;
 }
 

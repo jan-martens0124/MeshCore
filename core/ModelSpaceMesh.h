@@ -25,6 +25,7 @@ private:
     mutable std::optional<std::vector<IndexEdge>> edges;
     mutable std::optional<bool> convex;
     mutable std::optional<float> volume;
+    mutable std::optional<float> surfaceArea;
     mutable std::optional<std::shared_ptr<ModelSpaceMesh>> convexHull;
 //    mutable std::optional<GJKMesh> gjkMesh;
     // TODO add AABB bounds as well?
@@ -42,8 +43,9 @@ public:
     const AABB &getBounds() const;
 
     std::optional<std::shared_ptr<ModelSpaceMesh>> getConvexHull() const;
-    bool isConvex();
-    float getVolume();
+    bool isConvex() const;
+    float getVolume() const;
+    float getSurfaceArea() const; //https://people.eecs.berkeley.edu/~wkahan/Triangle.pdf
 
     const std::string &getName() const;
     void setName(const std::string &newName);

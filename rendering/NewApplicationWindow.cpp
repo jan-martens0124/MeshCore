@@ -38,7 +38,7 @@ NewApplicationWindow::NewApplicationWindow() {
     openAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_O));
 
     QAction* screenshotAction = fileMenu->addAction(QString("Export openGL screenshot..."));
-    connect(screenshotAction, &QAction::triggered, renderWidget->getOpenGLWidget(), &OpenGLWidget::captureScene);
+    connect(screenshotAction, &QAction::triggered, renderWidget, &RenderWidget::captureScene);
     screenshotAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_P));
 
     QAction* exitAction = fileMenu->addAction(QString("Exit"));
@@ -102,7 +102,7 @@ void NewApplicationWindow::keyPressEvent(QKeyEvent* event){
 void NewApplicationWindow::loadMesh(){
     QString fileName = QFileDialog::getOpenFileName(this, QString("Select mesh file"), R"(C:\Users\tolle\CLionProjects\MeshCore\data\models)", QString("Mesh Files (*.stl *.obj)"));
     if(std::filesystem::exists(fileName.toStdString())){
-        std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::parseFile(fileName.toStdString());
+        std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::loadMeshFile(fileName.toStdString());
         const WorldSpaceMesh worldSpaceMesh = WorldSpaceMesh(modelSpaceMesh);
 //        taskRenderWidget->addWorldSpaceMesh(worldSpaceMesh);
     }

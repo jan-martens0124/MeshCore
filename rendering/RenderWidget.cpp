@@ -12,6 +12,13 @@ RenderWidget::RenderWidget(QWidget *parent):
     {
         ui->setupUi(this);
         ui->progressBar->setMinimumWidth(350);
+
+        this->ui->taskSection->setVisible(false);
+
+        // Connect the start and stop buttons
+
+        connect(this->ui->startButton, &QPushButton::clicked, this, &RenderWidget::startCurrentTask);
+        connect(this->ui->stopButton, &QPushButton::clicked, this, &RenderWidget::stopCurrentTask);
     }
 
 RenderWidget::~RenderWidget() {
@@ -42,7 +49,7 @@ void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::sha
 //}
 
 void RenderWidget::addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel) {
-    this->getOrAddGroupLayout(group)->addWidget(new RenderModelControlWidget(renderModel));
+    this->getOrAddGroupLayout(group)->addWidget(new RenderModelControlWidget(renderModel, this));
 }
 
 void RenderWidget::clear() {
@@ -135,4 +142,113 @@ QVBoxLayout *RenderWidget::getOrAddGroupLayout(const std::string &group) {
         this->ui->objectsVerticalLayout->addWidget(line);
     }
     return iterator->second;
+}
+
+void RenderWidget::renderBox(const std::string &group, const AABB &aabb, const Transformation& transformation) {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderBoxSlot", Qt::AutoConnection,
+                              Q_ARG(std::string, group),
+                              Q_ARG(AABB, aabb),
+                              Q_ARG(Transformation, transformation),
+                              Q_ARG(RenderWidget*, this));
+}
+
+Color RenderWidget::defaultColors[] = {Color(1,0,0,1),        // Red
+                                       Color(0,0.6667,0,1),   // Green
+                                       Color(0,0,1,1),        // Blue
+                                       Color(1,1,0,1),        // Yellow
+                                       Color(1,0,1,1),        // Pink
+                                       Color(1,0.6667,0,1)};  // Orange
+
+void RenderWidget::notifySolution(const AbstractMeshSolution &solution) {
+
+
+    for (int i = 0; i < solution.getItemWorldSpaceMeshes().size(); i++){
+        this->renderWorldSpaceMesh("Items", solution.getItemWorldSpaceMeshes()[i], defaultColors[i%sizeof(defaultColors)]);
+    }
+
+    for(const auto& worldSpaceMesh: solution.getInclusionWorldSpaceMeshes()){
+        this->renderWorldSpaceMesh("Inclusions", worldSpaceMesh, Color(0,0.5,0.5,1));
+    }
+
+    this->renderWorldSpaceMesh("Containers", solution.getOuterWorldSpaceMesh(), Color(1, 1, 1, 0.4));
+}
+
+void RenderWidget::notifyProgress(float progress) {
+    int value = int(100*progress);
+    QMetaObject::invokeMethod(this, "updateProgressBarSlot", Qt::AutoConnection, Q_ARG(int, value));
+}
+
+[[maybe_unused]] void RenderWidget::updateProgressBarSlot(int progress) {
+    this->ui->progressBar->setValue(progress);
+}
+
+void RenderWidget::notifyStarted() {
+    QMetaObject::invokeMethod(this, "updateProgressBarSlot", Qt::AutoConnection, Q_ARG(int, 0));
+    QMetaObject::invokeMethod(this, "setStopButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, true));
+    QMetaObject::invokeMethod(this, "setStartButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, false));
+    this->clear();
+}
+
+void RenderWidget::notifyFinished() {
+    QMetaObject::invokeMethod(this, "setStopButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, false));
+    QMetaObject::invokeMethod(this, "setStartButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, true));
+}
+
+void RenderWidget::notifyStatus(const std::string &status) {
+    QString qStatus = QString::fromUtf8(status.data(), status.size());
+    QMetaObject::invokeMethod(this, "setStatusLabelSlot", Qt::AutoConnection, Q_ARG(QString, qStatus));
+}
+
+[[maybe_unused]] void RenderWidget::setStartButtonEnabledSlot(bool enabled) {
+    this->ui->startButton->setEnabled(enabled);
+}
+
+[[maybe_unused]] void RenderWidget::setStopButtonEnabledSlot(bool enabled) {
+    this->ui->stopButton->setEnabled(enabled);
+}
+
+[[maybe_unused]] void RenderWidget::setStatusLabelSlot(const QString& status) {
+    this->ui->statusLabel->setText(status);
+}
+
+void RenderWidget::observeTask(AbstractTask *task) {
+    if(this->currentTask!=nullptr){
+        currentTask->unregisterObserver(this);
+        this->clear();
+        this->ui->taskSection->setVisible(false);
+    }
+    currentTask = task;
+    if(task!=nullptr){
+        currentTask->registerObserver(this);
+        this->ui->taskSection->setVisible(true);
+    }
+}
+
+void RenderWidget::startCurrentTask() {
+    if(this->currentTask!=nullptr) this->currentTask->start();
+}
+
+void RenderWidget::stopCurrentTask() {
+    if(this->currentTask!=nullptr) this->currentTask->stop();
+}
+
+void RenderWidget::addOrUpdateRenderModel(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> renderModel) {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "addOrUpdateRenderModelSlot",
+                              Qt::AutoConnection,
+                              Q_ARG(std::string, group),
+                              Q_ARG(std::string, id),
+                              Q_ARG(std::shared_ptr<AbstractRenderModel>, renderModel), // We should copy the actual worldSpaceMesh object here, otherwise the transformation could change before the render thread reads it
+                              Q_ARG(RenderWidget*, this));
+}
+
+void RenderWidget::captureScene() {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureSceneSlot",
+                              Qt::AutoConnection);
+
+}
+
+void RenderWidget::captureSceneToFile(const std::string &fileName) {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureSceneToFileSlot",
+                              Qt::AutoConnection,
+                              Q_ARG(QString, QString::fromStdString(fileName)));
 }

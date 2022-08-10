@@ -21,23 +21,29 @@ private:
 
 public:
     template <unsigned int Degree>
-    RenderAABBTree(const AABBTree<Degree>& aabbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+    RenderAABBTree(const AABBTree<Degree>& aabbTree, const Transformation& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);
 
     template <unsigned int Degree>
-    RenderAABBTree(const OBBTree<Degree>& obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+    RenderAABBTree(const OBBTree<Degree>& obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
 
     void draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
-    void setTransformationMatrix(const glm::mat4 &transformation) override;
+    void setTransformation(const Transformation &transformation) override;
     void setRenderDepth(unsigned int newRenderDepth);
     unsigned int getDepth();
     void setColor(const Color &newColor) override;
+
+private:
+public:
+    RenderModelDetailDialog *createRenderModelDetailDialog(QWidget* parent) override;
+
+    QMenu *getContextMenu() override;
 
 private:
     void drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth);
 };
 
 void RenderAABBTree::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
-    this->drawRecursive(viewMatrix, projectionMatrix, lightMode, renderDepth);
+    if(this->isVisible()) this->drawRecursive(viewMatrix, projectionMatrix, lightMode, renderDepth);
 }
 
 void RenderAABBTree::drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth) {
@@ -52,36 +58,37 @@ void RenderAABBTree::drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 
 }
 
 template <unsigned int Degree>
-RenderAABBTree::RenderAABBTree(const AABBTree<Degree> &aabbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformationMatrix, "aabbTree"),
-        renderAABB(aabbTree.getBounds(), transformationMatrix, shader) {
+RenderAABBTree::RenderAABBTree(const AABBTree<Degree> &aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformation, "aabbTree"),
+        renderAABB(aabbTree.getBounds(), transformation, shader) {
         if(aabbTree.isSplit()){
             for (const auto &child : aabbTree.getChildren()){
-                if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderAABBTree>(*child, transformationMatrix, shader));
+                if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderAABBTree>(*child, transformation, shader));
             }
         }
 }
 
 template <unsigned int Degree>
-RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const glm::mat4& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(obbTree.getBounds().getRotation().getMatrix(), "obbTree"), renderAABB(obbTree.getBounds().getAabb(), obbTree.getBounds().getRotation().getMatrix(), shader){
-//    this->transformationMatrix = transformationMatrix * obbTree.getBounds().getTransformation().getMatrix(); // TODO check multiplication order
-//    this->renderAABB = obbTree.getBounds();
+RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(Transformation::fromQuaternion(obbTree.getBounds().getRotation()), "obbTree"), renderAABB(obbTree.getBounds().getAabb(), Transformation::fromQuaternion(obbTree.getBounds().getRotation()), shader){
     if(obbTree.isSplit()){
         for (const auto &child : obbTree.getChildren()){
-            if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderAABBTree>(*child, transformationMatrix, shader));
+            if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderAABBTree>(*child, transformation, shader));
         }
     }
 }
 
-void RenderAABBTree::setTransformationMatrix(const glm::mat4 &transformation) {
-    AbstractRenderModel::setTransformationMatrix(transformation);
-    renderAABB.setTransformationMatrix(transformation);
+void RenderAABBTree::setTransformation(const Transformation &transformation) {
+    AbstractRenderModel::setTransformation(transformation);
+    renderAABB.setTransformation(transformation);
     for (const auto &child : this->children){
-        child->setTransformationMatrix(transformation); // TODO probably wrong for OBB, yes!
+        child->setTransformation(transformation); // TODO probably wrong for OBB, yes!
     }
 }
 
 void RenderAABBTree::setRenderDepth(unsigned int newRenderDepth) {
     RenderAABBTree::renderDepth = newRenderDepth;
+    for (const auto &listener: this->listeners){
+        listener->notify();
+    }
 }
 
 unsigned int RenderAABBTree::getDepth() {
@@ -98,6 +105,53 @@ void RenderAABBTree::setColor(const Color &newColor) {
     for (const auto &child : this->children){
         child->setColor(newColor);
     }
+}
+
+RenderModelDetailDialog *RenderAABBTree::createRenderModelDetailDialog(QWidget* parent) {
+
+    auto dialog = AbstractRenderModel::createRenderModelDetailDialog(parent);
+
+    auto listener = std::make_shared<SimpleRenderModelListener>();
+    this->addListener(listener);
+
+    auto* optionsLayout = new QGridLayout();
+
+    auto* slider = new QSlider(Qt::Horizontal);
+    slider->setMinimum(0);
+    slider->setValue(this->renderDepth);
+    slider->setMaximum(this->getDepth());
+    optionsLayout->addWidget(new QLabel("Rendering Depth"), 0, 0);
+    optionsLayout->addWidget(slider, 1, 0);
+    QObject::connect(slider, &QSlider::valueChanged, [=](){
+        this->setRenderDepth(slider->value());
+    });
+    listener->setOnChanged([=](){
+        slider->setValue(renderDepth);
+    });
+
+    auto visibleCheckBox = new QCheckBox(QString("Visible"));
+    visibleCheckBox->setChecked(this->isVisible());
+    listener->setOnVisibleChanged([=](bool oldVisible, bool newVisible) {
+        visibleCheckBox->setChecked(newVisible);
+    });
+    QObject::connect(visibleCheckBox, &QCheckBox::clicked, [&](bool enabled) {
+        this->setVisible(enabled);
+    });
+    optionsLayout->addWidget(visibleCheckBox, 2, 0);
+
+    auto* optionsWidget = new QWidget();
+    optionsWidget->setLayout(optionsLayout);
+    dialog->addTab(optionsWidget, QString("Options"));
+
+    // TODO think about render animation on seperate thread
+
+    return dialog;
+}
+
+QMenu *RenderAABBTree::getContextMenu() {
+    return AbstractRenderModel::getContextMenu();
+
+    // TODO, if necessary
 }
 
 

@@ -5,9 +5,9 @@
 #ifndef OPTIXMESHCORE_OPENGLWIDGET_H
 #define OPTIXMESHCORE_OPENGLWIDGET_H
 
-#include "RenderModel.h"
-#include "RenderLine.h"
 #include "AbstractRenderModel.h"
+#include "../core/OBB.h"
+#include "../core/WorldSpaceMesh.h"
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QMouseEvent>
@@ -23,6 +23,7 @@ class RenderWidget;
 
 class OpenGLWidget: public QOpenGLWidget, protected QOpenGLFunctions {
 Q_OBJECT
+
 private:
 
     bool lightMode = false;
@@ -38,9 +39,11 @@ private:
     std::vector<std::shared_ptr<AbstractRenderModel>> sortedRenderModels;
 
 private:
-    std::vector<RenderLine> renderLines;
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
     std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
+public:
+    const std::shared_ptr<QOpenGLShaderProgram> &getAmbientShader() const;
+    const std::shared_ptr<QOpenGLShaderProgram> &getDiffuseShader() const;
 
 public:
     [[maybe_unused]] explicit OpenGLWidget(QWidget *parent = nullptr);
@@ -58,8 +61,7 @@ public:
     void setUsePerspective(bool newUsePerspective);
     void setLightMode(bool newLightMode);
 
-    void captureScene();
-    void captureSceneToFile(const QString& fileName);
+
 
 protected:
     void initializeGL() override;
@@ -78,8 +80,10 @@ private slots:
     void clear();
     void clearGroup(const std::string &group);
     void renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color &color, RenderWidget* renderWidget);
-
-
+    void renderBoxSlot(const std::string &group, const AABB &aabb, const Transformation& transformation, RenderWidget* renderWidget);
+    void addOrUpdateRenderModelSlot(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> sharedPtr, RenderWidget* renderWidget);
+    void captureSceneSlot();
+    void captureSceneToFileSlot(const QString& fileName);
 
 private:
     std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>& getOrInsertRenderModelsMap(const std::string &group) const;

@@ -29,20 +29,16 @@ void AbstractRenderModel::setColor(const Color &newColor) {
     }
 }
 
-const glm::mat4 &AbstractRenderModel::getTransformation() const {
-    return transformationMatrix;
+glm::mat4 AbstractRenderModel::getTransformationMatrix() const {
+    return transformation.getMatrix();
 }
 
-void AbstractRenderModel::setTransformationMatrix(const glm::mat4 &newTransformationMatrix) {
-    AbstractRenderModel::transformationMatrix = newTransformationMatrix;
-}
-
-AbstractRenderModel::AbstractRenderModel(const glm::mat4& transformation, const std::string& name):
+AbstractRenderModel::AbstractRenderModel(const Transformation& transformation, const std::string& name):
         color(Color(1)),
         vertexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::VertexBuffer)),
         indexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::IndexBuffer)),
         vertexArray(new QOpenGLVertexArrayObject()),
-        transformationMatrix(transformation)
+        transformation(transformation)
 {
     this->name = name;
     if(!name.empty()){
@@ -56,15 +52,16 @@ AbstractRenderModel::~AbstractRenderModel() {
     delete indexBuffer;
     delete vertexBuffer;
 
-    if(this->detailDialog != nullptr){
-        this->detailDialog->close();
-        delete this->detailDialog;
-    }
+    // We don't have to do this anymore, as the dialog will be removed by its parent (the RenderModelControlWidget)
+//    if(this->detailDialog != nullptr){
+//        this->detailDialog->close();
+//        delete this->detailDialog;
+//    }
 }
 
 AbstractRenderModel::AbstractRenderModel(AbstractRenderModel &&other) noexcept:
         color(other.color),
-        transformationMatrix(other.transformationMatrix)
+        transformation(other.transformation)
 {
     this->indexBuffer = other.indexBuffer;
     this->vertexArray = other.vertexArray;
@@ -83,7 +80,7 @@ AbstractRenderModel &AbstractRenderModel::operator=(AbstractRenderModel &&other)
         this->vertexArray = other.vertexArray;
         this->vertexBuffer = other.vertexBuffer;
         this->color = other.color;
-        this->transformationMatrix = other.transformationMatrix;
+        this->transformation = other.transformation;
         this->visible = other.visible;
         this->name = other.name;
 
@@ -131,3 +128,29 @@ QMenu* AbstractRenderModel::getContextMenu(){
 
     return contextMenu;
 }
+
+RenderModelDetailDialog *AbstractRenderModel::getDetailsDialog(QWidget* parent){
+
+    // Show existing dialog if already exists
+    if(this->detailDialog==nullptr){
+        this->detailDialog = this->createRenderModelDetailDialog(parent);
+    }
+    return this->detailDialog;
+}
+
+RenderModelDetailDialog *AbstractRenderModel::createRenderModelDetailDialog(QWidget* parent) {
+    return new RenderModelDetailDialog(this, parent);
+}
+
+void AbstractRenderModel::setTransformation(const Transformation &transformation) {
+    const auto oldValue = this->transformation;
+    AbstractRenderModel::transformation = transformation;
+    for (const auto &listener: this->listeners){
+        listener->notifyTransformationChanged(oldValue, this->transformation);
+    }
+}
+
+const Transformation &AbstractRenderModel::getTransformation() const {
+    return this->transformation;
+};
+

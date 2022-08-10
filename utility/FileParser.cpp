@@ -16,53 +16,64 @@
 #include <cstring>
 
 std::mutex FileParser::cacheMapMutex{};
-std::unordered_map<std::string, std::shared_ptr<ModelSpaceMesh>> FileParser::meshCacheMap{};
+std::unordered_map<std::string, std::weak_ptr<ModelSpaceMesh>> FileParser::meshCacheMap{};
 
 [[maybe_unused]] std::vector<std::shared_ptr<ModelSpaceMesh>> FileParser::parseFolder(const std::string &folderPath) {
 
     std::vector<std::shared_ptr<ModelSpaceMesh>> modelSpaceMeshes;
 
     for(const auto& file: std::filesystem::directory_iterator(folderPath)){
-        modelSpaceMeshes.emplace_back(FileParser::parseFile(file.path().string()));
+        modelSpaceMeshes.emplace_back(FileParser::loadMeshFile(file.path().string()));
     }
     return modelSpaceMeshes;
 }
 
-std::shared_ptr<ModelSpaceMesh> FileParser::parseFile(const std::string &filePath) {
+std::shared_ptr<ModelSpaceMesh> FileParser::loadMeshFile(const std::string &filePath) {
 
     std::locale::global(std::locale("en_US.UTF-8"));
-
-    std::string extension = filePath.substr(filePath.find_last_of('.') + 1);
 
     if(!std::filesystem::exists(filePath)){
         std::cout << "Warning: File " << filePath << " does not exist!" << std::endl;
         return std::make_shared<ModelSpaceMesh>(ModelSpaceMesh(std::vector<Vertex>(), std::vector<IndexTriangle>()));
     }
 
+    // Check if the file is already cached
     cacheMapMutex.lock();
     const auto cacheIterator = meshCacheMap.find(filePath);
     cacheMapMutex.unlock();
     if(cacheIterator != meshCacheMap.end()){
-        std::cout << "FileParser cache map hit for file " << filePath << std::endl;
-        return cacheIterator->second;
-    }
-    else{
-        std::shared_ptr<ModelSpaceMesh> returnModelSpaceMesh;
-        if (extension ==  "stl") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileSTL(filePath));
-        else if( extension == "obj") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileOBJ(filePath));
-        else{
-            // Return empty mesh if file extension not supported
-            std::cout << "Warning: Extension ." << extension << " of file " << filePath << " not supported!" << std::endl;
-            return nullptr;
-        }
-        cacheMapMutex.lock();
-        meshCacheMap[filePath] = returnModelSpaceMesh;
-        cacheMapMutex.unlock();
 
-        std::filesystem::path p(filePath);
-        returnModelSpaceMesh->setName(p.stem().string());
-        return returnModelSpaceMesh;
+        if(auto lockedPointer = cacheIterator->second.lock()){
+            // We return this if this is no nullptr
+            std::cout << "FileParser: cache map hit for file " << filePath << std::endl;
+            return lockedPointer;
+        }
+        else{
+            // Expired weak pointer present in map, erase it
+            cacheMapMutex.lock();
+            meshCacheMap.erase(cacheIterator);
+            cacheMapMutex.unlock();
+        }
     }
+
+    // Parse the file according to its extension
+    std::shared_ptr<ModelSpaceMesh> returnModelSpaceMesh;
+    std::string extension = filePath.substr(filePath.find_last_of('.') + 1);
+    if (extension ==  "stl") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileSTL(filePath));
+    else if( extension == "obj") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileOBJ(filePath));
+    else{
+        // Return empty mesh if file extension not supported
+        std::cout << "Warning: Extension ." << extension << " of file " << filePath << " not supported!" << std::endl;
+        return nullptr;
+    }
+    cacheMapMutex.lock();
+    meshCacheMap[filePath] = returnModelSpaceMesh;
+    cacheMapMutex.unlock();
+
+    std::filesystem::path p(filePath);
+    returnModelSpaceMesh->setName(p.stem().string());
+    return returnModelSpaceMesh;
+
 }
 
 void FileParser::saveFile(const std::string &filePath, const std::shared_ptr<ModelSpaceMesh>& mesh) {
@@ -339,7 +350,7 @@ std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& ve
     glm::vec3 zAxis(0, 0, 1);
     float angle = glm::angle(zAxis, facetNormal);
     glm::vec3 cross = glm::cross(facetNormal, zAxis);
-    if(cross == glm::vec3()){ // TODO should we compare with glm::epsilonEqual?
+    if(glm::all(glm::epsilonEqual(cross, glm::vec3(), 1e-8f))){
         // Choose an arbitrary axis to rotate around
         cross = glm::vec3(1,0,0);
     }
@@ -373,7 +384,7 @@ void FileParser::saveFileOBJ(const std::string &filePath, const std::shared_ptr<
         throw std::runtime_error("Could not open file " + filePath);
     }
 
-    // TODO think about saving precision
+    // TODO think about required saving precision
     // Write vertices
     for (const auto &vertex : mesh->getVertices()) {
         basicOfstream << "v " << vertex.x << " " << vertex.y << " " << vertex.z << std::endl;

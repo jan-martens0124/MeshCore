@@ -28,7 +28,7 @@ public:
     WorldSpaceMesh& operator=(WorldSpaceMesh &&other) = default;
     ~WorldSpaceMesh() = default;
 
-    [[nodiscard]] WorldSpaceMesh clone () const;
+    [[nodiscard]] std::shared_ptr<WorldSpaceMesh> clone () const;
 
     [[nodiscard]] const std::string& getId() const;
     [[nodiscard]] std::shared_ptr<ModelSpaceMesh> getModelSpaceMesh() const;

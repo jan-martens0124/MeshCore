@@ -4,45 +4,48 @@
 
 #include <iostream>
 #include <QtWidgets>
-#include <utility/FileParser.h>
-#include "rendering/RenderWindow.h"
 #include <thread>
+#include "rendering/NewApplicationWindow.h"
+#include "utility/FileParser.h"
+#include "rendering/OpenGLWidget.h"
 
-[[noreturn]] void run(OpenGLRenderWidget* openGlRenderWidget);
+[[noreturn]] void run(RenderWidget* openGlRenderWidget);
 
 int main(int argc, char *argv[]){
 
     QApplication app(argc, argv);
-    RenderWindow window;
+    NewApplicationWindow window;
     window.show();
 
-    std::thread thread(run, window.getOpenGlRenderWidget());
+    std::thread thread(run, window.getRenderWidget());
     int returnCode = QApplication::exec();
     thread.join();
     return returnCode;
 }
 
-[[noreturn]] void run(OpenGLRenderWidget* openGlRenderWidget){
+[[noreturn]] void run(RenderWidget* openGlRenderWidget){
 
     /// Here is where you would start of your code
 
     // Load some problem meshes
-    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::parseFile("../../data/models/Everton/banana.stl");
+    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::loadMeshFile("../../data/models/Everton/banana.stl");
     std::shared_ptr<WorldSpaceMesh> staticWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh);
 
-    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh2 = FileParser::parseFile("../../data/models/rocks/rock_008k.obj");
+    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh2 = FileParser::loadMeshFile("../../data/models/rocks/rock_008k.obj");
     std::shared_ptr<WorldSpaceMesh> dynamicWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh2);
 
     std::cout << "Number of vertices: " << staticWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
     std::cout << "Number of vertices: " << dynamicWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
 
-    glm::vec3 position(100.0f,0,0);
+    glm::vec3 position(10.0f,0,0);
 
     staticWorldSpaceMesh->getModelTransformation().setPosition(position);
     staticWorldSpaceMesh->getModelTransformation().setYaw(1.0f);
 
+    dynamicWorldSpaceMesh->getModelTransformation().setScale(2.0f);
+
     // Pas them to the renderer
-    openGlRenderWidget->addOrUpdateWorldSpaceMesh(*staticWorldSpaceMesh, Color(0.8, 0.8, 0.8, 0.6));
-    openGlRenderWidget->addOrUpdateWorldSpaceMesh(*dynamicWorldSpaceMesh, Color(0.75, 0.75, 0, 1));
+    openGlRenderWidget->renderWorldSpaceMesh("Meshes", staticWorldSpaceMesh, Color(0.8, 0.8, 0.8, 0.6));
+    openGlRenderWidget->renderWorldSpaceMesh("Meshes", dynamicWorldSpaceMesh, Color(0.75, 0.75, 0, 1));
 
 }

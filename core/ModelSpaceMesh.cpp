@@ -244,10 +244,6 @@ std::optional<std::shared_ptr<ModelSpaceMesh>> ModelSpaceMesh::getConvexHull() c
         return convexHull.value();
     }
 
-    // TODO should we return the mesh itself if it is convex?
-//    if(this.is);
-
-
     // Get the triangles that should be part of the convex hull
     const auto indexTriangles = getConvexHullMcCormack(this->vertices);
 
@@ -296,7 +292,7 @@ void ModelSpaceMesh::setName(const std::string &newName) {
     ModelSpaceMesh::name = newName;
 }
 
-float ModelSpaceMesh::getVolume() {
+float ModelSpaceMesh::getVolume() const {
     if(!volume.has_value()){
 
         float vol = 0.0f;
@@ -322,7 +318,7 @@ float ModelSpaceMesh::getVolume() {
     return volume.value();
 }
 
-bool ModelSpaceMesh::isConvex() {
+bool ModelSpaceMesh::isConvex() const{
 
     // Return the value if already calculated before
     if(convex.has_value()){
@@ -353,4 +349,25 @@ bool ModelSpaceMesh::isConvex() {
     }
     convex = true;
     return true;
+}
+
+float ModelSpaceMesh::getSurfaceArea() const {
+    if(!surfaceArea.has_value()){
+
+        // TODO validate
+        float doubleArea = 0.0f;
+        for (const auto &indexTriangle: this->triangles){
+
+            const auto v0 = this->vertices.at(indexTriangle.vertexIndex0);
+            const auto v1 = this->vertices.at(indexTriangle.vertexIndex1);
+            const auto v2 = this->vertices.at(indexTriangle.vertexIndex2);
+
+            auto edge0(v1-v0);
+            auto edge1(v2-v1);
+
+            doubleArea += glm::length(glm::cross(edge0, edge1));
+        }
+        surfaceArea = doubleArea / 2.0f;
+    }
+    return surfaceArea.value();
 }

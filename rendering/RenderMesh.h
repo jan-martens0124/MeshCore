@@ -22,6 +22,11 @@ private:
 
     RenderAABB boundingBox;
 
+    unsigned int numberOfVertices;
+    unsigned int numberOfTriangles;
+    float unscaledVolume;
+    float unscaledSurfaceArea;
+
 public:
 //    RenderModel();
 //    RenderModel(const RenderModel& other);
@@ -45,12 +50,11 @@ public:
 
     QMenu* getContextMenu() override;
 
-    RenderModelDetailDialog* getDetailsDialog() override;
+    RenderModelDetailDialog* createRenderModelDetailDialog(QWidget* parent) override;
 
     void setColor(const Color &newColor) override;
 
-    void setTransformationMatrix(const glm::mat4 &newTransformationMatrix) override;
-
+    void setTransformation(const Transformation &newTransformation) override;
 };
 
 

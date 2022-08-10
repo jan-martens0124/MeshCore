@@ -13,14 +13,17 @@
 #include <qaction.h>
 #include <qcolordialog.h>
 #include "RenderModelDetailDialog.h"
+#include "../core/Transformation.h"
 
 typedef glm::vec4 Color;
 
 class AbstractRenderModelListener{
 public:
+    virtual void notify() const = 0;
     virtual void notifyNameChanged(const std::string& oldName, const std::string& newName) const = 0;
     virtual void notifyColorChanged(const Color& oldColor, const Color& newColor) const = 0;
     virtual void notifyVisibleChanged(bool oldVisible, bool newVisible) const = 0;
+    virtual void notifyTransformationChanged(const Transformation& oldTransformation, const Transformation& newTransformation) const = 0;
 };
 
 class SimpleRenderModelListener: public AbstractRenderModelListener {
@@ -29,6 +32,11 @@ private:
     std::function<void(const std::string& oldName, const std::string& newName)> onNameChanged = {};
     std::function<void(const Color& oldColor, const Color& newColor)> onColorChanged = {};
     std::function<void(bool oldVisible, bool newVisible)> onVisibleChanged = {};
+    std::function<void(const Transformation& oldTransformation, const Transformation& newTransformation)> onTransformationChanged = {};
+
+    void notify() const override{
+        if(this->onChanged) this->onChanged();
+    }
 
     void notifyColorChanged(const Color& oldColor, const Color& newColor) const override {
         if(this->onColorChanged) this->onColorChanged(oldColor, newColor);
@@ -42,6 +50,11 @@ private:
 
     void notifyNameChanged(const std::string& oldName, const std::string& newName) const override {
         if(this->onNameChanged) this->onNameChanged(oldName, newName);
+        if(this->onChanged) this->onChanged();
+    }
+
+    void notifyTransformationChanged(const Transformation& oldTransformation, const Transformation& newTransformation) const override {
+        if(this->onTransformationChanged) this->onTransformationChanged(oldTransformation, newTransformation);
         if(this->onChanged) this->onChanged();
     }
 
@@ -62,6 +75,10 @@ public:
     [[maybe_unused]] void setOnNameChanged(const std::function<void(const std::string& oldName, const std::string& newName)> &newOnNameChanged) {
         this->onNameChanged = newOnNameChanged;
     }
+
+    [[maybe_unused]] void setOnTransformationChanged(const std::function<void(const Transformation& oldTransformation, const Transformation& newTransformation)> &newOnTransformationChanged) {
+        this->onTransformationChanged = newOnTransformationChanged;
+    }
 };
 
 class AbstractRenderModel: protected QOpenGLFunctions {
@@ -78,12 +95,12 @@ protected:
     QOpenGLBuffer* indexBuffer;
     QOpenGLBuffer* vertexBuffer;
     QOpenGLVertexArrayObject* vertexArray;
-    glm::mat4 transformationMatrix;
+    Transformation transformation;
     std::vector<std::shared_ptr<AbstractRenderModelListener>> listeners;
 
 public:
 //    AbstractRenderModel() = delete;
-    explicit AbstractRenderModel(const glm::mat4& transformation, const std::string& name);
+    explicit AbstractRenderModel(const Transformation& transformation, const std::string& name);
     AbstractRenderModel(AbstractRenderModel&& other) noexcept;
     AbstractRenderModel& operator=(AbstractRenderModel&& other) noexcept;
     virtual ~AbstractRenderModel();
@@ -97,17 +114,12 @@ public:
     void setVisible(bool newVisible);
     [[nodiscard]] const Color &getColor() const;
     virtual void setColor(const Color &newColor);
-    [[nodiscard]] const glm::mat4 &getTransformation() const;
-    virtual void setTransformationMatrix(const glm::mat4 &newTransformationMatrix);
+    [[nodiscard]] glm::mat4 getTransformationMatrix() const;
+    virtual void setTransformation(const Transformation &transformation);
+    const Transformation& getTransformation() const;
 
-    virtual RenderModelDetailDialog* getDetailsDialog(){
-        // Show existing dialog if already exists
-        if(this->detailDialog==nullptr){
-            this->detailDialog = new RenderModelDetailDialog(this);
-        }
-        return this->detailDialog;
-    };
-
+    RenderModelDetailDialog* getDetailsDialog(QWidget* parent);
+    virtual RenderModelDetailDialog* createRenderModelDetailDialog(QWidget* parent);
     virtual QMenu* getContextMenu();
 
     void addListener(const std::shared_ptr<AbstractRenderModelListener> &listener) {

@@ -16,7 +16,7 @@ class RenderModelControlWidget: public QWidget
 {
     Q_OBJECT
 public:
-    explicit RenderModelControlWidget(const std::shared_ptr<AbstractRenderModel>& renderModel);
+    explicit RenderModelControlWidget(const std::shared_ptr<AbstractRenderModel>& renderModel, QWidget* parent);
     ~RenderModelControlWidget() override;
 
 private:

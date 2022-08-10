@@ -7,7 +7,7 @@
 #include "RenderModelControlWidget.h"
 #include "forms/ui_rendermodelcontrolwidget.h"
 
-RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<AbstractRenderModel>& renderModel):
+RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<AbstractRenderModel>& renderModel, QWidget* parent): QWidget(parent),
         ui(new Ui::RenderModelControlWidget),
         renderModel(renderModel),
         listener(std::make_shared<SimpleRenderModelListener>()) {
@@ -46,7 +46,9 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
     });
 
     connect(ui->settingsPushButton, &QPushButton::clicked, [=](){
-        this->renderModel->getDetailsDialog()->show();
+        auto detailsDialog =  this->renderModel->getDetailsDialog(this);
+        detailsDialog->setParent(this);
+        detailsDialog->show();
     });
 
     // Context menu on right click

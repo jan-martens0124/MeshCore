@@ -25,10 +25,10 @@ int main(int argc, char *argv[]){
 void run(RenderWidget* renderWidget){
 
     // Load the item
-    std::shared_ptr<WorldSpaceMesh> itemWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::parseFile("../../data/models/Everton/banana.stl"));
+    std::shared_ptr<WorldSpaceMesh> itemWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../../data/models/Everton/banana.stl"));
 
     // Load a container
-    std::shared_ptr<WorldSpaceMesh> containerWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::parseFile("../../data/models/rocks/rock_008k.obj"));
+    std::shared_ptr<WorldSpaceMesh> containerWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../../data/models/rocks/rock_008k.obj"));
 
     containerWorldSpaceMesh->getModelTransformation().factorScale(10.0f);
 

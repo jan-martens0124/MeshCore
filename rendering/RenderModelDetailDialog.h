@@ -20,11 +20,12 @@ Q_OBJECT
 private:
 
 public:
-    explicit RenderModelDetailDialog(AbstractRenderModel* renderModel);
+    explicit RenderModelDetailDialog(AbstractRenderModel* renderModel, QWidget* parent);
     ~RenderModelDetailDialog() override;
 
-    void addLayout(QLayout* layout);
-    void addWidget(QWidget* widget);
+//    void addLayout(QLayout* layout);
+//    void addWidget(QWidget* widget);
+    void addTab(QWidget *widget, const QString &label);
 
 private:
     Ui::RenderModelDetailDialog *ui;
@@ -33,6 +34,7 @@ private:
 
 private:
     void applyChanges();
+
 };
 
 
