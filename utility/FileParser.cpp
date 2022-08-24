@@ -52,6 +52,16 @@ std::shared_ptr<ModelSpaceMesh> FileParser::loadMeshFile(const std::string &file
             // Expired weak pointer present in map, erase it
             cacheMapMutex.lock();
             meshCacheMap.erase(cacheIterator);
+
+            // Likely that there are other expired weak pointers in the map, remove them as well
+            for(auto iterator = meshCacheMap.begin(); iterator != meshCacheMap.end();){
+                if(iterator->second.expired()){
+                    iterator = meshCacheMap.erase(iterator);
+                }
+                else{
+                    ++iterator;
+                }
+            }
             cacheMapMutex.unlock();
         }
     }

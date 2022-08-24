@@ -31,7 +31,7 @@ protected:
 public:
     virtual void splitTopDown(unsigned int maxDepth, unsigned int maxTrianglesPerNode) = 0;
 private:
-    void getClosestTriangle(const Vertex& vertex, const VertexTriangle* result, float* lowerDistanceBoundSquared) const;
+    void getClosestTriangle(const Vertex& vertex, const VertexTriangle** result, float* lowerDistanceBoundSquared) const;
 
 public:
 //    AABBTree();
@@ -42,7 +42,8 @@ public:
     [[nodiscard]] virtual unsigned int getNumberOfRayIntersections(const Ray& ray) const;
     [[nodiscard]] virtual std::unordered_set<VertexTriangle> getIntersectingTriangles(const Ray& ray) const;
     [[nodiscard]] virtual std::unordered_set<VertexTriangle> getIntersectingTriangles(const VertexTriangle& triangle) const;
-    [[nodiscard]] VertexTriangle* getClosestTriangle(const Vertex& vertex) const;
+    [[nodiscard]] const VertexTriangle* getClosestTriangle(const Vertex& vertex) const;
+    [[nodiscard]] const Vertex getClosestPoint(const Vertex &vertex) const;
 
     [[nodiscard]] const AABB &getBounds() const;
     [[nodiscard]] bool isSplit() const;
@@ -50,6 +51,7 @@ public:
     [[nodiscard]] unsigned int getDepth() const;
     [[nodiscard]] const std::vector<VertexTriangle> &getTriangles() const;
     const std::array<std::shared_ptr<AABBTree<Degree>>, Degree> &getChildren() const;
+
 };
 
 template <unsigned int Degree>
@@ -254,28 +256,38 @@ std::unordered_set<VertexTriangle> AABBTree<Degree>::getIntersectingTriangles(co
 }
 
 template<unsigned int Degree>
-VertexTriangle* AABBTree<Degree>::getClosestTriangle(const Vertex &vertex) const{
-    VertexTriangle* result = nullptr;
+const VertexTriangle* AABBTree<Degree>::getClosestTriangle(const Vertex &vertex) const{
+    const VertexTriangle* closestTriangle = nullptr;
+    const VertexTriangle** result = &closestTriangle;
     auto* lowerDistanceBound = new float(std::numeric_limits<float>::max());
     this->getClosestTriangle(vertex, result, lowerDistanceBound);
-    return result;
+    assert(*result);
+    return *result;
 }
 
 template<unsigned int Degree>
-void AABBTree<Degree>::getClosestTriangle(const Vertex &vertex, const VertexTriangle* result, float* lowerDistanceBoundSquared) const {
-    if(split){
+const Vertex AABBTree<Degree>::getClosestPoint(const Vertex &vertex) const{
+    const VertexTriangle* closestTriangle = nullptr;
+    const VertexTriangle** result = &closestTriangle;
+    auto* lowerDistanceBound = new float(std::numeric_limits<float>::max());
+    this->getClosestTriangle(vertex, result, lowerDistanceBound);
+    assert(*result);
+    return (*result)->getClosestPoint(vertex);
+}
 
+template<unsigned int Degree>
+void AABBTree<Degree>::getClosestTriangle(const Vertex &vertex, const VertexTriangle** result, float* lowerDistanceBoundSquared) const {
+    if(split){
         // We calculate the closest distance for each child first, as we will calculate them all anyway
         std::array<float, Degree> distances;
         std::array<unsigned int, Degree> indices;
         for(unsigned int childIndex = 0; childIndex < Degree; childIndex++){
 
             // Calculate minimal distance to the bounding box
-            const AABBTree<Degree>& child = children[childIndex];
-            auto closestPoint = child.bounds.getClosestPoint(vertex);
+            auto child = children[childIndex];
+            auto closestPoint = child->bounds.getClosestPoint(vertex);
             auto delta = vertex - closestPoint;
             auto dSquared = glm::dot(delta, delta);
-
             distances[childIndex] = dSquared;
 
             indices[childIndex] = childIndex; // Sorted later
@@ -298,12 +310,12 @@ void AABBTree<Degree>::getClosestTriangle(const Vertex &vertex, const VertexTria
 
     }
     else{
-        for (const auto &triangle : triangles){
+        for (auto &triangle : triangles){
             auto closestPoint = triangle.getClosestPoint(vertex);
             auto delta = closestPoint - vertex;
             auto distanceSquared = glm::dot(delta, delta);
-            if(distanceSquared < *lowerDistanceBoundSquared){
-                result = &triangle;
+            if(distanceSquared < *lowerDistanceBoundSquared){ // If multiple triangles are equally close, the first one will be returned
+                *result = &triangle;
                 *lowerDistanceBoundSquared = distanceSquared;
             }
         }
