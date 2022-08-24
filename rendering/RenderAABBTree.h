@@ -38,6 +38,8 @@ public:
 
     QMenu *getContextMenu() override;
 
+    unsigned int getRenderDepth() const;
+
 private:
     void drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth);
 };
@@ -91,6 +93,10 @@ void RenderAABBTree::setRenderDepth(unsigned int newRenderDepth) {
     }
 }
 
+unsigned int RenderAABBTree::getRenderDepth() const {
+    return renderDepth;
+}
+
 unsigned int RenderAABBTree::getDepth() {
     unsigned int depth = 0;
     for (const auto &child : this->children){
@@ -116,19 +122,6 @@ RenderModelDetailDialog *RenderAABBTree::createRenderModelDetailDialog(QWidget* 
 
     auto* optionsLayout = new QGridLayout();
 
-    auto* slider = new QSlider(Qt::Horizontal);
-    slider->setMinimum(0);
-    slider->setValue(this->renderDepth);
-    slider->setMaximum(this->getDepth());
-    optionsLayout->addWidget(new QLabel("Rendering Depth"), 0, 0);
-    optionsLayout->addWidget(slider, 1, 0);
-    QObject::connect(slider, &QSlider::valueChanged, [=](){
-        this->setRenderDepth(slider->value());
-    });
-    listener->setOnChanged([=](){
-        slider->setValue(renderDepth);
-    });
-
     auto visibleCheckBox = new QCheckBox(QString("Visible"));
     visibleCheckBox->setChecked(this->isVisible());
     listener->setOnVisibleChanged([=](bool oldVisible, bool newVisible) {
@@ -137,7 +130,40 @@ RenderModelDetailDialog *RenderAABBTree::createRenderModelDetailDialog(QWidget* 
     QObject::connect(visibleCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setVisible(enabled);
     });
-    optionsLayout->addWidget(visibleCheckBox, 2, 0);
+    optionsLayout->addWidget(visibleCheckBox, 0, 0);
+
+    // TODO this isn't properly implemented yet
+    auto animateRenderDepth = new QCheckBox(QString("Animate render depth"));
+    animateRenderDepth->setChecked(false);
+    std::atomic<bool> animate = false;
+    QObject::connect(animateRenderDepth, &QCheckBox::clicked, [&](bool enabled) {
+        animate = enabled;
+        // Start a thread that increases the render depth every second until animate is false
+        if(enabled){
+            std::thread([&]() {
+                while(animate){
+                    this->setRenderDepth((this->getRenderDepth()+1)%this->getDepth());
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                }
+            }).detach();
+        }
+        // TODO an now we somehow have to clean this thread up :)
+    });
+    optionsLayout->addWidget(animateRenderDepth, 1, 0);
+
+    auto* slider = new QSlider(Qt::Horizontal);
+    slider->setMinimum(0);
+    slider->setValue(this->renderDepth);
+    slider->setMaximum(this->getDepth());
+    optionsLayout->addWidget(new QLabel("Rendering Depth"), 2, 0);
+    optionsLayout->addWidget(slider, 3, 0);
+    QObject::connect(slider, &QSlider::valueChanged, [=](){
+        this->setRenderDepth(slider->value());
+    });
+    listener->setOnChanged([=](){
+        slider->setValue(renderDepth);
+    });
+
 
     auto* optionsWidget = new QWidget();
     optionsWidget->setLayout(optionsLayout);

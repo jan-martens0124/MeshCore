@@ -294,6 +294,7 @@ void AABBTree<Degree>::getClosestTriangle(const Vertex &vertex, const VertexTria
         }
 
         // We can then sort to visit closer distances first and pruning more work
+        // This is much faster than not storing the distances and then sorting them
         std::sort(indices.begin(), indices.end(), [distances](const auto& indexA, const auto& indexB){
             return distances[indexA] < distances[indexB];
         });
@@ -307,7 +308,6 @@ void AABBTree<Degree>::getClosestTriangle(const Vertex &vertex, const VertexTria
                 break; // Because of the sorting, the next children won't be visited either
             }
         }
-
     }
     else{
         for (auto &triangle : triangles){
