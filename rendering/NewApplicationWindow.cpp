@@ -53,19 +53,28 @@ NewApplicationWindow::NewApplicationWindow() {
     connect(resetViewAction, &QAction::triggered, renderWidget->getOpenGLWidget(), &OpenGLWidget::resetView);
     resetViewAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_0));
 
-    QAction* toggleWireFrame = viewMenu->addAction(QString("Enable Wireframe"));
-    connect(toggleWireFrame, &QAction::triggered, renderWidget->getOpenGLWidget(),
-            &OpenGLWidget::toggleWireframe);
-    toggleWireFrame->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_W));
-    toggleWireFrame->setCheckable(true);
-
-    QAction* toggleCulling = viewMenu->addAction(QString("Enable Backface Culling"));
-    connect(toggleCulling, &QAction::triggered, renderWidget->getOpenGLWidget(), &OpenGLWidget::toggleCullFace);
-    toggleCulling->setCheckable(true);
-    toggleCulling->setChecked(true);
+//    QAction* toggleWireFrame = viewMenu->addAction(QString("Enable Wireframe"));
+//    connect(toggleWireFrame, &QAction::triggered, renderWidget->getOpenGLWidget(),
+//            &OpenGLWidget::toggleWireframe);
+//    toggleWireFrame->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_W));
+//    toggleWireFrame->setCheckable(true);
+//
+//    QAction* toggleCulling = viewMenu->addAction(QString("Enable Backface Culling"));
+//    connect(toggleCulling, &QAction::triggered, renderWidget->getOpenGLWidget(), &OpenGLWidget::toggleCullFace);
+//    toggleCulling->setCheckable(true);
+//    toggleCulling->setChecked(true);
 
     {
-        QAction* toggleLightMode = viewMenu->addAction(QString("Enable Light mode"));
+        QAction* toggleAxis = viewMenu->addAction(QString("Enable Axis"));
+        connect(toggleAxis, &QAction::triggered, [=](bool enabled){
+            renderWidget->getOpenGLWidget()->setAxisEnabled(enabled);
+            renderWidget->getOpenGLWidget()->update();
+        });
+        toggleAxis->setCheckable(true);
+        toggleAxis->setChecked(renderWidget->getOpenGLWidget()->isAxisEnabled());
+    }
+    {
+        QAction* toggleLightMode = viewMenu->addAction(QString("Enable Light Mode"));
         connect(toggleLightMode, &QAction::triggered, [=](bool enabled){
             renderWidget->getOpenGLWidget()->setLightMode(enabled);
             renderWidget->getOpenGLWidget()->update();

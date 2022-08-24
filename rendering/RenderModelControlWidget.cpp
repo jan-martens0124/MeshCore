@@ -28,7 +28,10 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
     });
 
     listener->setOnNameChanged([&](const std::string& oldName, const std::string& newName) {
-        this->ui->nameLabel->setText(QString::fromStdString(newName));
+
+        QFontMetrics metrics(this->ui->nameLabel->font());
+        QString elidedText = metrics.elidedText(QString::fromStdString(newName), Qt::ElideRight, this->ui->nameLabel->width());
+        this->ui->nameLabel->setText(elidedText);
     });
 
     this->renderModel->addListener(listener);

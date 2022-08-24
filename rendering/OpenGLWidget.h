@@ -8,6 +8,7 @@
 #include "AbstractRenderModel.h"
 #include "../core/OBB.h"
 #include "../core/WorldSpaceMesh.h"
+#include "RenderLine.h"
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QMouseEvent>
@@ -28,6 +29,8 @@ private:
 
     bool lightMode = false;
     bool usePerspective = true;
+    bool axisEnabled = true;
+
     int width{};
     int height{};
     QPoint lastMousePosition;
@@ -37,6 +40,7 @@ private:
 
     mutable std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>> groupedRenderModelsMap;
     std::vector<std::shared_ptr<AbstractRenderModel>> sortedRenderModels;
+    std::vector<std::shared_ptr<RenderLine>> axisRenderLines;
 
 private:
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
@@ -50,17 +54,13 @@ public:
 
 public:
     void resetView();
-    void toggleWireframe();
-    void toggleCullFace();
-
 
     [[nodiscard]] bool isUsePerspective() const;
     [[nodiscard]] bool isLightMode() const;
-
-
+    [[nodiscard]] bool isAxisEnabled() const;
     void setUsePerspective(bool newUsePerspective);
     void setLightMode(bool newLightMode);
-
+    void setAxisEnabled(bool enabled);
 
 
 protected:

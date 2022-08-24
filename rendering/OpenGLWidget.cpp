@@ -62,6 +62,14 @@ void OpenGLWidget::initializeGL() {
     ambientShader->bindAttributeLocation("vertex", 0);
     ambientShader->bindAttributeLocation("normal", 1);
     ambientShader->link();
+
+    // Store the axis render line
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(100,0,0), Transformation(), ambientShader));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,100,0), Transformation(), ambientShader));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,100), Transformation(), ambientShader));
+    axisRenderLines[0]->setColor(Color(1,0,0,1));
+    axisRenderLines[1]->setColor(Color(0,1,0,1));
+    axisRenderLines[2]->setColor(Color(0,0,1,1));
 }
 
 void OpenGLWidget::resetView() {
@@ -88,6 +96,13 @@ void OpenGLWidget::calculateProjectionMatrix(){
 }
 
 void OpenGLWidget::paintGL() {
+
+    if(this->axisEnabled){
+        for (const auto &axisRenderLine: this->axisRenderLines){
+            axisRenderLine->draw(viewMatrix, projectionMatrix, lightMode);
+        }
+    }
+
     for(auto& renderModel: this->sortedRenderModels){
         renderModel->draw(viewMatrix, projectionMatrix, lightMode);
     }
@@ -216,34 +231,6 @@ void OpenGLWidget::keyPressEvent(QKeyEvent* event){
     }
 }
 
-void OpenGLWidget::toggleWireframe() {
-    this->makeCurrent();
-    GLint currentPolygonMode[2];
-    GL_CALL(glGetIntegerv(GL_POLYGON_MODE, currentPolygonMode));
-    bool wireframeDisabled = currentPolygonMode[0] == GL_FILL;
-    for(auto& groupEntry: this->groupedRenderModelsMap){
-        for (const auto &modelEntry: groupEntry.second){
-            if(auto renderMesh = std::dynamic_pointer_cast<RenderMesh>(modelEntry.second)){
-                renderMesh->setWireframeEnabled(wireframeDisabled);
-            }
-        }
-    }
-    this->update();
-}
-
-void OpenGLWidget::toggleCullFace() {
-    this->makeCurrent();
-    GL_CALL(GLboolean cullingEnabled = glIsEnabled(GL_CULL_FACE));
-    for(auto& groupEntry: this->groupedRenderModelsMap){
-        for (const auto &modelEntry: groupEntry.second){
-            if(auto renderMesh = std::dynamic_pointer_cast<RenderMesh>(modelEntry.second)){
-                renderMesh->setCullingEnabled(!cullingEnabled);
-            }
-        }
-    }
-    this->update();
-}
-
 void OpenGLWidget::setLightMode(bool newLightMode){
     this->lightMode = newLightMode;
     this->makeCurrent();
@@ -293,6 +280,15 @@ void OpenGLWidget::setUsePerspective(bool newUsePerspective) {
 
 bool OpenGLWidget::isLightMode() const {
     return lightMode;
+}
+
+bool OpenGLWidget::isAxisEnabled() const {
+    return axisEnabled;
+}
+
+void OpenGLWidget::setAxisEnabled(bool enabled) {
+    OpenGLWidget::axisEnabled = enabled;
+    this->update();
 }
 
 std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>& OpenGLWidget::getOrInsertRenderModelsMap(const std::string& group) const {
