@@ -10,6 +10,7 @@
 #include "../core/OBB.h"
 #include "../core/WorldSpaceMesh.h"
 #include "../core/VertexTriangle.h"
+#include "../core/Sphere.h"
 
 #define GJK_EPSILON 0.00001f
 #define GJK_STEEPEST_DESCENT true
@@ -61,6 +62,14 @@ public:
     [[nodiscard]] glm::vec3 computeSupport(const glm::vec3 &direction) const override;
 };
 
+class GJKSphere: public GJKConvexShape {
+    Vertex center;
+    float radius;
+public:
+    explicit GJKSphere(const Sphere& sphere);
+    [[nodiscard]] glm::vec3 computeSupport(const glm::vec3 &direction) const override;
+};
+
 class GJKMesh: public GJKConvexShape {
     std::shared_ptr<WorldSpaceMesh> worldSpaceMesh;
     std::vector<std::set<unsigned int>> connectedVertexIndices;
@@ -71,6 +80,6 @@ public:
     [[nodiscard]] glm::vec3 computeSupport(const glm::vec3 &direction) const override;
 };
 
-// TODO GJK for VertexTriangle, Sphere
+// TODO GJK for VertexTriangle
 
 #endif //OPTIXMESHCORE_GJK_H

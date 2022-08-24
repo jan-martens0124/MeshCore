@@ -1,5 +1,5 @@
 //
-// Created by Jonas on 15/06/2022.
+// Created by Jonas on 15/06/2022. Core algorithm mostly copied from an implementation by Wim Vancroonenburg
 //
 
 #include "GJK.h"
@@ -7,7 +7,6 @@
 #include <unordered_set>
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
-
 
 std::optional<double>
 GJK::computeDistanceSqr(const GJKConvexShape &convex_shape_A, const GJKConvexShape &convex_shape_B,
@@ -383,3 +382,9 @@ glm::vec3 GJKMesh::computeSupport(const glm::vec3 &direction) const {
     this->startVertexIndex = currentVertexIndex;
     return worldSpaceMesh->getModelTransformation().transformVertex(vertices.at(currentVertexIndex));
 }
+
+glm::vec3 GJKSphere::computeSupport(const glm::vec3 &direction) const {
+    return center + glm::normalize(direction) * radius;
+}
+
+GJKSphere::GJKSphere(const Sphere &sphere): radius(sphere.radius), center(sphere.center) {}

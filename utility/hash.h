@@ -6,6 +6,7 @@
 #define OPTIXMESHCORE_HASH_H
 
 #include "../core/VertexTriangle.h"
+#include "../core/Sphere.h"
 
 #if GLM_HAS_CXX11_STL
     #include <glm/gtx/hash.hpp>
@@ -26,6 +27,17 @@
             auto hash = std::hash<Vertex>();
             glm::detail::hash_combine(result, hash(aabb.getMinimum()));
             glm::detail::hash_combine(result, hash(aabb.getMaximum()));
+            return result;
+        }
+    };
+
+    template<> struct std::hash<Sphere> {
+        size_t operator()(const Sphere &sphere) const {
+            size_t result = 0;
+            auto vertexHash = std::hash<Vertex>();
+            auto floatHash = std::hash<float>();
+            glm::detail::hash_combine(result, vertexHash(sphere.center));
+            glm::detail::hash_combine(result, floatHash(sphere.radius));
             return result;
         }
     };
@@ -52,6 +64,12 @@
             const auto& min = aabb.getMinimum();
             const auto& max = aabb.getMaximum();
             return std::hash<float>()(min.x + min.y + min.z + max.x + max.y + max.z);
+        }
+    };
+
+    template<> struct std::hash<Sphere> {
+        size_t operator()(const Sphere &sphere) const {
+            return std::hash<float>()(sphere.center.x + sphere.center.y + sphere.center.z + sphere.radius);
         }
     };
 #endif
