@@ -222,7 +222,11 @@
             <number>6</number>
            </property>
            <item>
-            <layout class="QVBoxLayout" name="objectsVerticalLayout"/>
+            <layout class="QVBoxLayout" name="objectsVerticalLayout">
+             <property name="spacing">
+              <number>2</number>
+             </property>
+            </layout>
            </item>
            <item>
             <spacer name="verticalSpacer">

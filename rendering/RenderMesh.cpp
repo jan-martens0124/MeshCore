@@ -245,14 +245,8 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
 
     auto* optionsLayout = new QGridLayout();
 
-    auto listener = std::make_shared<SimpleRenderModelListener>();
-    this->addListener(listener);
-
     auto visibleCheckBox = new QCheckBox(QString("Visible"));
     visibleCheckBox->setChecked(this->isVisible());
-    listener->setOnVisibleChanged([=](bool oldVisible, bool newVisible) {
-        visibleCheckBox->setChecked(newVisible);
-    });
     QObject::connect(visibleCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setVisible(enabled);
     });
@@ -260,9 +254,6 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
 
     auto wireframeCheckBox = new QCheckBox(QString("Show Wireframe"));
     wireframeCheckBox->setChecked(this->isWireframeEnabled());
-    listener->setOnChanged([=]() {
-        wireframeCheckBox->setChecked(this->isWireframeEnabled());
-    });
     QObject::connect(wireframeCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setWireframeEnabled(enabled);
     });
@@ -270,9 +261,7 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
 
     auto cullingCheckBox = new QCheckBox(QString("Enable Culling"));
     cullingCheckBox->setChecked(this->isCullingEnabled());
-    listener->setOnChanged([=]() {
-        cullingCheckBox->setChecked(this->isCullingEnabled());
-    });
+
     QObject::connect(cullingCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setCullingEnabled(enabled);
     });
@@ -280,13 +269,21 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
 
     auto boundingBoxCheckBox = new QCheckBox(QString("Show Bounding Box"));
     boundingBoxCheckBox->setChecked(this->isBoundingBoxEnabled());
-    listener->setOnChanged([=]() {
-        boundingBoxCheckBox->setChecked(this->isBoundingBoxEnabled());
-    });
     QObject::connect(boundingBoxCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setBoundingBoxEnabled(enabled);
     });
     optionsLayout->addWidget(boundingBoxCheckBox, 3, 0);
+
+    auto listener = std::make_shared<SimpleRenderModelListener>();
+    this->addListener(listener);
+    listener->setOnVisibleChanged([=](bool oldVisible, bool newVisible) {
+        visibleCheckBox->setChecked(newVisible);
+    });
+    listener->setOnChanged([=]() {
+        wireframeCheckBox->setChecked(this->isWireframeEnabled());
+        cullingCheckBox->setChecked(this->isCullingEnabled());
+        boundingBoxCheckBox->setChecked(this->isBoundingBoxEnabled());
+    });
 
     auto* optionsWidget = new QWidget();
     optionsWidget->setLayout(optionsLayout);

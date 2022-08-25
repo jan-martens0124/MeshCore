@@ -29,7 +29,7 @@ private:
 
     bool lightMode = false;
     bool usePerspective = true;
-    bool axisEnabled = true;
+    bool axisEnabled = false;
 
     int width{};
     int height{};
