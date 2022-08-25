@@ -41,7 +41,7 @@ public:
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getClosestPoint(Vertex point) const {
-        return this->aabb.getClosestPoint(this->rotation.inverseRotateVertex(point));
+        return this->rotation.rotateVertex(this->aabb.getClosestPoint(this->rotation.inverseRotateVertex(point)));
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] const Quaternion &getRotation() const {

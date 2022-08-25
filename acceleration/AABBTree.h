@@ -43,7 +43,7 @@ public:
     [[nodiscard]] virtual std::unordered_set<VertexTriangle> getIntersectingTriangles(const Ray& ray) const;
     [[nodiscard]] virtual std::unordered_set<VertexTriangle> getIntersectingTriangles(const VertexTriangle& triangle) const;
     [[nodiscard]] const VertexTriangle* getClosestTriangle(const Vertex& vertex) const;
-    [[nodiscard]] const Vertex getClosestPoint(const Vertex &vertex) const;
+    [[nodiscard]] Vertex getClosestPoint(const Vertex &vertex) const;
 
     [[nodiscard]] const AABB &getBounds() const;
     [[nodiscard]] bool isSplit() const;
@@ -266,7 +266,7 @@ const VertexTriangle* AABBTree<Degree>::getClosestTriangle(const Vertex &vertex)
 }
 
 template<unsigned int Degree>
-const Vertex AABBTree<Degree>::getClosestPoint(const Vertex &vertex) const{
+Vertex AABBTree<Degree>::getClosestPoint(const Vertex &vertex) const{
     const VertexTriangle* closestTriangle = nullptr;
     const VertexTriangle** result = &closestTriangle;
     auto* lowerDistanceBound = new float(std::numeric_limits<float>::max());

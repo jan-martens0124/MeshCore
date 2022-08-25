@@ -11,7 +11,7 @@
 class Quaternion: public glm::fquat{
 public:
 
-    MC_FUNC_QUALIFIER Quaternion() = default;
+    MC_FUNC_QUALIFIER Quaternion(): qua(1,0,0,0){};
 
     MC_FUNC_QUALIFIER explicit Quaternion(const glm::fquat &quaternion): qua(quaternion){}
 

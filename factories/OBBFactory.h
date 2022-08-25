@@ -100,6 +100,7 @@ private:
             totalSum += *iter;
             n++;
         }
+        assert(n>=2);
         Vertex mean = totalSum / float(n);
 
         //1. Find the covariance matrix
