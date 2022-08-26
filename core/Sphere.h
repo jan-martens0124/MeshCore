@@ -38,6 +38,16 @@ public:
     MC_FUNC_QUALIFIER [[nodiscard]] float getSurfaceArea() const {
         return 4.0f * glm::pi<float>() * radius * radius;
     }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] Vertex getClosestPoint(Vertex point) const {
+        return glm::normalize(point - this->center) * this->radius + this->center;
+    }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] float getDistanceSquaredTo(Vertex point) const {
+        auto deltaCenter = point - this->center;
+        auto distance = glm::sqrt(glm::dot(deltaCenter, deltaCenter)) - this->radius;
+        return distance*distance;
+    }
 };
 
 #endif //OPTIXMESHCORE_SPHERE_H

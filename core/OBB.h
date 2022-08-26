@@ -44,6 +44,10 @@ public:
         return this->rotation.rotateVertex(this->aabb.getClosestPoint(this->rotation.inverseRotateVertex(point)));
     }
 
+    MC_FUNC_QUALIFIER [[nodiscard]] float getDistanceSquaredTo(Vertex point) const {
+        return this->aabb.getDistanceSquaredTo(this->rotation.inverseRotateVertex(point));
+    }
+
     MC_FUNC_QUALIFIER [[nodiscard]] const Quaternion &getRotation() const {
         return rotation;
     }

@@ -53,6 +53,11 @@ public:
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getClosestPoint(Vertex point) const {
         return glm::clamp(point, this->getMinimum(), this->getMaximum());
     }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] float getDistanceSquaredTo(Vertex point) const {
+        auto delta = this->getClosestPoint(point) - point;
+        return glm::dot(delta, delta);
+    }
 };
 
 #endif //MESHCORE_AABB_H
