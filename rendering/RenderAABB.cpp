@@ -10,7 +10,7 @@
 
 void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
 
-    if(this->isVisible()) {
+    if (this->isVisible()) {
 
         // Bind required buffers and shaders
         this->initializeOpenGLFunctions();
@@ -20,51 +20,25 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
 
         // Set MVP matrix uniform
         const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
-        this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+        this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix",
+                                             QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
 
         // Set color uniform
         QVector4D drawColor;
         const auto color = this->getColor();
         drawColor = QVector4D(color.r, color.g, color.b, color.a);
-        if(lightMode){
-            if(glm::vec3(color) == glm::vec3(1,1,1)){
+        if (lightMode) {
+            if (glm::vec3(color) == glm::vec3(1, 1, 1)) {
                 drawColor = QVector4D(0, 0, 0, color.a);
-            }
-            else if(glm::vec3(color) == glm::vec3(0,0,0)){
+            } else if (glm::vec3(color) == glm::vec3(0, 0, 0)) {
                 drawColor = QVector4D(1, 1, 1, color.a);
             }
         }
         this->ambientShader->setUniformValue("u_Color", drawColor);
 
 
-        GL_CALL(glDrawElements(GL_LINES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
+        GL_CALL(glDrawElements(GL_LINES, this->indexBuffer->size() / sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
     }
-}
-
-void RenderAABB::updateBounds(const AABB &aabb) {
-
-    std::vector<Vertex> vertices;
-    std::vector<float> vertexData;
-    Vertex min = aabb.getMinimum();
-    Vertex max = aabb.getMaximum();
-
-    vertices.emplace_back(min.x, min.y, min.z);
-    vertices.emplace_back(min.x, min.y, max.z);
-    vertices.emplace_back(min.x, max.y, min.z);
-    vertices.emplace_back(min.x, max.y, max.z);
-    vertices.emplace_back(max.x, min.y, min.z);
-    vertices.emplace_back(max.x, min.y, max.z);
-    vertices.emplace_back(max.x, max.y, min.z);
-    vertices.emplace_back(max.x, max.y, max.z);
-
-    for (const auto &vertex : vertices){
-        vertexData.emplace_back(vertex.x);
-        vertexData.emplace_back(vertex.y);
-        vertexData.emplace_back(vertex.z);
-    }
-
-    this->vertexBuffer->bind();
-    this->vertexBuffer->allocate(&vertexData.front(), vertexData.size() * sizeof(float));
 }
 
 RenderAABB::RenderAABB(const AABB &aabb, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader):

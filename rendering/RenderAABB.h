@@ -23,8 +23,6 @@ public:
     RenderModelDetailDialog *createRenderModelDetailDialog(QWidget* parent) override;
 
     void draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
-
-    void updateBounds(const AABB &aabb);
 };
 
 

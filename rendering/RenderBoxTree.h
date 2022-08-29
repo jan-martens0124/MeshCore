@@ -2,29 +2,35 @@
 // Created by Jonas on 8/11/2021.
 //
 
-#ifndef OPTIXMESHCORE_RENDERAABBTREE_H
-#define OPTIXMESHCORE_RENDERAABBTREE_H
+#ifndef OPTIXMESHCORE_RENDERBOXTREE_H
+#define OPTIXMESHCORE_RENDERBOXTREE_H
 
 
 #include <QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
 #include "../meshcore/acceleration/AABBTree.h"
-#include "../../core/OBBTree.h"
 #include "RenderAABB.h"
+#include "../core/AABB.h"
+#include "../core/OBB.h"
+#include "../acceleration/AbstractBoundsTree.h"
+#include "RenderBoundsTree.h"
 
-class RenderAABBTree: public AbstractRenderModel {
+class RenderBoxTree: public AbstractRenderModel {
 private:
     unsigned int renderDepth = 0;
     std::shared_ptr<QOpenGLShaderProgram> shader;
-    std::vector<std::shared_ptr<RenderAABBTree>> children;
+    std::vector<std::shared_ptr<RenderBoxTree>> children;
     RenderAABB renderAABB;
 
 public:
     template <unsigned int Degree>
-    RenderAABBTree(const AABBTree<Degree>& aabbTree, const Transformation& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+    RenderBoxTree(const AABBTree<Degree>& aabbTree, const Transformation& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);
 
     template <unsigned int Degree>
-    RenderAABBTree(const OBBTree<Degree>& obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+    RenderBoxTree(const AbstractBoundsTree<AABB, Degree>& obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+
+    template <unsigned int Degree>
+    RenderBoxTree(const AbstractBoundsTree<OBB, Degree>& obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
 
     void draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
     void setTransformation(const Transformation &transformation) override;
@@ -44,11 +50,11 @@ private:
     void drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth);
 };
 
-void RenderAABBTree::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
+void RenderBoxTree::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
     if(this->isVisible()) this->drawRecursive(viewMatrix, projectionMatrix, lightMode, renderDepth);
 }
 
-void RenderAABBTree::drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth) {
+void RenderBoxTree::drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth) {
     if(depth > 0){
         for (const auto &child : this->children){
             child->drawRecursive(viewMatrix, projectionMatrix, lightMode, depth-1);
@@ -60,25 +66,35 @@ void RenderAABBTree::drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 
 }
 
 template <unsigned int Degree>
-RenderAABBTree::RenderAABBTree(const AABBTree<Degree> &aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformation, "aabbTree"),
-        renderAABB(aabbTree.getBounds(), transformation, shader) {
+RenderBoxTree::RenderBoxTree(const AABBTree<Degree> &aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformation, "aabbTree"),
+                                                                                                                                                           renderAABB(aabbTree.getBounds(), transformation, shader) {
         if(aabbTree.isSplit()){
             for (const auto &child : aabbTree.getChildren()){
-                if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderAABBTree>(*child, transformation, shader));
+                if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoxTree>(*child, transformation, shader));
             }
         }
 }
 
 template <unsigned int Degree>
-RenderAABBTree::RenderAABBTree(const OBBTree<Degree> &obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(Transformation::fromQuaternion(obbTree.getBounds().getRotation()), "obbTree"), renderAABB(obbTree.getBounds().getAabb(), Transformation::fromQuaternion(obbTree.getBounds().getRotation()), shader){
-    if(obbTree.isSplit()){
-        for (const auto &child : obbTree.getChildren()){
-            if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderAABBTree>(*child, transformation, shader));
+RenderBoxTree::RenderBoxTree(const AbstractBoundsTree<AABB, Degree> &aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformation, "aabbTree"),
+                                                                                                                                                           renderAABB(aabbTree.getBounds(), transformation, shader) {
+    if(aabbTree.isSplit()){
+        for (const auto &child : aabbTree.getChildren()){
+            if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoxTree>(*child, transformation, shader));
         }
     }
 }
 
-void RenderAABBTree::setTransformation(const Transformation &transformation) {
+template <unsigned int Degree>
+RenderBoxTree::RenderBoxTree(const AbstractBoundsTree<OBB, Degree> &obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(Transformation::fromQuaternion(obbTree.getBounds().getRotation()), "obbTree"), renderAABB(obbTree.getBounds().getAabb(), Transformation::fromQuaternion(obbTree.getBounds().getRotation()), shader){
+    if(obbTree.isSplit()){
+        for (const auto &child : obbTree.getChildren()){
+            if(!child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoxTree>(*child, transformation, shader));
+        }
+    }
+}
+
+void RenderBoxTree::setTransformation(const Transformation &transformation) {
     AbstractRenderModel::setTransformation(transformation);
     renderAABB.setTransformation(transformation);
     for (const auto &child : this->children){
@@ -86,18 +102,18 @@ void RenderAABBTree::setTransformation(const Transformation &transformation) {
     }
 }
 
-void RenderAABBTree::setRenderDepth(unsigned int newRenderDepth) {
-    RenderAABBTree::renderDepth = newRenderDepth;
+void RenderBoxTree::setRenderDepth(unsigned int newRenderDepth) {
+    RenderBoxTree::renderDepth = newRenderDepth;
     for (const auto &listener: this->listeners){
         listener->notify();
     }
 }
 
-unsigned int RenderAABBTree::getRenderDepth() const {
+unsigned int RenderBoxTree::getRenderDepth() const {
     return renderDepth;
 }
 
-unsigned int RenderAABBTree::getDepth() {
+unsigned int RenderBoxTree::getDepth() {
     unsigned int depth = 0;
     for (const auto &child : this->children){
         depth = std::max(depth, child->getDepth() + 1);
@@ -105,7 +121,7 @@ unsigned int RenderAABBTree::getDepth() {
     return depth;
 }
 
-void RenderAABBTree::setColor(const Color &newColor) {
+void RenderBoxTree::setColor(const Color &newColor) {
     AbstractRenderModel::setColor(newColor);
     renderAABB.setColor(newColor);
     for (const auto &child : this->children){
@@ -113,7 +129,7 @@ void RenderAABBTree::setColor(const Color &newColor) {
     }
 }
 
-RenderModelDetailDialog *RenderAABBTree::createRenderModelDetailDialog(QWidget* parent) {
+RenderModelDetailDialog *RenderBoxTree::createRenderModelDetailDialog(QWidget* parent) {
 
     auto dialog = AbstractRenderModel::createRenderModelDetailDialog(parent);
 
@@ -174,11 +190,11 @@ RenderModelDetailDialog *RenderAABBTree::createRenderModelDetailDialog(QWidget* 
     return dialog;
 }
 
-QMenu *RenderAABBTree::getContextMenu() {
+QMenu *RenderBoxTree::getContextMenu() {
     return AbstractRenderModel::getContextMenu();
 
     // TODO, if necessary
 }
 
 
-#endif //OPTIXMESHCORE_RENDERAABBTREE_H
+#endif //OPTIXMESHCORE_RENDERBOXTREE_H

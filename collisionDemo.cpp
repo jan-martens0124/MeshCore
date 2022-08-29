@@ -5,6 +5,7 @@
 #include <QtWidgets>
 #include <utility/FileParser.h>
 #include "rendering/NewApplicationWindow.h"
+#include "rendering/RenderBoxTree.h"
 #include <thread>
 #include "acceleration/AABBOctree.h"
 
@@ -43,6 +44,9 @@ void run(RenderWidget* renderWidget){
 
     // Create the Octree which will speed up intersection tests with the container
     AABBOctree octree(containerWorldSpaceMesh->getModelSpaceMesh());
+    auto renderTree = std::make_shared<RenderBoxTree>(octree, Transformation(), renderWidget->getOpenGLWidget()->getAmbientShader());
+    renderTree->setVisible(false);
+    renderWidget->addOrUpdateRenderModel("Container", "renderTree0", renderTree);
 
     // Test new random transformations for the item
     Random random;
