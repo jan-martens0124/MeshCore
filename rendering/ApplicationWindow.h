@@ -15,12 +15,12 @@ class QMenu;
 class QMenuBar;
 QT_END_NAMESPACE
 
-class NewApplicationWindow: public QMainWindow {
+class ApplicationWindow: public QMainWindow {
 private:
     QMenuBar *menuBar;
     RenderWidget* renderWidget;
 public:
-    NewApplicationWindow();
+    ApplicationWindow();
     [[nodiscard]] RenderWidget* getRenderWidget() const;
 
 protected:

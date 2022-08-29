@@ -2,13 +2,13 @@
 // Created by Jonas on 19/05/2022.
 //
 
-#include "NewApplicationWindow.h"
+#include "ApplicationWindow.h"
 #include "../utility/FileParser.h"
 #include <QtWidgets>
 #include <iostream>
 #include <filesystem>
 
-NewApplicationWindow::NewApplicationWindow() {
+ApplicationWindow::ApplicationWindow() {
 
     QSurfaceFormat format;
     format.setDepthBufferSize(24);
@@ -34,7 +34,7 @@ NewApplicationWindow::NewApplicationWindow() {
     setMenuBar(menuBar);
 
     QAction* openAction = fileMenu->addAction(QString("Open..."));
-    connect(openAction, &QAction::triggered, this, &NewApplicationWindow::loadMesh);
+    connect(openAction, &QAction::triggered, this, &ApplicationWindow::loadMesh);
     openAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_O));
 
     QAction* screenshotAction = fileMenu->addAction(QString("Export openGL screenshot..."));
@@ -93,22 +93,22 @@ NewApplicationWindow::NewApplicationWindow() {
     }
 
     QAction* aboutAction = helpMenu->addAction(QString("About Meshcore"));
-    connect(aboutAction, &QAction::triggered, this, &NewApplicationWindow::displayApplicationInfo);
+    connect(aboutAction, &QAction::triggered, this, &ApplicationWindow::displayApplicationInfo);
 
     setMinimumSize(1280,720);
     setWindowTitle(tr("MeshCore"));
 }
 
-RenderWidget *NewApplicationWindow::getRenderWidget() const {
+RenderWidget *ApplicationWindow::getRenderWidget() const {
     return renderWidget;
 }
 
-void NewApplicationWindow::keyPressEvent(QKeyEvent* event){
+void ApplicationWindow::keyPressEvent(QKeyEvent* event){
     printf("\nkey event in ApplicationWindow: %i", event->key());
     std::cout << event->key() << std::endl;
 }
 
-void NewApplicationWindow::loadMesh(){
+void ApplicationWindow::loadMesh(){
     QString fileName = QFileDialog::getOpenFileName(this, QString("Select mesh file"), R"(C:\Users\tolle\CLionProjects\MeshCore\data\models)", QString("Mesh Files (*.stl *.obj)"));
     if(std::filesystem::exists(fileName.toStdString())){
         std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::loadMeshFile(fileName.toStdString());
@@ -117,7 +117,7 @@ void NewApplicationWindow::loadMesh(){
     }
 }
 
-void NewApplicationWindow::displayApplicationInfo(){
+void ApplicationWindow::displayApplicationInfo(){
     auto messageBox = QMessageBox(this);
     messageBox.setInformativeText("Meshcore v0.0.2");
     messageBox.setWindowTitle("About MeshCore");

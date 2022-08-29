@@ -4,7 +4,7 @@
 #include <iostream>
 #include <QtWidgets>
 #include <utility/FileParser.h>
-#include "rendering/NewApplicationWindow.h"
+#include "rendering/ApplicationWindow.h"
 #include "rendering/RenderBoxTree.h"
 #include <thread>
 #include "acceleration/AABBOctree.h"

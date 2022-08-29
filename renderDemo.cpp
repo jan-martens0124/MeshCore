@@ -5,7 +5,7 @@
 #include <iostream>
 #include <QtWidgets>
 #include <thread>
-#include "rendering/NewApplicationWindow.h"
+#include "rendering/ApplicationWindow.h"
 #include "utility/FileParser.h"
 #include "rendering/RenderSphere.h"
 
