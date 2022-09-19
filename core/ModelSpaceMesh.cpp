@@ -279,8 +279,8 @@ std::optional<std::shared_ptr<ModelSpaceMesh>> ModelSpaceMesh::getConvexHull() c
 
     assert(!convexHull.has_value() && "This shouldn't be calculated again if a value was present already");
     auto hull = std::make_shared<ModelSpaceMesh>(hullVertices, hullTriangles);
-    convexHull.value()->setName("Convex hull of " + this->getName());
     convexHull = hull;
+    convexHull.value()->setName("Convex hull of " + this->getName());
     return hull;
 }
 
