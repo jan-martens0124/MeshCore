@@ -9,11 +9,13 @@
 #include "AbstractRenderModel.h"
 #include "../meshcore/core/AABB.h"
 #include "RenderOBB.h"
+#include "RenderSphere.h"
 
 
 class RenderBoundsTree: public AbstractRenderModel{
 private:
     unsigned int renderDepth = 0;
+    std::atomic<bool> animating = false; // For cycling through the render depth
     std::vector<std::shared_ptr<RenderBoundsTree>> children;
     std::shared_ptr<AbstractRenderModel> renderNodeModel;
 
@@ -153,22 +155,20 @@ RenderModelDetailDialog *RenderBoundsTree::createRenderModelDetailDialog(QWidget
     });
     optionsLayout->addWidget(visibleCheckBox, 0, 0);
 
-    // TODO this isn't properly implemented yet
     auto animateRenderDepth = new QCheckBox(QString("Animate render depth"));
     animateRenderDepth->setChecked(false);
     std::atomic<bool> animate = false;
     QObject::connect(animateRenderDepth, &QCheckBox::clicked, [&](bool enabled) {
-        animate = enabled;
+        animating = enabled;
         // Start a thread that increases the render depth every second until animate is false
         if(enabled){
             std::thread([&]() {
-                while(animate){
+                while(animating){
                     this->setRenderDepth((this->getRenderDepth()+1)%this->getDepth());
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 }
             }).detach();
         }
-        // TODO an now we somehow have to clean this thread up :)
     });
     optionsLayout->addWidget(animateRenderDepth, 1, 0);
 

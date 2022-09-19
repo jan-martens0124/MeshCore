@@ -7,6 +7,7 @@
 
 #include "AbstractRenderModel.h"
 #include "../core/OBB.h"
+#include "../core/Sphere.h"
 #include "../core/WorldSpaceMesh.h"
 #include "RenderLine.h"
 #include <QOpenGLWidget>
@@ -81,6 +82,7 @@ private slots:
     void clearGroup(const std::string &group);
     void renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color &color, RenderWidget* renderWidget);
     void renderBoxSlot(const std::string &group, const AABB &aabb, const Transformation& transformation, RenderWidget* renderWidget);
+    void renderSphereSlot(const std::string &group, const Sphere &sphere, const Transformation& transformation, RenderWidget* renderWidget);
     void addOrUpdateRenderModelSlot(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> sharedPtr, RenderWidget* renderWidget);
     void captureSceneSlot();
     void captureSceneToFileSlot(const QString& fileName);

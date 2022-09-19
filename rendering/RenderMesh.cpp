@@ -133,14 +133,15 @@ void RenderMesh::draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMa
             this->ambientShader->setUniformValue("u_Color", drawColor);
         }
         else{
-
+            // TODO what if we want to draw the surface and the wireframe at the same time?
+            //  How to determine the right color=> separate: default color, combined: color for surface and black/white wireframe
             GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
             const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
             glm::vec3 viewSpaceLightDirection = glm::vec4(0, 0, 1, 1) * viewMatrix;
             const glm::vec3 modelLightDirection = glm::vec3(glm::vec4(viewSpaceLightDirection, 1.0f) *
                                                                     this->getTransformationMatrix());
-            const float ambientLighting = 0.05f;
+            const float ambientLighting = 0.05f; // TODO make this a configurable member of OpenGLWidget
             const auto color = this->getColor();
             this->diffuseShader->bind();
             this->diffuseShader->setUniformValue("u_Ambient", ambientLighting);

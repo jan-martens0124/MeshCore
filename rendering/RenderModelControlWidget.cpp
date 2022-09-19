@@ -14,7 +14,7 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
 
     ui->setupUi(this);
 
-    ui->nameLabel->setText(QString::fromStdString(this->renderModel->getName()));
+
     ui->visibleCheckBox->setChecked(this->renderModel->isVisible());
     const auto &color = this->renderModel->getColor();
     ui->colorPushButton->setStyleSheet("background-color: " + QColor(color.r*255, color.g*255, color.b*255, color.a*255).name());
@@ -27,8 +27,10 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
         this->ui->visibleCheckBox->setChecked(newVisible);
     });
 
+    QFontMetrics metrics(this->ui->nameLabel->font());
+    QString elidedText = metrics.elidedText(QString::fromStdString(this->renderModel->getName()), Qt::ElideRight, 81); // Sad that the 81 is hard coded, but this is executed before the name label gets it's final size, we won't override the resize operator in a separate class just for this
+    ui->nameLabel->setText(elidedText);
     listener->setOnNameChanged([&](const std::string& oldName, const std::string& newName) {
-
         QFontMetrics metrics(this->ui->nameLabel->font());
         QString elidedText = metrics.elidedText(QString::fromStdString(newName), Qt::ElideRight, this->ui->nameLabel->width());
         this->ui->nameLabel->setText(elidedText);

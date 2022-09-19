@@ -137,13 +137,6 @@
           </item>
          </layout>
         </item>
-        <item>
-         <widget class="Line" name="line">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
        </layout>
       </widget>
      </item>
@@ -173,7 +166,7 @@
           <x>0</x>
           <y>0</y>
           <width>323</width>
-          <height>591</height>
+          <height>600</height>
          </rect>
         </property>
         <property name="sizePolicy">

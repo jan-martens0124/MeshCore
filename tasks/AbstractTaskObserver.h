@@ -6,7 +6,7 @@
 #define MESHCORE_ABSTRACTTASKOBSERVER_H
 
 
-#include "../../solutions/AbstractMeshSolution.h"
+#include "../localsearch/AbstractLocalSearch.h"
 #include <iostream>
 
 class AbstractTaskObserver {
@@ -33,7 +33,7 @@ public:
         std::cout << "This notifyStatus should be overridden: " << status << std::endl;
     }
 
-    virtual void notifySolution(const AbstractMeshSolution& solution){
+    virtual void notifySolution(const std::shared_ptr<const AbstractSolution>& solution){
         std::cout << "This notifySolution should be overridden!" << std::endl;
     }
 };

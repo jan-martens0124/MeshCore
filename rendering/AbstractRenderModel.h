@@ -14,8 +14,7 @@
 #include <qcolordialog.h>
 #include "RenderModelDetailDialog.h"
 #include "../core/Transformation.h"
-
-typedef glm::vec4 Color;
+#include "Color.h"
 
 class AbstractRenderModelListener{
 public:

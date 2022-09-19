@@ -6,6 +6,7 @@
 #include "OpenGLWidget.h"
 #include "ShaderProgramSource.h"
 #include "RenderMesh.h"
+#include "RenderSphere.h"
 #include "RenderWidget.h"
 #include "Exception.h"
 
@@ -16,6 +17,7 @@ Q_DECLARE_METATYPE(std::string)
 Q_DECLARE_METATYPE(std::shared_ptr<WorldSpaceMesh>)
 Q_DECLARE_METATYPE(RenderWidget*)
 Q_DECLARE_METATYPE(AABB)
+Q_DECLARE_METATYPE(Sphere)
 Q_DECLARE_METATYPE(Transformation)
 
 void OpenGLWidget::initializeGL() {
@@ -391,6 +393,54 @@ void OpenGLWidget::renderBoxSlot(const std::string &group, const AABB &aabb, con
 
         // No entry present yet, create new render Model
         auto renderAABB = std::make_shared<RenderAABB>(aabb, transformation, this->ambientShader);
+
+        // Insert it in the renderModelsMap
+        modelIterator = renderModelsMap.insert({renderId, renderAABB}).first;
+
+        // Add listener to redraw when mesh is changed
+        const auto listener = std::make_shared<SimpleRenderModelListener>();
+        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
+            if(oldColor.a!=newColor.a){
+                this->updateSortedRenderModels();
+            }
+        });
+
+        listener->setOnChanged([this](){
+            this->update();
+        });
+        renderAABB->addListener(listener);
+
+        // Add control widget to the renderWidget
+        renderWidget->addControlWidget(group, renderAABB);
+
+        // Set the color
+        modelIterator->second->setColor(Color(1,1,1,1));
+
+        this->updateSortedRenderModels();
+    }
+
+    // Update the transformation
+    modelIterator->second->setTransformation(transformation);
+
+    this->update();
+
+}
+
+
+void OpenGLWidget::renderSphereSlot(const std::string &group, const Sphere &sphere, const Transformation& transformation, RenderWidget *renderWidget) {
+    // Find the group
+    auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
+
+    // Find the model in this group
+    auto renderId = std::to_string(std::hash<Sphere>{}(sphere));
+    auto modelIterator = renderModelsMap.find(renderId);
+
+    if(modelIterator == renderModelsMap.end()){
+
+        this->makeCurrent();
+
+        // No entry present yet, create new render Model
+        auto renderAABB = std::make_shared<RenderSphere>(sphere, transformation, this->ambientShader, this->diffuseShader);
 
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({renderId, renderAABB}).first;

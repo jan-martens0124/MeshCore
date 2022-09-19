@@ -18,6 +18,7 @@
 class RenderBoxTree: public AbstractRenderModel {
 private:
     unsigned int renderDepth = 0;
+    std::atomic<bool> animating = false; // For cycling through the render depth
     std::shared_ptr<QOpenGLShaderProgram> shader;
     std::vector<std::shared_ptr<RenderBoxTree>> children;
     RenderAABB renderAABB;
@@ -27,7 +28,7 @@ public:
     RenderBoxTree(const AABBTree<Degree>& aabbTree, const Transformation& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);
 
     template <unsigned int Degree>
-    RenderBoxTree(const AbstractBoundsTree<AABB, Degree>& obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+    RenderBoxTree(const AbstractBoundsTree<AABB, Degree>& aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
 
     template <unsigned int Degree>
     RenderBoxTree(const AbstractBoundsTree<OBB, Degree>& obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
@@ -37,6 +38,8 @@ public:
     void setRenderDepth(unsigned int newRenderDepth);
     unsigned int getDepth();
     void setColor(const Color &newColor) override;
+
+//    void setIntersectingColor(const Color &newColor, const VertexTriangle& vertexTriangle) override;
 
 private:
 public:
@@ -148,22 +151,19 @@ RenderModelDetailDialog *RenderBoxTree::createRenderModelDetailDialog(QWidget* p
     });
     optionsLayout->addWidget(visibleCheckBox, 0, 0);
 
-    // TODO this isn't properly implemented yet
     auto animateRenderDepth = new QCheckBox(QString("Animate render depth"));
     animateRenderDepth->setChecked(false);
-    std::atomic<bool> animate = false;
     QObject::connect(animateRenderDepth, &QCheckBox::clicked, [&](bool enabled) {
-        animate = enabled;
+        animating = enabled;
         // Start a thread that increases the render depth every second until animate is false
         if(enabled){
             std::thread([&]() {
-                while(animate){
+                while(animating){
                     this->setRenderDepth((this->getRenderDepth()+1)%this->getDepth());
                     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 }
             }).detach();
         }
-        // TODO an now we somehow have to clean this thread up :)
     });
     optionsLayout->addWidget(animateRenderDepth, 1, 0);
 

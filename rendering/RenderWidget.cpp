@@ -6,6 +6,7 @@
 #include <QtWidgets>
 #include "forms/ui_renderwidget.h"
 #include "RenderModelControlWidget.h"
+#include "../../solutions/AbstractMeshSolution.h"
 
 RenderWidget::RenderWidget(QWidget *parent):
     QWidget(parent), ui(new Ui::RenderWidget)
@@ -29,7 +30,7 @@ OpenGLWidget *RenderWidget::getOpenGLWidget() const {
     return ui->openGLWidget;
 }
 
-void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh,  const Color& color = Color(1.0f)) {
+void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh,  const Color& color) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderWorldSpaceMeshSlot",
                               Qt::AutoConnection,
                               Q_ARG(std::string, group),
@@ -152,25 +153,16 @@ void RenderWidget::renderBox(const std::string &group, const AABB &aabb, const T
                               Q_ARG(RenderWidget*, this));
 }
 
-Color RenderWidget::defaultColors[] = {Color(1,0,0,1),        // Red
-                                       Color(0,0.6667,0,1),   // Green
-                                       Color(0,0,1,1),        // Blue
-                                       Color(1,1,0,1),        // Yellow
-                                       Color(1,0,1,1),        // Pink
-                                       Color(1,0.6667,0,1)};  // Orange
+void RenderWidget::renderSphere(const std::string &group, const Sphere &sphere, const Transformation& transformation) {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderSphereSlot", Qt::AutoConnection,
+                              Q_ARG(std::string, group),
+                              Q_ARG(Sphere, sphere),
+                              Q_ARG(Transformation, transformation),
+                              Q_ARG(RenderWidget*, this));
+}
 
-void RenderWidget::notifySolution(const AbstractMeshSolution &solution) {
-
-
-    for (int i = 0; i < solution.getItemWorldSpaceMeshes().size(); i++){
-        this->renderWorldSpaceMesh("Items", solution.getItemWorldSpaceMeshes()[i], defaultColors[i%sizeof(defaultColors)]);
-    }
-
-    for(const auto& worldSpaceMesh: solution.getInclusionWorldSpaceMeshes()){
-        this->renderWorldSpaceMesh("Inclusions", worldSpaceMesh, Color(0,0.5,0.5,1));
-    }
-
-    this->renderWorldSpaceMesh("Containers", solution.getOuterWorldSpaceMesh(), Color(1, 1, 1, 0.4));
+void RenderWidget::notifySolution(const std::shared_ptr<const AbstractSolution>& solution) {
+    if(this->onSolutionNotified) onSolutionNotified(this, solution);
 }
 
 void RenderWidget::notifyProgress(float progress) {
@@ -211,13 +203,19 @@ void RenderWidget::notifyStatus(const std::string &status) {
     this->ui->statusLabel->setText(status);
 }
 
-void RenderWidget::observeTask(AbstractTask *task) {
+void RenderWidget::observeTask(AbstractTask *task, const std::function<void(RenderWidget* renderWidget, std::shared_ptr<const AbstractSolution> solution)>& onSolutionNotified) {
+
+    // Clear currently observed task if needed
     if(this->currentTask!=nullptr){
         currentTask->unregisterObserver(this);
         this->clear();
         this->ui->taskSection->setVisible(false);
+        this->onSolutionNotified = {};
     }
+
+    // Set and observe new task
     currentTask = task;
+    this->onSolutionNotified = onSolutionNotified;
     if(task!=nullptr){
         currentTask->registerObserver(this);
         this->ui->taskSection->setVisible(true);

@@ -15,6 +15,7 @@ private:
 
     bool cullingEnabled = true;
     bool wireframeEnabled = false;
+    bool surfaceEnabled = true;
     bool boundingBoxEnabled = false;
 
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;

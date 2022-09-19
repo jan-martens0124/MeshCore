@@ -4,14 +4,15 @@
 
 #include "AbstractTask.h"
 
-void run_static(AbstractTask* task){
+void AbstractTask::run_static(AbstractTask* task){
+    task->notifyObserversStarted();
     task->run();
+    task->notifyObserversFinished();
 }
 
 void AbstractTask::start() {
     this->join();
     this->stopCalled = false;
-    randomEngine.seed(this->seed);
     thread = new std::thread(run_static, this);
 }
 
@@ -25,24 +26,8 @@ void AbstractTask::join() {
 
 AbstractTask::AbstractTask():
     stopCalled(false),
-    thread(nullptr),
-    seed(0u),
-    randomEngine(this->seed)
+    thread(nullptr)
 {}
-
-void AbstractTask::setSeed(unsigned int newSeed) {
-    this->seed = newSeed;
-}
-
-float AbstractTask::getRandomFloat(float maxValue){
-    auto nextFloat = boost::random::uniform_real_distribution<float>(0, maxValue);
-    return nextFloat(this->randomEngine);
-}
-
-unsigned int AbstractTask::getRandomUint(unsigned int maxValueExclusive) {
-    auto nextUint = boost::random::uniform_int_distribution<unsigned int>(0u, maxValueExclusive);
-    return nextUint(this->randomEngine);
-}
 
 void AbstractTask::notifyObserversUpdate() const {
     for(AbstractTaskObserver* observer: taskObservers){
@@ -66,7 +51,7 @@ void AbstractTask::registerObserver(AbstractTaskObserver* observer) {
     taskObservers.emplace_back(observer);
 }
 
-void AbstractTask::notifyObserversSolution(const AbstractMeshSolution& solution) const{
+void AbstractTask::notifyObserversSolution(const std::shared_ptr<const AbstractSolution>& solution) const {
     for(AbstractTaskObserver* observer: taskObservers){
         observer->notifySolution(solution);
     }

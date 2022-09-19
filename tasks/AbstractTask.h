@@ -9,14 +9,12 @@
 #include <thread>
 #include <atomic>
 #include "AbstractTaskObserver.h"
-#include "../../solutions/AbstractMeshSolution.h"
+#include "../localsearch/AbstractSolution.h"
 #include <boost/random.hpp>
 
 class AbstractTask {
 private:
-    unsigned int seed;
     std::thread* thread;
-    boost::random::mt19937 randomEngine;
     std::vector<AbstractTaskObserver *> taskObservers;
 
 protected:
@@ -25,7 +23,6 @@ protected:
 public:
     AbstractTask();
 
-    void setSeed(unsigned int seed);
     virtual void run();
     void start();
     void stop();
@@ -35,14 +32,12 @@ public:
     void unregisterObserver(AbstractTaskObserver* observer);
     void notifyObserversUpdate() const;
     void notifyObserversProgress(float progress) const;
+    void notifyObserversStatus(const std::string& status) const;
+    void notifyObserversSolution(const std::shared_ptr<const AbstractSolution>& solution) const;
+private:
+    static void run_static(AbstractTask *task);
     void notifyObserversFinished() const;
     void notifyObserversStarted() const;
-    void notifyObserversStatus(const std::string& status) const;
-    void notifyObserversSolution(const AbstractMeshSolution& solution) const;
-
-protected:
-    float getRandomFloat(float maxValue);
-    unsigned int getRandomUint(unsigned int maxValueExclusive);
 };
 
 #endif //MESHCORE_ABSTRACTTASK_H

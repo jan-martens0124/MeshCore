@@ -10,12 +10,7 @@
 #include <type_traits>
 #include <functional>
 #include "../utility/random.h"
-
-struct AbstractSolution{
-    virtual ~AbstractSolution() = default;
-    [[nodiscard]] virtual bool isFeasible() const = 0;
-    [[nodiscard]] virtual std::shared_ptr<AbstractSolution> clone() const = 0;
-};
+#include "AbstractSolution.h"
 
 template <class Solution>
 class ObjectiveFunction {
