@@ -4,7 +4,7 @@
 
 #include "AABBOctree.h"
 
-AABBOctree::AABBOctree(const std::shared_ptr<ModelSpaceMesh>& modelSpaceMesh): AABBTree<8u>(modelSpaceMesh->getBounds(), 0){
+AABBOctree::AABBOctree(const std::shared_ptr<ModelSpaceMesh>& modelSpaceMesh): AbstractBoundsTree(modelSpaceMesh->getBounds(), 0){
     const auto& vertices = modelSpaceMesh->getVertices();
     for(const auto& triangle: modelSpaceMesh->getTriangles()){
         this->triangles.emplace_back(VertexTriangle(vertices[triangle.vertexIndex0], vertices[triangle.vertexIndex1], vertices[triangle.vertexIndex2]));

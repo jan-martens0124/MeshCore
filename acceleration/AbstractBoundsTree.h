@@ -24,73 +24,74 @@
  *
  * **/
 
-template <class Bounds, unsigned int Degree> class AbstractBoundsTree {
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment=false>
+class AbstractBoundsTree {
 protected:
     Bounds bounds;
+    std::vector<VertexTriangle> triangles;
+    std::array<std::shared_ptr<AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>>, Degree> children;
+    const unsigned int depth;
     bool split = false;
     bool empty = true;
-    unsigned int depth = 0;
-    std::vector<VertexTriangle> triangles;
-    std::array<std::shared_ptr<AbstractBoundsTree<Bounds, Degree>>, Degree> children;
-
-private:
-    void getClosestTriangle(const Vertex& vertex, const VertexTriangle** result, float* lowerDistanceBoundSquared) const;
 
 public:
     AbstractBoundsTree(const Bounds &bounds, unsigned int depth): bounds(bounds), split(false), depth(depth), empty(true) {}
     virtual void splitTopDown(unsigned int maxDepth, unsigned int maxTrianglesPerNode) = 0;
-//    template <unsigned int OtherDegree> [[nodiscard]] bool intersectsBoundsTree(const glm::mat4 &otherToThisTransformationMatrix, const Bounds<OtherDegree>& other, const glm::mat4 &thisToOtherTransformationMatrix) const; // TODO this one should be implemented for AABB tree specifically
 
     [[nodiscard]] bool intersectsTriangle(const VertexTriangle& vertexTriangle) const;
     [[nodiscard]] bool intersectsRay(const Ray& ray) const;
-    [[nodiscard]] virtual unsigned int getNumberOfRayIntersections(const Ray& ray) const;
-    [[nodiscard]] virtual std::unordered_set<VertexTriangle> getIntersectingTriangles(const Ray& ray) const;
-    [[nodiscard]] virtual std::unordered_set<VertexTriangle> getIntersectingTriangles(const VertexTriangle& triangle) const;
-    [[nodiscard]] const VertexTriangle* getClosestTriangle(const Vertex& vertex) const;
     [[nodiscard]] Vertex getClosestPoint(const Vertex &vertex) const;
+    [[nodiscard]] const VertexTriangle* getClosestTriangle(const Vertex& vertex) const;
+    [[nodiscard]] double getShortestDistanceSquared(const Vertex& vertex) const;
+    [[nodiscard]] unsigned int getNumberOfRayIntersections(const Ray& ray) const;
+    [[nodiscard]] std::vector<VertexTriangle> getIntersectingTriangles(const Ray& ray) const;
+    [[nodiscard]] std::vector<VertexTriangle> getIntersectingTriangles(const VertexTriangle& triangle) const;
+
+private:
+    // More efficient versions of the function are possible if each triangle is uniquely assigned to a single node
+    void getIntersectingTriangles(const Ray& ray, std::vector<VertexTriangle>& result) const;
+    void getIntersectingTriangles(const Ray& ray, std::unordered_set<VertexTriangle>& result) const;
+    void getIntersectingTriangles(const VertexTriangle& triangle, std::vector<VertexTriangle>& result) const;
+    void getIntersectingTriangles(const VertexTriangle& triangle, std::unordered_set<VertexTriangle>& result) const;
+
+    void getClosestTriangle(const Vertex& vertex, const VertexTriangle** result, float* lowerDistanceBoundSquared) const;
+
+public:
 
     [[nodiscard]] const Bounds &getBounds() const;
     [[nodiscard]] bool isSplit() const;
     [[nodiscard]] bool isEmpty() const;
-    [[nodiscard]] unsigned int getDepth() const;
     [[nodiscard]] const std::vector<VertexTriangle> &getTriangles() const;
-    const std::array<std::shared_ptr<AbstractBoundsTree<Bounds, Degree>>, Degree> &getChildren() const;
-
-//    static_assert(std::is_function<class Bounds::getClosestPoint>());
+    [[nodiscard]] const std::array<std::shared_ptr<AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>>, Degree> &getChildren() const;
 };
 
-template <class Bounds, unsigned int Degree>
-const Bounds &AbstractBoundsTree<Bounds, Degree>::getBounds() const {
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+const Bounds &AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getBounds() const {
     return bounds;
 }
 
-template <class Bounds, unsigned int Degree>
-bool AbstractBoundsTree<Bounds, Degree>::isSplit() const {
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::isSplit() const {
     return split;
 }
 
-template <class Bounds, unsigned int Degree>
-bool AbstractBoundsTree<Bounds, Degree>::isEmpty() const {
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::isEmpty() const {
     return empty;
 }
 
-template <class Bounds, unsigned int Degree>
-unsigned int AbstractBoundsTree<Bounds, Degree>::getDepth() const {
-    return depth;
-}
-
-template <class Bounds, unsigned int Degree>
-const std::vector<VertexTriangle> &AbstractBoundsTree<Bounds, Degree>::getTriangles() const {
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+const std::vector<VertexTriangle> &AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getTriangles() const {
     return triangles;
 }
 
-template <class Bounds, unsigned int Degree>
-const std::array<std::shared_ptr<AbstractBoundsTree<Bounds, Degree>>, Degree> &AbstractBoundsTree<Bounds, Degree>::getChildren() const {
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+const std::array<std::shared_ptr<AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>>, Degree> &AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getChildren() const {
     return children;
 }
 
-template <class Bounds, unsigned int Degree>
-bool AbstractBoundsTree<Bounds, Degree>::intersectsTriangle(const VertexTriangle &vertexTriangle) const{
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::intersectsTriangle(const VertexTriangle &vertexTriangle) const{
     if(Intersection::intersect(this->bounds, vertexTriangle)){
         if(split){
             assert(triangles.empty());
@@ -105,8 +106,8 @@ bool AbstractBoundsTree<Bounds, Degree>::intersectsTriangle(const VertexTriangle
     else return false;
 }
 
-template <class Bounds, unsigned int Degree>
-bool AbstractBoundsTree<Bounds, Degree>::intersectsRay(const Ray &ray) const {
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::intersectsRay(const Ray &ray) const {
     if(Intersection::intersect(this->bounds, ray)){
         if(split){
             assert(triangles.empty());
@@ -121,85 +122,156 @@ bool AbstractBoundsTree<Bounds, Degree>::intersectsRay(const Ray &ray) const {
     else return false;
 }
 
-template <class Bounds, unsigned int Degree>
-unsigned int AbstractBoundsTree<Bounds, Degree>::getNumberOfRayIntersections(const Ray &ray) const {
-    return this->getIntersectingTriangles(ray).size();
-//    // Code below is more efficient but this is only correct if each triangle is only present in a single node on each level, which we can't know
-//    if(Intersection::intersect(this->bounds, ray)){
-//        unsigned int intersectingTriangles = 0u;
-//        if(split){
-//            assert(triangles.empty()); // A split node shouldn't contain any triangles
-//            for(const auto& child: children){
-//                auto childIntersectingTriangles = child->getNumberOfRayIntersections(ray);
-//                intersectingTriangles += childIntersectingTriangles;
-//            }
-//        }
-//        else{
-//            for(const auto& triangle: triangles){
-//                if(Intersection::intersect(ray, triangle)){
-//                    intersectingTriangles++;
-//                }
-//            }
-//        }
-//        return intersectingTriangles;
-//    }
-//    else{
-//        return 0u;
-//    }
-}
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+unsigned int AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getNumberOfRayIntersections(const Ray &ray) const {
 
-template <class Bounds, unsigned int Degree>
-std::unordered_set<VertexTriangle> AbstractBoundsTree<Bounds, Degree>::getIntersectingTriangles(const Ray &ray) const {
+    if(!UniqueTriangleAssignment){
+        std::unordered_set<VertexTriangle> result;
+        this->getIntersectingTriangles(ray, result);
+        return result.size();
+    }
+
+    // Code below is more efficient but this is only correct if each triangle is uniquely assigned to a single node on each level
     if(Intersection::intersect(this->bounds, ray)){
-        std::unordered_set<VertexTriangle> intersectingTriangles;
+        unsigned int intersectingTriangles = 0u;
         if(split){
             assert(triangles.empty()); // A split node shouldn't contain any triangles
             for(const auto& child: children){
-                auto childIntersectingTriangles = child->getIntersectingTriangles(ray);
-                intersectingTriangles.insert(childIntersectingTriangles.begin(), childIntersectingTriangles.end());
+                auto childIntersectingTriangles = child->getNumberOfRayIntersections(ray);
+                intersectingTriangles += childIntersectingTriangles;
             }
         }
         else{
             for(const auto& triangle: triangles){
                 if(Intersection::intersect(ray, triangle)){
-                    intersectingTriangles.insert(triangle);
+                    intersectingTriangles++;
                 }
             }
         }
         return intersectingTriangles;
     }
     else{
-        return {};
+        return 0u;
     }
 }
 
-template <class Bounds, unsigned int Degree>
-std::unordered_set<VertexTriangle> AbstractBoundsTree<Bounds, Degree>::getIntersectingTriangles(const VertexTriangle &triangle) const {
-    if(Intersection::intersect(this->bounds, triangle)){
-        std::unordered_set<VertexTriangle> intersectingTriangles;
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+std::vector<VertexTriangle> AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getIntersectingTriangles(const Ray &ray) const {
+    if(UniqueTriangleAssignment){
+        std::vector<VertexTriangle> result;
+        this->getIntersectingTriangles(ray, result);
+        return result;
+    }
+    else{
+        std::unordered_set<VertexTriangle> result;
+        this->getIntersectingTriangles(ray, result);
+        return std::vector<VertexTriangle>(result.begin(), result.end());
+    }
+}
+
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getIntersectingTriangles(const Ray &ray, std::vector<VertexTriangle> &result) const {
+    if(Intersection::intersect(this->bounds, ray)){
         if(split){
             assert(triangles.empty()); // A split node shouldn't contain any triangles
             for(const auto& child: children){
-                auto childIntersectingTriangles = child->getIntersectingTriangles(triangle);
-                intersectingTriangles.insert(childIntersectingTriangles.begin(), childIntersectingTriangles.end());
+                child->getIntersectingTriangles(ray, result);
             }
         }
         else{
             for(const auto& triangle: triangles){
-                if(Intersection::intersect(triangle, triangle)){
-                    intersectingTriangles.insert(triangle);
+                if(Intersection::intersect(ray, triangle)){
+                    result.emplace_back(triangle);
                 }
             }
         }
-        return intersectingTriangles;
-    }
-    else{
-        return {};
     }
 }
 
-template <class Bounds, unsigned int Degree>
-const VertexTriangle* AbstractBoundsTree<Bounds, Degree>::getClosestTriangle(const Vertex &vertex) const{
+
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getIntersectingTriangles(const Ray &ray, std::unordered_set<VertexTriangle> &result) const {
+    if(Intersection::intersect(this->bounds, ray)){
+        if(split){
+            assert(triangles.empty()); // A split node shouldn't contain any triangles
+            for(const auto& child: children){
+                child->getIntersectingTriangles(ray, result);
+            }
+        }
+        else{
+            for(const auto& triangle: triangles){
+                if(Intersection::intersect(ray, triangle)){
+                    result.insert(triangle);
+                }
+            }
+        }
+    }
+}
+
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getIntersectingTriangles(const VertexTriangle &triangle, std::vector<VertexTriangle> &result) const {
+    if(Intersection::intersect(this->bounds, triangle)){
+        if(split){
+            assert(triangles.empty()); // A split node shouldn't contain any triangles
+            for(const auto& child: children){
+                child->getIntersectingTriangles(triangle, result);
+            }
+        }
+        else{
+            for(const auto& nodeTriangle: triangles){
+                if(Intersection::intersect(triangle, nodeTriangle)){
+                    result.emplace_back(nodeTriangle);
+                }
+            }
+        }
+    }
+}
+
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getIntersectingTriangles(const VertexTriangle &triangle, std::unordered_set<VertexTriangle> &result) const {
+    if(Intersection::intersect(this->bounds, triangle)){
+        if(split){
+            assert(triangles.empty()); // A split node shouldn't contain any triangles
+            for(const auto& child: children){
+                child->getIntersectingTriangles(triangle, result);
+            }
+        }
+        else{
+            for(const auto& nodeTriangle: triangles){
+                if(Intersection::intersect(triangle, nodeTriangle)){
+                    result.insert(nodeTriangle);
+                }
+            }
+        }
+    }
+}
+
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+std::vector<VertexTriangle> AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getIntersectingTriangles(const VertexTriangle &triangle) const {
+    if(UniqueTriangleAssignment){
+        std::vector<VertexTriangle> result;
+        this->getIntersectingTriangles(triangle, result);
+        return result;
+    }
+    else{
+        std::unordered_set<VertexTriangle> result;
+        this->getIntersectingTriangles(triangle, result);
+        return std::vector<VertexTriangle>(result.begin(), result.end());
+    }
+}
+
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+double AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getShortestDistanceSquared(const Vertex &vertex) const{
+    const VertexTriangle* closestTriangle = nullptr;
+    const VertexTriangle** result = &closestTriangle;
+    auto* lowerDistanceBoundSquared = new float(std::numeric_limits<float>::max());
+    this->getClosestTriangle(vertex, result, lowerDistanceBoundSquared);
+    assert(*result);
+    return *lowerDistanceBoundSquared;
+}
+
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+const VertexTriangle* AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestTriangle(const Vertex &vertex) const{
     const VertexTriangle* closestTriangle = nullptr;
     const VertexTriangle** result = &closestTriangle;
     auto* lowerDistanceBoundSquared = new float(std::numeric_limits<float>::max());
@@ -208,8 +280,8 @@ const VertexTriangle* AbstractBoundsTree<Bounds, Degree>::getClosestTriangle(con
     return *result;
 }
 
-template <class Bounds, unsigned int Degree>
-Vertex AbstractBoundsTree<Bounds, Degree>::getClosestPoint(const Vertex &vertex) const{
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+Vertex AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestPoint(const Vertex &vertex) const{
     const VertexTriangle* closestTriangle = nullptr;
     const VertexTriangle** result = &closestTriangle;
     auto* lowerDistanceBoundSquared = new float(std::numeric_limits<float>::max());
@@ -218,8 +290,8 @@ Vertex AbstractBoundsTree<Bounds, Degree>::getClosestPoint(const Vertex &vertex)
     return (*result)->getClosestPoint(vertex);
 }
 
-template <class Bounds, unsigned int Degree>
-void AbstractBoundsTree<Bounds, Degree>::getClosestTriangle(const Vertex &vertex, const VertexTriangle** result, float* lowerDistanceBoundSquared) const {
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestTriangle(const Vertex &vertex, const VertexTriangle** result, float* lowerDistanceBoundSquared) const {
     if(split){
         // We calculate the closest distance for each child first, as we will calculate them all anyway
         std::array<float, Degree> squaredDistances;
@@ -260,12 +332,5 @@ void AbstractBoundsTree<Bounds, Degree>::getClosestTriangle(const Vertex &vertex
         }
     }
 }
-
-template<unsigned int Degree>
-struct AbstractBoundsTrees{
-    typedef AbstractBoundsTree<AABB, Degree> AABBTree;
-    typedef AbstractBoundsTree<OBB, Degree> OBBTree;
-    typedef AbstractBoundsTree<Sphere, Degree> SphereTree;
-};
 
 #endif //OPTIXMESHCORE_ABSTRACTBOUNDSTREE_H
