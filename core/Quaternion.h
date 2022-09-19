@@ -15,6 +15,19 @@ public:
 
     MC_FUNC_QUALIFIER explicit Quaternion(const glm::fquat &quaternion): qua(quaternion){}
 
+    MC_FUNC_QUALIFIER explicit Quaternion(float yaw, float pitch, float roll){
+        auto sx = sin(roll/2);
+        auto sy = sin(pitch/2);
+        auto sz = sin(yaw/2);
+        auto cx = cos(roll/2);
+        auto cy = cos(pitch/2);
+        auto cz = cos(yaw/2);
+        this->w = cx*cy*cz - sx*sy*sz;
+        this->x = sx*cy*cz + cx*sy*sz;
+        this->y = cx*sy*cz - sx*cy*sz;
+        this->z = cx*cy*sz + sx*sy*cz;
+    }
+
     MC_FUNC_QUALIFIER explicit Quaternion(const glm::mat3 rotationMatrix): qua(glm::quat_cast(rotationMatrix)){}
 
     MC_FUNC_QUALIFIER explicit Quaternion(const glm::mat4 rotationMatrix): qua(glm::quat_cast(rotationMatrix)){}

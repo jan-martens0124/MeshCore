@@ -12,6 +12,9 @@ public:
     const Vertex center;
     const float radius;
 public:
+
+    MC_FUNC_QUALIFIER Sphere(): center(), radius(){}
+
     MC_FUNC_QUALIFIER Sphere(Vertex center, float radius): center(center), radius(radius) {}
 
     MC_FUNC_QUALIFIER [[nodiscard]] Sphere getTransformed(const Transformation &transformation) const {
@@ -37,6 +40,11 @@ public:
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getSurfaceArea() const {
         return 4.0f * glm::pi<float>() * radius * radius;
+    }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] bool containsPoint(Vertex point) const {
+        auto deltaCenter = point - this->center;
+        return glm::dot(deltaCenter, deltaCenter) <= this->radius * this->radius;
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getClosestPoint(Vertex point) const {

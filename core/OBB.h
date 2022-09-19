@@ -7,6 +7,8 @@
 
 #include "AABB.h"
 #include "Quaternion.h"
+#include "Transformation.h"
+#include <glm/gtc/epsilon.hpp>
 
 /** OBB as an AABB in its own model space, defined by a rotation only **/
 class OBB {
@@ -18,6 +20,13 @@ public:
     MC_FUNC_QUALIFIER OBB(): aabb(), rotation(){};
 
     MC_FUNC_QUALIFIER OBB(const AABB& aabb, const Quaternion& rotation): aabb(aabb), rotation(rotation){}
+
+    MC_FUNC_QUALIFIER OBB(const AABB& aabb, const Transformation& transformation) {
+        this->rotation = Quaternion(transformation.getYaw(), transformation.getPitch(), transformation.getRoll());
+        auto rotatedTranslation = this->rotation.inverseRotateVertex(transformation.getPosition());
+        auto scale = transformation.getScale();
+        this->aabb = AABB(aabb.getMinimum()*scale+rotatedTranslation, aabb.getMaximum()*scale+rotatedTranslation);
+    }
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getSurfaceArea() const {
         return aabb.getSurfaceArea();
