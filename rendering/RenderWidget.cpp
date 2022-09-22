@@ -6,7 +6,6 @@
 #include <QtWidgets>
 #include "forms/ui_renderwidget.h"
 #include "RenderModelControlWidget.h"
-#include "../../solutions/AbstractMeshSolution.h"
 
 RenderWidget::RenderWidget(QWidget *parent):
     QWidget(parent), ui(new Ui::RenderWidget)
