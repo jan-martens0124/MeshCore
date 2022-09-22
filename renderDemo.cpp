@@ -55,14 +55,4 @@ int main(int argc, char *argv[]){
     openGlRenderWidget->renderWorldSpaceMesh("Meshes", rockWorldSpaceMesh, Color(0.8, 0.8, 0.8, 0.6));
     openGlRenderWidget->renderWorldSpaceMesh("Meshes", bananaWorldSpaceMesh, Color(0.75, 0.75, 0, 1));
 
-
-
-    std::shared_ptr<WorldSpaceMesh> worldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../../data/public/Stoyan et al. 2005/Polyhedron5.obj"));
-    openGlRenderWidget->renderWorldSpaceMesh("Meshes", worldSpaceMesh, Color(0.75, 0.75, 0, 1));
-
-    auto result = worldSpaceMesh->getModelSpaceMesh()->getConvexHull();
-
-//    std::shared_ptr<WorldSpaceMesh> worldSpaceMesh2 = std::make_shared<WorldSpaceMesh>(result.value());
-//    openGlRenderWidget->renderWorldSpaceMesh("Meshes", worldSpaceMesh2, Color(0.75, 0.75, 0, 1));
-//    std::cout << result.has_value() << std::endl;
 }
