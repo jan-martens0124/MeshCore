@@ -1,0 +1,3 @@
+[submodule "datasets"]
+	path = datasets
+	url = git@gitlab.kuleuven.be:u0140494/3d-irregular-data-sets.git
