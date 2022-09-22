@@ -14,7 +14,7 @@ void run(RenderWidget* renderWidget);
 int main(int argc, char *argv[]){
 
     QApplication app(argc, argv);
-    NewApplicationWindow window;
+    ApplicationWindow window;
     window.show();
 
     std::thread thread(run, window.getRenderWidget());
@@ -46,7 +46,7 @@ void run(RenderWidget* renderWidget){
     AABBOctree octree(containerWorldSpaceMesh->getModelSpaceMesh());
     auto renderTree = std::make_shared<RenderBoxTree>(octree, Transformation(), renderWidget->getOpenGLWidget()->getAmbientShader());
     renderTree->setVisible(false);
-    renderWidget->addOrUpdateRenderModel("Container", "renderTree0", renderTree);
+//    renderWidget->addOrUpdateRenderModel("Container", "renderTree0", renderTree);
 
     // Test new random transformations for the item
     Random random;

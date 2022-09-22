@@ -28,12 +28,8 @@ find_package(OpenGL REQUIRED)
 link_libraries(OpenGL::GL)
 
 ### GLEW ###
-add_definitions(-DGLEW_STATIC)
-include_directories(${GLEW_DIR}/include)
-link_libraries("${GLEW_DIR}/lib/Release/x64/glew32s.lib")
-
-#find_package(GLEW REQUIRED)
-
+find_package(GLEW REQUIRED)
+link_libraries(GLEW::glew)
 
 file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp)
 add_executable(A-SimpleRenderDemo renderDemo.cpp ${SOURCES})

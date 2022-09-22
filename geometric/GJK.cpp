@@ -65,7 +65,7 @@ std::optional<glm::vec3> GJK::doSimplex(std::vector<glm::vec3> &simplex, const g
             g = doSimplex4(simplex, origin, simplex[0], simplex[1], simplex[2], simplex[3]);
             break;
         default:
-            throw std::exception("Should not occur!");
+            throw std::runtime_error("Should not occur!");
     }
 
     if(glm::distance(g,origin) < GJK_EPSILON)
