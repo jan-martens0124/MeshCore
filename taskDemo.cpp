@@ -92,7 +92,7 @@ int main(int argc, char *argv[]){
     DummyTask dummyTask;
 
     // Pass a function that is called when a solution has to be rendered
-    std::function<void(RenderWidget* renderWidget, std::shared_ptr<const AbstractSolution> solution)> onSolutionNotified = [](RenderWidget* renderWidget, std::shared_ptr<const AbstractSolution> solution){
+    std::function<void(RenderWidget* renderWidget, std::shared_ptr<const AbstractSolution> solution)> onSolutionNotified = [](RenderWidget* renderWidget, const std::shared_ptr<const AbstractSolution>& solution){
         auto dummySolution = std::dynamic_pointer_cast<const DummySolution>(solution);
         renderWidget->renderWorldSpaceMesh("Container", dummySolution->getContainer(), Color(1.0,1.0,1.0,0.4));
         renderWidget->renderWorldSpaceMesh("Items", dummySolution->getItem(), Color::Red());

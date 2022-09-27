@@ -9,6 +9,7 @@
 #include "RenderSphere.h"
 #include "RenderWidget.h"
 #include "Exception.h"
+#include <glm/gtx/hash.hpp>
 
 [[maybe_unused]] OpenGLWidget::OpenGLWidget(QWidget *parent): QOpenGLWidget(parent) {}
 
@@ -32,6 +33,7 @@ void OpenGLWidget::initializeGL() {
     qRegisterMetaType<RenderWidget*>();
     qRegisterMetaType<AABB>();
     qRegisterMetaType<Transformation>();
+    qRegisterMetaType<Sphere>();
 
     GL_CALL(glClearColor(0,0,0,1));
 
@@ -379,14 +381,18 @@ void OpenGLWidget::updateSortedRenderModels(){
     });
 }
 
-void OpenGLWidget::renderBoxSlot(const std::string &group, const AABB &aabb, const Transformation& transformation, RenderWidget *renderWidget) {
+void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, RenderWidget *renderWidget) {
+
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
 
     // Find the model in this group
+    auto hash = std::hash<AABB>{}(aabb);
+    glm::detail::hash_combine(hash, std::hash<glm::mat4>{}(transformation.getMatrix()));
     auto renderId = std::to_string(std::hash<AABB>{}(aabb));
     auto modelIterator = renderModelsMap.find(renderId);
 
+    // Create a new model if not found
     if(modelIterator == renderModelsMap.end()){
 
         this->makeCurrent();
@@ -415,6 +421,7 @@ void OpenGLWidget::renderBoxSlot(const std::string &group, const AABB &aabb, con
 
         // Set the color
         modelIterator->second->setColor(Color(1,1,1,1));
+        modelIterator->second->setName(name);
 
         this->updateSortedRenderModels();
     }
@@ -426,8 +433,8 @@ void OpenGLWidget::renderBoxSlot(const std::string &group, const AABB &aabb, con
 
 }
 
+void OpenGLWidget::renderSphereSlot(const std::string &group, const std::string& name, const Sphere &sphere, const Color& color, RenderWidget *renderWidget) {
 
-void OpenGLWidget::renderSphereSlot(const std::string &group, const Sphere &sphere, const Transformation& transformation, RenderWidget *renderWidget) {
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
 
@@ -435,12 +442,13 @@ void OpenGLWidget::renderSphereSlot(const std::string &group, const Sphere &sphe
     auto renderId = std::to_string(std::hash<Sphere>{}(sphere));
     auto modelIterator = renderModelsMap.find(renderId);
 
+    // Create a new model if not found
     if(modelIterator == renderModelsMap.end()){
 
         this->makeCurrent();
 
         // No entry present yet, create new render Model
-        auto renderAABB = std::make_shared<RenderSphere>(sphere, transformation, this->ambientShader, this->diffuseShader);
+        auto renderAABB = std::make_shared<RenderSphere>(sphere, Transformation(), this->ambientShader, this->diffuseShader);
 
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({renderId, renderAABB}).first;
@@ -462,13 +470,91 @@ void OpenGLWidget::renderSphereSlot(const std::string &group, const Sphere &sphe
         renderWidget->addControlWidget(group, renderAABB);
 
         // Set the color
-        modelIterator->second->setColor(Color(1,1,1,1));
+        modelIterator->second->setColor(color);
+        modelIterator->second->setName(name);
 
         this->updateSortedRenderModels();
     }
 
     // Update the transformation
-    modelIterator->second->setTransformation(transformation);
+    modelIterator->second->setTransformation(Transformation());
+
+    this->update();
+
+}
+
+void OpenGLWidget::renderTriangleSlot(const std::string &group, const std::string &name, const VertexTriangle &triangle,
+                                      const Color &color, RenderWidget *renderWidget) {
+
+    // Find the group
+    auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
+
+    // Find the model in this group
+    auto renderId = std::to_string(std::hash<VertexTriangle>{}(triangle));
+    auto modelIterator = renderModelsMap.find(renderId);
+
+    // Create a new model if not found
+    if(modelIterator == renderModelsMap.end()){
+
+        this->makeCurrent();
+
+        // No entry present yet, create new render Model
+//        auto renderTriangle = std::make_shared<RenderTriangle>(triangle, Transformation(), this->ambientShader, this->diffuseShader);
+        // TODO create a renderTriangle or handle it as a mesh
+    }
+
+    // Update the transformation
+    modelIterator->second->setTransformation(Transformation());
+
+    this->update();
+}
+
+void OpenGLWidget::renderLineSlot(const std::string &group, const std::string &name, const glm::vec3 &start,
+                                  const glm::vec3 &end, const Color &color, RenderWidget *renderWidget) {
+
+    // Find the group
+    auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
+
+    // Find the model in this group
+    auto renderId = std::to_string(std::hash<glm::vec3>{}(start)) + std::to_string(std::hash<glm::vec3>{}(end));
+    auto modelIterator = renderModelsMap.find(renderId);
+
+    // Create a new model if not found
+    if(modelIterator == renderModelsMap.end()){
+
+        this->makeCurrent();
+
+        // No entry present yet, create new render Model
+        auto renderLine = std::make_shared<RenderLine>(start, end, Transformation(), this->ambientShader);
+
+        // Insert it in the renderModelsMap
+        modelIterator = renderModelsMap.insert({renderId, renderLine}).first;
+
+        // Add listener to redraw when mesh is changed
+        const auto listener = std::make_shared<SimpleRenderModelListener>();
+        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
+            if(oldColor.a!=newColor.a){
+                this->updateSortedRenderModels();
+            }
+        });
+
+        listener->setOnChanged([this](){
+            this->update();
+        });
+        renderLine->addListener(listener);
+
+        // Add control widget to the renderWidget
+        renderWidget->addControlWidget(group, renderLine);
+
+        // Set the color
+        modelIterator->second->setColor(color);
+        modelIterator->second->setName(name);
+
+        this->updateSortedRenderModels();
+    }
+
+    // Update the transformation
+    modelIterator->second->setTransformation(Transformation());
 
     this->update();
 

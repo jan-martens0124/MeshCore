@@ -31,6 +31,10 @@ link_libraries(OpenGL::GL)
 find_package(GLEW REQUIRED)
 link_libraries(GLEW::glew)
 
+### GSL ###
+find_package(GSL REQUIRED)
+link_libraries(GSL::gsl)
+
 file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp)
 add_executable(A-SimpleRenderDemo renderDemo.cpp ${SOURCES})
 add_executable(B-SimpleCollisionDemo collisionDemo.cpp ${SOURCES})

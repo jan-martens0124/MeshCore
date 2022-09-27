@@ -4,6 +4,7 @@
 
 #include "RenderWidget.h"
 #include <QtWidgets>
+#include <iomanip>
 #include "forms/ui_renderwidget.h"
 #include "RenderModelControlWidget.h"
 
@@ -23,6 +24,13 @@ RenderWidget::RenderWidget(QWidget *parent):
 
 RenderWidget::~RenderWidget() {
     delete ui;
+    if(this->currentTask != nullptr){
+        currentTask->stop();
+        currentTask->join();
+    }
+    if(timerThread.joinable()){
+        this->timerThread.join();
+    }
 }
 
 OpenGLWidget *RenderWidget::getOpenGLWidget() const {
@@ -144,20 +152,41 @@ QVBoxLayout *RenderWidget::getOrAddGroupLayout(const std::string &group) {
     return iterator->second;
 }
 
-void RenderWidget::renderBox(const std::string &group, const AABB &aabb, const Transformation& transformation) {
+void RenderWidget::renderBox(const std::string &group, const std::string& name,  const AABB &aabb, const Transformation& transformation) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderBoxSlot", Qt::AutoConnection,
                               Q_ARG(std::string, group),
+                              Q_ARG(std::string, name),
                               Q_ARG(AABB, aabb),
                               Q_ARG(Transformation, transformation),
                               Q_ARG(RenderWidget*, this));
 }
 
-void RenderWidget::renderSphere(const std::string &group, const Sphere &sphere, const Transformation& transformation) {
+void RenderWidget::renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const Color &color) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderSphereSlot", Qt::AutoConnection,
                               Q_ARG(std::string, group),
+                              Q_ARG(std::string, name),
                               Q_ARG(Sphere, sphere),
-                              Q_ARG(Transformation, transformation),
+                              Q_ARG(Color, color),
                               Q_ARG(RenderWidget*, this));
+}
+
+void RenderWidget::renderTriangle(const std::string& group, const std::string& name, const VertexTriangle& vertexTriangle, const Color &color) {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderTriangleSlot", Qt::AutoConnection,
+                              Q_ARG(std::string, group),
+                              Q_ARG(std::string, name),
+                              Q_ARG(VertexTriangle, vertexTriangle),
+                              Q_ARG(Color, color),
+                              Q_ARG(RenderWidget*, this));
+}
+
+void RenderWidget::renderLine(const std::string &group, const Vertex &vertexA, const Vertex &vertexB,
+                              const Color &color) {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderLineSlot", Qt::AutoConnection,
+                                Q_ARG(std::string, group),
+                                Q_ARG(Vertex, vertexA),
+                                Q_ARG(Vertex, vertexB),
+                                Q_ARG(Color, color),
+                                Q_ARG(RenderWidget*, this));
 }
 
 void RenderWidget::notifySolution(const std::shared_ptr<const AbstractSolution>& solution) {
@@ -174,13 +203,44 @@ void RenderWidget::notifyProgress(float progress) {
 }
 
 void RenderWidget::notifyStarted() {
+    QMetaObject::invokeMethod(this, "setStatusLabelSlot", Qt::AutoConnection, Q_ARG(QString, QString::fromStdString("-")));
     QMetaObject::invokeMethod(this, "updateProgressBarSlot", Qt::AutoConnection, Q_ARG(int, 0));
     QMetaObject::invokeMethod(this, "setStopButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, true));
     QMetaObject::invokeMethod(this, "setStartButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, false));
+
+    this->taskRunning = true;
+
+    // Start timer thread
+    timerThread = std::thread([&]{
+        auto startMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+        while(taskRunning){
+            auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+            auto elapsedMs = nowMs - startMs;
+            //Format as HH:MM:SS
+            auto hours = std::chrono::duration_cast<std::chrono::hours>(elapsedMs);
+            elapsedMs -= std::chrono::milliseconds(std::chrono::hours(hours));
+            auto minutes = std::chrono::duration_cast<std::chrono::minutes>(elapsedMs);
+            elapsedMs -= std::chrono::milliseconds(std::chrono::minutes(minutes));
+            auto seconds = std::chrono::duration_cast<std::chrono::seconds>(elapsedMs);
+//            elapsedMs -= std::chrono::milliseconds(std::chrono::seconds(seconds));
+//            auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(elapsedMs);
+            std::stringstream ss;
+            ss << std::setfill('0') << std::setw(2) << hours.count()
+               << ":" << std::setfill('0') << std::setw(2) << minutes.count()
+               << ":" << std::setfill('0') << std::setw(2) << seconds.count();
+//               << "." << std::setfill('0') << std::setw(3) << milliseconds.count();
+
+            QMetaObject::invokeMethod(this, "setTimeLabelSlot", Qt::AutoConnection, Q_ARG(QString, QString::fromStdString(ss.str())));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        }
+    });
     this->clear();
 }
 
 void RenderWidget::notifyFinished() {
+    this->taskRunning = false;
+    QMetaObject::invokeMethod(this, "setStatusLabelSlot", Qt::AutoConnection, Q_ARG(QString, QString::fromStdString("Finished")));
     QMetaObject::invokeMethod(this, "setStopButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, false));
     QMetaObject::invokeMethod(this, "setStartButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, true));
 }
@@ -202,7 +262,7 @@ void RenderWidget::notifyStatus(const std::string &status) {
     this->ui->statusLabel->setText(status);
 }
 
-void RenderWidget::observeTask(AbstractTask *task, const std::function<void(RenderWidget* renderWidget, std::shared_ptr<const AbstractSolution> solution)>& onSolutionNotified) {
+void RenderWidget::observeTask(AbstractTask *task, const std::function<void(RenderWidget* renderWidget, const std::shared_ptr<const AbstractSolution> solution)>& onTaskSolutionNotified) {
 
     // Clear currently observed task if needed
     if(this->currentTask!=nullptr){
@@ -213,8 +273,8 @@ void RenderWidget::observeTask(AbstractTask *task, const std::function<void(Rend
     }
 
     // Set and observe new task
-    currentTask = task;
-    this->onSolutionNotified = onSolutionNotified;
+    this->currentTask = task;
+    this->onSolutionNotified = onTaskSolutionNotified;
     if(task!=nullptr){
         currentTask->registerObserver(this);
         this->ui->taskSection->setVisible(true);
@@ -248,4 +308,8 @@ void RenderWidget::captureSceneToFile(const std::string &fileName) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureSceneToFileSlot",
                               Qt::AutoConnection,
                               Q_ARG(QString, QString::fromStdString(fileName)));
+}
+
+[[maybe_unused]] void RenderWidget::setTimeLabelSlot(const QString &time) {
+    this->ui->timeLabel->setText(time);
 }

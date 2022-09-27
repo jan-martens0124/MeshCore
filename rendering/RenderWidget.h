@@ -73,14 +73,14 @@ public:
     // Render primitives
     // We need to provide this methods because users can't create render models outside of the main thread
     // TODO render new object each time or use hashes // Not ideal, open question... let the user provide a hash or id by their choice
-    template<unsigned int Degree>
-    void renderAABBTree(const std::string &group, const std::shared_ptr<AABBTree<Degree>> &aabbTree, const Color &color);
+//    template<unsigned int Degree>
+//    void renderAABBTree(const std::string &group, const std::shared_ptr<AABBTree<Degree>> &aabbTree, const Color &color);
 
-    void renderBox(const std::string &group, const AABB &aabb, const Transformation& transformation=Transformation());
-    void renderSphere(const std::string &group, const Sphere &sphere, const Transformation& transformation);
-    void renderTriangle(const std::string &group, const VertexTriangle &triangle, const Transformation& transformation);
-//    void renderLine(const std::string &group, const Sphere &sphere, const Transformation& transformation);
-//    void renderSphere(const std::string &group, const AABB &aabb, const glm::mat4& transformationMatrix)
+    // TODO pass names as well, that will serve as id (together with hash?)
+    void renderBox(const std::string &group, const std::string& name, const AABB &aabb, const Transformation& transformation=Transformation());
+    void renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const Color &color = Color(1.0f));
+    void renderTriangle(const std::string &group, const std::string& name, const VertexTriangle &triangle, const Color &color = Color(1.0f));
+    void renderLine(const std::string &group, const Vertex &vertexA, const Vertex &vertexB, const Color &color = Color(1.0f));
     void addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel);
 
     void observeTask(AbstractTask* task, const std::function<void(RenderWidget* renderWidget, std::shared_ptr<const AbstractSolution> solution)>& onSolutionNotified);
@@ -94,13 +94,15 @@ public:
     void notifySolution(const std::shared_ptr<const AbstractSolution>& solution) override;
 private:
     AbstractTask* currentTask = nullptr;
-    std::function<void(RenderWidget* renderWidget, std::shared_ptr<const AbstractSolution> solution)> onSolutionNotified  = {};
-    static Color defaultColors[];
+    std::function<void(RenderWidget* renderWidget, const std::shared_ptr<const AbstractSolution>& solution)> onSolutionNotified  = {};
+    std::thread timerThread{};
+    std::atomic<boolean> taskRunning = false;
 private slots:
-    void updateProgressBarSlot(int progress);
-    void setStartButtonEnabledSlot(bool enabled);
-    void setStopButtonEnabledSlot(bool enabled);
-    void setStatusLabelSlot(const QString& status);
+    [[maybe_unused]] void updateProgressBarSlot(int progress);
+    [[maybe_unused]] void setStartButtonEnabledSlot(bool enabled);
+    [[maybe_unused]] void setStopButtonEnabledSlot(bool enabled);
+    [[maybe_unused]] void setStatusLabelSlot(const QString& status);
+    [[maybe_unused]] void setTimeLabelSlot(const QString& time);
 };
 
 #endif //OPTIXMESHCORE_RENDERWIDGET_H
