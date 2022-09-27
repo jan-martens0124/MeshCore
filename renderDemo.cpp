@@ -9,7 +9,7 @@
 #include "utility/FileParser.h"
 #include "rendering/RenderSphere.h"
 
-[[noreturn]] void run(RenderWidget* openGlRenderWidget);
+[[noreturn]] void run(RenderWidget* renderWidget);
 
 int main(int argc, char *argv[]){
 
@@ -17,29 +17,20 @@ int main(int argc, char *argv[]){
     ApplicationWindow window;
     window.show();
 
-    std::thread thread(run, window.getRenderWidget());
-
-
-    Sphere sphere(glm::vec3(-5.0f, 0.0f, 0.0f), 5.0f);
-    auto renderSphere = std::make_shared<RenderSphere>(sphere, Transformation(), window.getRenderWidget()->getOpenGLWidget()->getAmbientShader(), window.getRenderWidget()->getOpenGLWidget()->getDiffuseShader());
-    renderSphere->setColor(Color(1.0f, 0.2f, 0.2f, 0.5f));
-    window.getRenderWidget()->addOrUpdateRenderModel("Sphere", "0qd54f", renderSphere);
+    std::thread workerThread(run, window.getRenderWidget());
 
     int returnCode = QApplication::exec();
-    thread.join();
+    workerThread.join();
     return returnCode;
 }
 
-[[noreturn]] void run(RenderWidget* openGlRenderWidget){
+void run(RenderWidget* renderWidget){
 
-    /// Here is where you would start of your code
+    /// Here is where you would start code running on a separate thread
 
-    // Load some problem meshes
-    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::loadMeshFile("../../data/models/Everton/banana.stl");
-    std::shared_ptr<WorldSpaceMesh> bananaWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh);
-
-    std::shared_ptr<ModelSpaceMesh> modelSpaceMesh2 = FileParser::loadMeshFile("../../data/models/rocks/rock_008k.obj");
-    std::shared_ptr<WorldSpaceMesh> rockWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh2);
+    // Load some meshes
+    std::shared_ptr<WorldSpaceMesh> bananaWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../datasets/E. F. Silva et al. 2021/banana.stl"));
+    std::shared_ptr<WorldSpaceMesh> rockWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../datasets/E. F. Silva et al. 2021/stone_1.obj"));
 
     std::cout << "Number of vertices: " << bananaWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
     std::cout << "Number of vertices: " << rockWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
@@ -48,11 +39,13 @@ int main(int argc, char *argv[]){
 
     bananaWorldSpaceMesh->getModelTransformation().setPosition(position);
     bananaWorldSpaceMesh->getModelTransformation().setYaw(1.0f);
-
-    rockWorldSpaceMesh->getModelTransformation().setScale(2.0f);
+    rockWorldSpaceMesh->getModelTransformation().setScale(0.5f);
+    rockWorldSpaceMesh->getModelTransformation().setPosition(glm::vec3(0,0,-15));
 
     // Pass them to the renderer
-    openGlRenderWidget->renderWorldSpaceMesh("Meshes", rockWorldSpaceMesh, Color(0.8, 0.8, 0.8, 0.6));
-    openGlRenderWidget->renderWorldSpaceMesh("Meshes", bananaWorldSpaceMesh, Color(0.75, 0.75, 0, 1));
+    renderWidget->renderWorldSpaceMesh("Meshes", rockWorldSpaceMesh, Color(0.8, 0.8, 0.8, 0.6));
+    renderWidget->renderWorldSpaceMesh("Meshes", bananaWorldSpaceMesh, Color(0.75, 0.75, 0, 1));
 
+    // Render a primitive shape as well
+    renderWidget->renderSphere("Sphere", "Sphere2", Sphere(glm::vec3(-15.0f, 0.0f, 0.0f), 5.0f), Color(1.0f, 0.2f, 0.2f, 0.5f));
 }
