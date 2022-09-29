@@ -240,7 +240,7 @@ void RenderWidget::notifyStarted() {
 
 void RenderWidget::notifyFinished() {
     this->taskRunning = false;
-    QMetaObject::invokeMethod(this, "setStatusLabelSlot", Qt::AutoConnection, Q_ARG(QString, QString::fromStdString("Finished")));
+    if(timerThread.joinable()) timerThread.join();
     QMetaObject::invokeMethod(this, "setStopButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, false));
     QMetaObject::invokeMethod(this, "setStartButtonEnabledSlot", Qt::AutoConnection, Q_ARG(bool, true));
 }

@@ -61,6 +61,10 @@ public:
         notifyObserversStatus("Executing random walk");
         for (int i = 0; i < iterations; ++i){
 
+            if(this->stopCalled){
+                return;
+            }
+
             // 0. Sample a random change to position and orientation
             const Transformation originalTransformation = item->getModelTransformation();
             item->getModelTransformation().deltaPosition(glm::vec3(random.nextFloat(-0.5f, 0.5f), random.nextFloat(-0.5f, 0.5f), random.nextFloat(-0.5f, 0.5f)));

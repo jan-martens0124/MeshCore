@@ -7,6 +7,12 @@
 void AbstractTask::run_static(AbstractTask* task){
     task->notifyObserversStarted();
     task->run();
+    if(task->stopCalled){
+        task->notifyObserversStatus("Stopped");
+    }
+    else{
+        task->notifyObserversStatus("Finished");
+    }
     task->notifyObserversFinished();
 }
 
