@@ -10,11 +10,11 @@ endif()
 
 ### GLM ###
 find_package(glm REQUIRED)
-include_directories(${GLM_INCLUDE_DIRS})
+link_libraries(glm::glm)
 
 ### Boost ###
 find_package(Boost REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
+link_libraries(Boost::boost)
 
 ### QT ###
 set(CMAKE_AUTOMOC ON)
