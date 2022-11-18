@@ -36,8 +36,8 @@
             size_t result = 0;
             auto vertexHash = std::hash<Vertex>();
             auto floatHash = std::hash<float>();
-            glm::detail::hash_combine(result, vertexHash(sphere.center));
-            glm::detail::hash_combine(result, floatHash(sphere.radius));
+            glm::detail::hash_combine(result, vertexHash(sphere.getCenter()));
+            glm::detail::hash_combine(result, floatHash(sphere.getRadius()));
             return result;
         }
     };
@@ -69,7 +69,7 @@
 
     template<> struct std::hash<Sphere> {
         size_t operator()(const Sphere &sphere) const {
-            return std::hash<float>()(sphere.center.x + sphere.center.y + sphere.center.z + sphere.radius);
+            return std::hash<float>()(sphere.getCenter().x + sphere.getCenter().y + sphere.getCenter().z + sphere.getRadius());
         }
     };
 #endif

@@ -23,7 +23,7 @@ RenderSphere::RenderSphere(const Sphere &sphere,
     std::vector<Vertex> vertices;
     std::vector<IndexTriangle> indexTriangles;
 
-    this->unscaledRadius = sphere.radius;
+    this->unscaledRadius = sphere.getRadius();
     this->unscaledVolume = sphere.getVolume();
     this->unscaledSurfaceArea = sphere.getSurfaceArea();
 
@@ -38,9 +38,9 @@ RenderSphere::RenderSphere(const Sphere &sphere,
         const auto stackAngle = -glm::pi<float>() * ((float)currentStack / (float)stackCount-0.5f);
         for(auto currentSector=0u; currentSector <= sectorCount; ++currentSector){
             const auto sectorAngle= glm::two_pi<float>() * (float)currentSector / (float)sectorCount;
-            const auto x= sphere.center.x + sphere.radius*glm::cos(stackAngle)*glm::cos(sectorAngle);
-            const auto y= sphere.center.y + sphere.radius*glm::cos(stackAngle)*glm::sin(sectorAngle);
-            const auto z= sphere.center.z + sphere.radius*glm::sin(stackAngle);
+            const auto x= sphere.getCenter().x + sphere.getRadius()*glm::cos(stackAngle)*glm::cos(sectorAngle);
+            const auto y= sphere.getCenter().y + sphere.getRadius()*glm::cos(stackAngle)*glm::sin(sectorAngle);
+            const auto z= sphere.getCenter().z + sphere.getRadius()*glm::sin(stackAngle);
             vertices.emplace_back(x, y, z);
         }
     }

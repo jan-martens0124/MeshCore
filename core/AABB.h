@@ -58,6 +58,14 @@ public:
         auto delta = this->getClosestPoint(point) - point;
         return glm::dot(delta, delta);
     }
+
+    MC_FUNC_QUALIFIER bool operator==(const AABB &other) const {
+        return minimum == other.minimum && maximum == other.maximum;
+    }
+
+    MC_FUNC_QUALIFIER bool operator!=(const AABB &other) const {
+        return !(other == *this);
+    }
 };
 
 #endif //MESHCORE_AABB_H

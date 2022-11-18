@@ -6,16 +6,31 @@
 #define OPTIXMESHCORE_SPHERE_H
 
 #include "Vertex.h"
+#include "Core.h"
+#include "Transformation.h"
 
 class Sphere{
+private:
+    Vertex center;
+    float radius, radiusSquared;
 public:
-    const Vertex center;
-    const float radius;
-public:
+    MC_FUNC_QUALIFIER [[nodiscard]] const Vertex &getCenter() const {
+        return center;
+    }
 
-    MC_FUNC_QUALIFIER Sphere(): center(), radius(){}
+    MC_FUNC_QUALIFIER [[nodiscard]] float getRadius() const {
+        return radius;
+    }
 
-    MC_FUNC_QUALIFIER Sphere(Vertex center, float radius): center(center), radius(radius) {}
+    MC_FUNC_QUALIFIER [[nodiscard]] float getRadiusSquared() const {
+        return radiusSquared;
+    }
+
+    MC_FUNC_QUALIFIER Sphere(): center(0.0f), radius(0.0f), radiusSquared(0.0f){}
+
+    MC_FUNC_QUALIFIER Sphere(Vertex center, float radius): center(center), radius(radius), radiusSquared(radius * radius){
+        assert(radius>=0.0f);
+    }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Sphere getTransformed(const Transformation &transformation) const {
         auto transformedCenter = transformation.transformVertex(this->center);
@@ -35,25 +50,39 @@ public:
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getVolume() const {
-        return (4.0f / 3.0f) * glm::pi<float>() * radius * radius * radius;
+        return (4.0f / 3.0f) * glm::pi<float>() * getRadiusSquared() * radius;
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getSurfaceArea() const {
-        return 4.0f * glm::pi<float>() * radius * radius;
+        return 4.0f * glm::pi<float>() * getRadiusSquared();
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] bool containsPoint(Vertex point) const {
         auto deltaCenter = point - this->center;
-        return glm::dot(deltaCenter, deltaCenter) <= this->radius * this->radius;
+        return glm::dot(deltaCenter, deltaCenter) <= getRadiusSquared();
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getClosestPoint(Vertex point) const {
-        return glm::normalize(point - this->center) * this->radius + this->center;
+        auto deltaCenter = point - this->center;
+        auto distanceCenterSquared = glm::dot(deltaCenter, deltaCenter);
+
+        // Return the point itself if it is inside the sphere
+        if(distanceCenterSquared <= getRadiusSquared()){
+            return point;
+        }
+        return  this->center + deltaCenter*glm::inversesqrt(deltaCenter) * this->radius;
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getDistanceSquaredTo(Vertex point) const {
         auto deltaCenter = point - this->center;
-        auto distance = glm::sqrt(glm::dot(deltaCenter, deltaCenter)) - this->radius;
+        auto distanceCenterSquared = glm::dot(deltaCenter, deltaCenter);
+
+        // Return 0 if the point is inside the sphere
+        if(distanceCenterSquared <= getRadiusSquared()){
+            return 0.0f;
+        }
+
+        auto distance = glm::sqrt(distanceCenterSquared) - this->radius;
         return distance*distance;
     }
 };

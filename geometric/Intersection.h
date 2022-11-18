@@ -52,6 +52,7 @@ namespace Intersection{
 
     // Sphere-Sphere
     bool intersect(const Sphere& firstSphere, const Sphere& secondSphere);
+    float calculateOverlappingVolume(const Sphere& firstSphere, const Sphere& secondSphere);
 
     // Mesh-Mesh
     bool intersects(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB);

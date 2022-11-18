@@ -93,33 +93,35 @@ const std::array<std::shared_ptr<AbstractBoundsTree<Bounds, Degree, UniqueTriang
 template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
 bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::intersectsTriangle(const VertexTriangle &vertexTriangle) const{
     if(Intersection::intersect(this->bounds, vertexTriangle)){
-        if(split){
-            assert(triangles.empty());
-            return std::any_of(children.begin(), children.end(), [vertexTriangle](const auto& child) {return child->intersectsTriangle(vertexTriangle);});
+        for (const auto &child: children){
+            if(child && child->intersectsTriangle(vertexTriangle)){
+                return true;
+            }
         }
-        else{
-            return std::any_of(triangles.begin(), triangles.end(), [vertexTriangle](const auto& triangle) {
-                return Intersection::intersect(triangle, vertexTriangle);
-            });
+        for(const auto& triangle: triangles){
+            if(Intersection::intersect(triangle, vertexTriangle)){
+                return true;
+            }
         }
     }
-    else return false;
+    return false;
 }
 
 template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
 bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::intersectsRay(const Ray &ray) const {
     if(Intersection::intersect(this->bounds, ray)){
-        if(split){
-            assert(triangles.empty());
-            return std::any_of(children.begin(), children.end(), [ray](const auto& child) {return child->intersectsRay(ray);});
+        for (const auto &child: children){
+            if(child && child->intersectsTriangle(ray)){
+                return true;
+            }
         }
-        else{
-            return std::any_of(triangles.begin(), triangles.end(), [ray](const auto& triangle) {
-                return Intersection::intersect(ray, triangle);
-            });
+        for(const auto& triangle: triangles){
+            if(Intersection::intersect(ray, triangle)){
+                return true;
+            }
         }
     }
-    else return false;
+    return false;
 }
 
 template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
@@ -134,18 +136,13 @@ unsigned int AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getNu
     // Code below is more efficient but this is only correct if each triangle is uniquely assigned to a single node on each level
     if(Intersection::intersect(this->bounds, ray)){
         unsigned int intersectingTriangles = 0u;
-        if(split){
-            assert(triangles.empty()); // A split node shouldn't contain any triangles
-            for(const auto& child: children){
-                auto childIntersectingTriangles = child->getNumberOfRayIntersections(ray);
-                intersectingTriangles += childIntersectingTriangles;
-            }
+        for(const auto& child: children){
+            auto childIntersectingTriangles = child->getNumberOfRayIntersections(ray);
+            intersectingTriangles += childIntersectingTriangles;
         }
-        else{
-            for(const auto& triangle: triangles){
-                if(Intersection::intersect(ray, triangle)){
-                    intersectingTriangles++;
-                }
+        for(const auto& triangle: triangles){
+            if(Intersection::intersect(ray, triangle)){
+                intersectingTriangles++;
             }
         }
         return intersectingTriangles;

@@ -3,7 +3,8 @@
 //
 
 #include "FileParser.h"
-#include "../mapbox/earcut.hpp"
+#include "../external/mapbox/earcut.hpp"
+#include "../utility/io.h"
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -14,7 +15,6 @@
 #include <glm/gtx/vector_angle.hpp>
 #include <array>
 #include <cstring>
-
 std::mutex FileParser::cacheMapMutex{};
 std::unordered_map<std::string, std::weak_ptr<ModelSpaceMesh>> FileParser::meshCacheMap{};
 
@@ -91,10 +91,11 @@ void FileParser::saveFile(const std::string &filePath, const std::shared_ptr<Mod
 
     std::string extension = filePath.substr(filePath.find_last_of('.') + 1);
 
-    if(std::filesystem::exists(filePath)){
-        std::cout << "Warning: File " << filePath << " already exists!" << std::endl;
-        return;
-    }
+    // TODO enable this again
+//    if(std::filesystem::exists(filePath)){
+//        std::cout << "Warning: File " << filePath << " already exists!" << std::endl;
+//        return;
+//    }
 
     if( extension == "obj") saveFileOBJ(filePath, mesh);
     else{
@@ -181,6 +182,28 @@ ModelSpaceMesh FileParser::parseFileOBJ(const std::string &filePath) {
     return {finalVertices, finalTriangles};
 }
 
+glm::vec3 readASCIISTLNormalLine(std::string line){
+    assert(line.find("facet normal") != std::string::npos);
+    auto vertexIndex = line.find("facet normal");
+    line = line.substr(vertexIndex + 12); // Remove leading vertex word
+
+    while(line.find_first_of(' ') == 0) line = line.substr(1); // Remove leading whitespace
+    auto floatIndex = line.find_first_of(' ');
+    float x = std::stof(line.substr(0, floatIndex));
+    line = line.substr(floatIndex);
+
+    while(line.find_first_of(' ') == 0) line = line.substr(1); // Remove leading whitespace
+    floatIndex = line.find_first_of(' ');
+    float y = std::stof(line.substr(0, floatIndex));
+    line = line.substr(floatIndex);
+
+    while(line.find_first_of(' ') == 0) line = line.substr(1); // Remove leading whitespace
+    floatIndex = line.find_first_of(' ');
+    float z = std::stof(line.substr(0, floatIndex));
+
+    return {x,y,z};
+}
+
 Vertex readASCIISTLVertexLine(std::ifstream& stream){
     std::string line;
     getline(stream, line);
@@ -223,7 +246,7 @@ ModelSpaceMesh FileParser::parseFileSTL(const std::string &filePath) {
         if(firstLength != std::string::npos){
 
             // Begin parsing polygon
-            std::vector<Vertex> facetVertices;
+            glm::vec3 facetNormal = readASCIISTLNormalLine(line);
             getline(stream, line);
             assert(line.find("outer loop") != std::string::npos);
 
@@ -247,6 +270,19 @@ ModelSpaceMesh FileParser::parseFileSTL(const std::string &filePath) {
             }
             assert(indices.size()==3);
             triangles.emplace_back(IndexTriangle{indices[0], indices[1], indices[2]});
+
+            VertexTriangle triangle{vertices[indices[0]], vertices[indices[1]], vertices[indices[2]]};
+
+#if !NDEBUG
+            auto calculatedUnitNormal = glm::normalize(triangle.normal);
+            if(!glm::all(glm::epsilonEqual(calculatedUnitNormal,facetNormal, 1e-3f))){
+                std::cout << "Warning: Parsed normal and calculated normals not equal:" << std::endl;
+                std::cout << "Parsed normal: " << facetNormal << std::endl;
+                std::cout << "Calculated normal: " << triangle.normal << std::endl;
+                std::cout << "Calculated normalized normal: " << glm::normalize(triangle.normal) << std::endl;
+            }
+#endif
+
 
             // Finish parsing polygon
             getline(stream, line);
@@ -298,12 +334,10 @@ ModelSpaceMesh FileParser::parseFileBinarySTL(const std::string &filePath) {
     std::vector<IndexTriangle> triangles;
     triangles.reserve(numTriangles);
     char attributes[2];
-    char normal[12];
     for(unsigned int i=0; i<numTriangles; i++){
         std::vector<unsigned int> indices;
-        stream.read(normal, 12);
+        glm::vec3 normalVector = readBinaryVertexLittleEndian(stream); // TODO verify
         for(int j=0; j<3; j++){
-
             Vertex vertex = readBinaryVertexLittleEndian(stream);
             // We try to find if the vertex already exists, as we don't want to duplicate it
             if(vertexSet.find(vertex)!=vertexSet.end()){
@@ -388,6 +422,13 @@ std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& ve
     return triangles;
 }
 
+std::string formatDouble(float input){
+    std::string str = std::to_string(input);
+    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+    str.erase(str.find_last_not_of('.') + 1, std::string::npos);
+    return str;
+}
+
 void FileParser::saveFileOBJ(const std::string &filePath, const std::shared_ptr<ModelSpaceMesh> &mesh) {
     std::ofstream basicOfstream(filePath);
     if(!basicOfstream.is_open()){
@@ -396,8 +437,9 @@ void FileParser::saveFileOBJ(const std::string &filePath, const std::shared_ptr<
 
     // TODO think about required saving precision
     // Write vertices
+
     for (const auto &vertex : mesh->getVertices()) {
-        basicOfstream << "v " << vertex.x << " " << vertex.y << " " << vertex.z << std::endl;
+        basicOfstream << "v " << formatDouble(vertex.x) << " " << formatDouble(vertex.y) << " " << formatDouble(vertex.z) << std::endl;
     }
 
     // Write triangles

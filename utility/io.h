@@ -12,6 +12,7 @@
 #include "../core/AABB.h"
 #include "../core/VertexTriangle.h"
 #include "../core/OBB.h"
+#include "../core/Sphere.h"
 
 
 static std::ostream &operator<<(std::ostream &os, const Vertex &v) {
@@ -19,7 +20,11 @@ static std::ostream &operator<<(std::ostream &os, const Vertex &v) {
 }
 
 static std::ostream & operator<<(std::ostream & os, const Ray& ray){
-    return os << "Ray(Origin" << ray.origin << ", Direction" << ray.direction << ")";
+    return os << "Ray(Origin" << ray.origin << ", Direction " << ray.direction << ")";
+}
+
+static std::ostream & operator<<(std::ostream & os, const Sphere& sphere){
+    return os << "Sphere(Center" << sphere.getCenter() << ", Radius " << sphere.getRadius() << ")";
 }
 
 static std::ostream& operator<<(std::ostream& o, const Transformation& transformation) {
