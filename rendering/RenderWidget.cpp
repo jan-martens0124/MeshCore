@@ -17,7 +17,6 @@ RenderWidget::RenderWidget(QWidget *parent):
         this->ui->taskSection->setVisible(false);
 
         // Connect the start and stop buttons
-
         connect(this->ui->startButton, &QPushButton::clicked, this, &RenderWidget::startCurrentTask);
         connect(this->ui->stopButton, &QPushButton::clicked, this, &RenderWidget::stopCurrentTask);
     }
@@ -45,16 +44,6 @@ void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::sha
                               Q_ARG(Color, color),
                               Q_ARG(RenderWidget*, this));
 }
-
-//template <unsigned int Degree>
-//void RenderWidget::renderAABBTree(const std::string &group, const std::shared_ptr<AABBTree<Degree>> &aabbTree, const Color& color = Color(1.0f)) {
-//    QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderAABBTreeSlot",
-//                              Qt::AutoConnection,
-//                              Q_ARG(std::string, group),
-//                              Q_ARG(std::shared_ptr<AABBTree>, aabbTree),
-//                              Q_ARG(Color, color),
-//                              Q_ARG(RenderWidget*, this));
-//}
 
 void RenderWidget::addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel) {
     this->getOrAddGroupLayout(group)->addWidget(new RenderModelControlWidget(renderModel, this));
@@ -152,12 +141,13 @@ QVBoxLayout *RenderWidget::getOrAddGroupLayout(const std::string &group) {
     return iterator->second;
 }
 
-void RenderWidget::renderBox(const std::string &group, const std::string& name,  const AABB &aabb, const Transformation& transformation) {
+void RenderWidget::renderBox(const std::string &group, const std::string& name,  const AABB &aabb, const Transformation& transformation, const Color& color) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderBoxSlot", Qt::AutoConnection,
                               Q_ARG(std::string, group),
                               Q_ARG(std::string, name),
                               Q_ARG(AABB, aabb),
                               Q_ARG(Transformation, transformation),
+                              Q_ARG(Color, color),
                               Q_ARG(RenderWidget*, this));
 }
 

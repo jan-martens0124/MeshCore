@@ -381,7 +381,7 @@ void OpenGLWidget::updateSortedRenderModels(){
     });
 }
 
-void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, RenderWidget *renderWidget) {
+void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, const Color& color, RenderWidget *renderWidget) {
 
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
@@ -425,6 +425,9 @@ void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &na
 
         this->updateSortedRenderModels();
     }
+
+    // Update the color
+    modelIterator->second->setColor(color);
 
     // Update the transformation
     modelIterator->second->setTransformation(transformation);

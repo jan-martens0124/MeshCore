@@ -5,12 +5,14 @@
 #ifndef OPTIXMESHCORE_RENDERWIDGET_H
 #define OPTIXMESHCORE_RENDERWIDGET_H
 
+#include <QApplication>
 #include <unordered_map>
 #include <iostream>
 #include "AbstractRenderModel.h"
 #include "../core/WorldSpaceMesh.h"
 #include "../acceleration/AABBTree.h"
 #include "../tasks/AbstractTaskObserver.h"
+#include "RenderBoundsTree.h"
 #include "OpenGLWidget.h"
 #include "../tasks/AbstractTask.h"
 #include "../acceleration/AbstractBoundsTree.h"
@@ -41,46 +43,29 @@ public:
     void clear();
     void clearGroup(const std::string &group);
 
-
-
+private:
     // Render generic objects that extend AbstractRenderModel
-    // TODO this would imply that programmers make their own render models, which can't happen outside the main thread...
+    // This would imply that programmers make their own render models, which can't happen outside the main thread, this is not a good practice
     void addOrUpdateRenderModel(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> renderModel);
 
+public:
     // Render objects with ids like meshes
     void renderWorldSpaceMesh(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color& color = Color(1.0f));
 
-//    template<class Bounds, unsigned int Degree>
-//    void renderBoundsTree(const std::string &group, const std::shared_ptr<AbstractBoundsTree<OBB, 2>> &boundsTree, const Color &color){
-//        QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderBoundsTreeSlot",
-//                                  Qt::AutoConnection,
-//                                  Q_ARG(std::string, group),
-//                                  Q_ARG(std::shared_ptr<AbstractBoundsTree<OBB, 2>>, boundsTree), // We should copy the actual worldSpaceMesh object here, otherwise the transformation could change before the render thread reads it
-//                                  Q_ARG(Color, color),
-//                                  Q_ARG(RenderWidget*, this));
-//    }
+    template<class BoundsTree>
+    void renderBoundsTree(const std::string &group, const std::string& name, const std::shared_ptr<BoundsTree>& boundsTree, const Transformation& transformation, const Color &color=Color::White()){
+        QMetaObject::invokeMethod(qApp, [group, color, name, transformation, boundsTree, this](){
+            auto renderModel = std::make_shared<RenderBoundsTree>(*boundsTree, transformation, this->getOpenGLWidget()->getAmbientShader(), this->getOpenGLWidget()->getDiffuseShader());
+            renderModel->setName(name);
+            renderModel->setColor(color);
+            this->addOrUpdateRenderModel(group, name, renderModel); // TODO replace name with actual id
+        });
+    }
 
-    // TODO this separation should happen in OPENGLWidget HAHHA SHOULD IT???
-//    template<unsigned int Degree>
-//    void renderBoundsTree(const std::string &group, const std::shared_ptr<AbstractBoundsTree<AABB, Degree>> &boundsTree, const Color &color);
-//
-//    template<unsigned int Degree>
-//    void renderBoundsTree(const std::string &group, const std::shared_ptr<AbstractBoundsTree<OBB, Degree>> &boundsTree, const Color &color);
-//
-//    template<unsigned int Degree>
-//    void renderBoundsTree(const std::string &group, const std::shared_ptr<AbstractBoundsTree<Sphere, Degree>> &boundsTree, const Color &color);
-
-    // Render primitives
-    // We need to provide this methods because users can't create render models outside of the main thread
-    // TODO render new object each time or use hashes // Not ideal, open question... let the user provide a hash or id by their choice
-//    template<unsigned int Degree>
-//    void renderAABBTree(const std::string &group, const std::shared_ptr<AABBTree<Degree>> &aabbTree, const Color &color);
-
-    // TODO pass names as well, that will serve as id (together with hash?)
-    void renderBox(const std::string &group, const std::string& name, const AABB &aabb, const Transformation& transformation=Transformation());
-    void renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const Color &color = Color(1.0f));
-    void renderTriangle(const std::string &group, const std::string& name, const VertexTriangle &triangle, const Color &color = Color(1.0f));
-    void renderLine(const std::string &group, const Vertex &vertexA, const Vertex &vertexB, const Color &color = Color(1.0f));
+    void renderBox(const std::string &group, const std::string& name, const AABB &aabb, const Transformation& transformation=Transformation(), const Color& = Color::White());
+    void renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const Color &color = Color::White());
+    void renderTriangle(const std::string &group, const std::string& name, const VertexTriangle &triangle, const Color &color = Color::White());
+    void renderLine(const std::string &group, const Vertex &vertexA, const Vertex &vertexB, const Color &color = Color::White());
     void addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel);
 
     void observeTask(AbstractTask* task, const std::function<void(RenderWidget* renderWidget, std::shared_ptr<const AbstractSolution> solution)>& onSolutionNotified);

@@ -82,13 +82,10 @@ private slots:
     void clear();
     void clearGroup(const std::string &group);
     void renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color &color, RenderWidget* renderWidget);
-    void renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, RenderWidget *renderWidget);
+    void renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, const Color& color, RenderWidget *renderWidget);
     void renderSphereSlot(const std::string &group, const std::string &name, const Sphere &sphere, const Color& color, RenderWidget* renderWidget);
     void renderTriangleSlot(const std::string &group, const std::string &name, const VertexTriangle &triangle, const Color& color, RenderWidget* renderWidget);
     void renderLineSlot(const std::string &group, const std::string &name, const glm::vec3 &start, const glm::vec3 &end, const Color& color, RenderWidget* renderWidget);
-
-    // TODO renderAbstractBoundsTreeSlots
-
 
     void addOrUpdateRenderModelSlot(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> sharedPtr, RenderWidget* renderWidget);
     void captureSceneSlot();

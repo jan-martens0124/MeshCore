@@ -5,7 +5,6 @@
 #include <QtWidgets>
 #include <utility/FileParser.h>
 #include "rendering/ApplicationWindow.h"
-#include "rendering/RenderBoxTree.h"
 #include <thread>
 #include "acceleration/AABBOctree.h"
 
@@ -43,10 +42,8 @@ void run(RenderWidget* renderWidget){
     renderWidget->renderWorldSpaceMesh("Container", containerWorldSpaceMesh, Color(1, 1, 1, 0.7));
 
     // Create the Octree which will speed up intersection tests with the container
-    AABBOctree octree(containerWorldSpaceMesh->getModelSpaceMesh());
-//    auto renderTree = std::make_shared<RenderBoxTree>(octree, Transformation(), renderWidget->getOpenGLWidget()->getAmbientShader());
-//    renderTree->setVisible(false);
-//    renderWidget->addOrUpdateRenderModel("Container", "renderTree0", renderTree);
+    auto octree = std::make_shared<AABBOctree>(containerWorldSpaceMesh->getModelSpaceMesh());
+    renderWidget->renderBoundsTree("Container", "Octree", octree, containerWorldSpaceMesh->getModelTransformation());
 
     // Test new random transformations for the item
     Random random;
@@ -70,7 +67,7 @@ void run(RenderWidget* renderWidget){
 
             // A ray that starts in this vertex should intersect the outer container an uneven number of times if it's inside the container
             Ray ray(containerModelSpaceVertex, glm::vec3(0,0,1)); // Direction doesn't matter
-            auto numberOfIntersections = octree.getNumberOfRayIntersections(ray);
+            auto numberOfIntersections = octree->getNumberOfRayIntersections(ray);
             if(numberOfIntersections % 2 == 0){
                 // This position is not feasible, revert to the previous transformation and go to the next iteration
                 itemWorldSpaceMesh->getModelTransformation() = originalTransformation;
@@ -95,7 +92,7 @@ void run(RenderWidget* renderWidget){
                 const auto transformedTriangle = vertexTriangle.getTransformed(itemToContainerTransformation);
 
                 // Check if the triangle intersects the container
-                bool intersects = octree.intersectsTriangle(transformedTriangle);
+                bool intersects = octree->intersectsTriangle(transformedTriangle);
 
                 if(intersects){
                     // This position is not feasible, revert to the previous transformation and go to the next iteration
