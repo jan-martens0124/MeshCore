@@ -5,10 +5,10 @@
 #ifndef MESHCORE_AABBVOLUMEHIERARCHY_H
 #define MESHCORE_AABBVOLUMEHIERARCHY_H
 
-#include "AABBTree.h"
 #include "../core/ModelSpaceMesh.h"
+#include "AbstractBoundsTree.h"
 
-class AABBVolumeHierarchy final: public AABBTree<2u> {
+class AABBVolumeHierarchy final: public AbstractBoundsTree<AABB, 2u, true> {
 
 private:
     void splitTopDown(unsigned int maxDepth, unsigned int maxTrianglesPerNode) override;
@@ -18,10 +18,7 @@ public:
     AABBVolumeHierarchy(const std::shared_ptr<ModelSpaceMesh>& modelSpaceMesh, unsigned int maxDepth, unsigned int maxTrianglesPerNode);
 
 private:
-    AABBVolumeHierarchy(const AABB &aabb, unsigned int depth, unsigned int maxDepth, unsigned int maxTrianglesPerNode): AABBTree(aabb, depth){};
-public:
-    [[nodiscard]] unsigned int getNumberOfRayIntersections(const Ray &ray) const override;
-
+    AABBVolumeHierarchy(const AABB &aabb, unsigned int depth, unsigned int maxDepth, unsigned int maxTrianglesPerNode): AbstractBoundsTree(aabb, depth){};
 private:
     AABBVolumeHierarchy(const AABB &aabb, unsigned int depth, std::vector<VertexTriangle> triangles);
 };

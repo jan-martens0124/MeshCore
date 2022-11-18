@@ -6,7 +6,7 @@
 #include "../factories/AABBFactory.h"
 
 AABBVolumeHierarchy::AABBVolumeHierarchy(const std::shared_ptr<ModelSpaceMesh>& modelSpaceMesh, unsigned int maxDepth, unsigned int maxTrianglesPerNode):
-    AABBTree<2u>(modelSpaceMesh->getBounds(), 0){
+        AbstractBoundsTree<AABB, 2U, true>(modelSpaceMesh->getBounds(), 0){
 
     const auto& vertices = modelSpaceMesh->getVertices();
 
@@ -91,32 +91,9 @@ void AABBVolumeHierarchy::doSplit() {
     this->split = true;
 }
 
-AABBVolumeHierarchy::AABBVolumeHierarchy(const AABB &aabb, unsigned int depth, std::vector<VertexTriangle> triangles): AABBTree(aabb, depth){
+AABBVolumeHierarchy::AABBVolumeHierarchy(const AABB &aabb, unsigned int depth, std::vector<VertexTriangle> triangles): AbstractBoundsTree(aabb, depth){
     this->triangles = std::move(triangles);
     this->empty = this->triangles.empty();
-}
-
-unsigned int AABBVolumeHierarchy::getNumberOfRayIntersections(const Ray &ray) const {
-    if(Intersection::intersect(this->bounds, ray)){
-        if(split){
-            assert(triangles.empty());
-            unsigned int sum = 0;
-            for(const auto& child: children){
-                sum += child->getNumberOfRayIntersections(ray);
-            }
-            assert(this->getIntersectingTriangles(ray).size() == sum);
-            return sum;
-        }
-        else{
-            return std::count_if(triangles.begin(), triangles.end(), [ray](const auto& triangle) {
-                return Intersection::intersect(ray, triangle);
-            });
-        }
-    }
-    else{
-        assert(this->getIntersectingTriangles(ray).empty());
-        return 0;
-    }
 }
 
 AABBVolumeHierarchy::AABBVolumeHierarchy(const std::shared_ptr<ModelSpaceMesh>& modelSpaceMesh):

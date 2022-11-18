@@ -387,4 +387,4 @@ glm::vec3 GJKSphere::computeSupport(const glm::vec3 &direction) const {
     return center + glm::normalize(direction) * radius;
 }
 
-GJKSphere::GJKSphere(const Sphere &sphere): radius(sphere.radius), center(sphere.center) {}
+GJKSphere::GJKSphere(const Sphere &sphere): radius(sphere.getRadius()), center(sphere.getCenter()) {}
