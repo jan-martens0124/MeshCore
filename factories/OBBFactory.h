@@ -51,8 +51,6 @@ public:
         assert(glm::epsilonEqual(rotatedVertex0.y, rotatedVertex2.y, 1e-6f));
         assert(glm::epsilonEqual(rotatedVertex1.y, rotatedVertex2.y, 1e-6f));
 
-        glm::equal
-
         // Edge 0 should align with the X axis
         assert(glm::epsilonEqual(rotatedVertex1.y, rotatedVertex0.y, 1e-5f)); // Redundant
         assert(glm::epsilonEqual(rotatedVertex1.z, rotatedVertex0.z, 1e-5f));
