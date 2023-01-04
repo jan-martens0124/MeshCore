@@ -261,7 +261,7 @@ void OpenGLWidget::setLightMode(bool newLightMode){
 void OpenGLWidget::captureSceneSlot() {
     this->makeCurrent();
     auto capture = this->grabFramebuffer();
-    QString fileName = QFileDialog::getSaveFileName(this, QString("Save screenshot"), "example", QString("Image Files (*.jpg)"));
+    QString fileName = QFileDialog::getSaveFileName(this, QString("Save screenshot"), "example", QString("Image Files (*.png)"));
     std::cout<< fileName.toStdString() << std::endl;
     capture.save(fileName);
 }
