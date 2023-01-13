@@ -27,6 +27,19 @@ public:
         }
 
         auto result = createMinimumBoundingSphereGaertner(vertices);
+
+#if !NDEBUG
+        for (const auto &point: vertices){
+            if(!result.containsPoint(point)){
+                auto deltaCenter = point - result.getCenter();
+                auto dot = glm::dot(deltaCenter, deltaCenter);
+                auto radiusSquared = result.getRadiusSquared();
+                std::cout << "Point outside bounding sphere!" << std::endl;
+            }
+
+            assert(result.containsPoint(point));
+        }
+#endif
         return result;
     }
 
@@ -39,6 +52,10 @@ private:
     static Sphere createMinimumBoundingSphere2(Vertex vertex1, Vertex vertex2){
         auto center = (vertex1 + vertex2) / 2.0f;
         auto radius = glm::distance(vertex1, vertex2) / 2.0f;
+
+        assert(glm::distance(center, vertex1) <= radius);
+        assert(glm::distance(center, vertex2) <= radius);
+
         return {center, radius};
     }
 
@@ -57,6 +74,11 @@ private:
 
         auto radius = glm::length(o);
         auto center = vertex1 + o;
+
+        assert(glm::length(center - vertex1) <= radius);
+        assert(glm::length(center - vertex2) <= radius);
+        assert(glm::length(center - vertex3) <= radius);
+
         return {center, radius};
     }
 
@@ -77,6 +99,12 @@ private:
 
         auto radius = glm::length(o);
         auto center = vertex1 + o;
+
+        assert(glm::length(center - vertex1) <= radius);
+        assert(glm::length(center - vertex2) <= radius);
+        assert(glm::length(center - vertex3) <= radius);
+        assert(glm::length(center - vertex4) <= radius);
+
         return {center, radius};
     }
 
@@ -105,7 +133,7 @@ private:
         MB mb (d, lp.begin(), lp.end());
         Vertex center = {mb.center()[0], mb.center()[1], mb.center()[2]};
         float radius = glm::sqrt(mb.squared_radius());
-        return {center, radius};
+        return {center, radius * (1+1e-4f)};
     }
 
 private:

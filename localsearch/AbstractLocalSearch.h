@@ -195,7 +195,7 @@ private:
 public:
 	explicit CompositeMoveFactory(const std::vector<std::shared_ptr<MoveFactory<S>>>& mfs, std::vector<double> weights = {}) : moveFactories(mfs) {
         if(!weights.empty()){
-            double totalWeight;
+            double totalWeight = 0;
             for(auto& weight : weights){
                 totalWeight += weight;
             }

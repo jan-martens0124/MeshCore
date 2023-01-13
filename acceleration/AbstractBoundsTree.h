@@ -137,8 +137,10 @@ unsigned int AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getNu
     if(Intersection::intersect(this->bounds, ray)){
         unsigned int intersectingTriangles = 0u;
         for(const auto& child: children){
-            auto childIntersectingTriangles = child->getNumberOfRayIntersections(ray);
-            intersectingTriangles += childIntersectingTriangles;
+            if(child){
+                auto childIntersectingTriangles = child->getNumberOfRayIntersections(ray);
+                intersectingTriangles += childIntersectingTriangles;
+            }
         }
         for(const auto& triangle: triangles){
             if(Intersection::intersect(ray, triangle)){

@@ -50,6 +50,15 @@ public:
                glm::all(glm::lessThanEqual(point, this->maximum));
     }
 
+    MC_FUNC_QUALIFIER [[nodiscard]] bool containsAABB(const AABB& aabb) const {
+        return minimum.x <= aabb.minimum.x &&
+               minimum.y <= aabb.minimum.y &&
+               minimum.z <= aabb.minimum.z &&
+               maximum.x >= aabb.maximum.x &&
+               maximum.y >= aabb.maximum.y &&
+               maximum.z >= aabb.maximum.z;
+    }
+
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getClosestPoint(Vertex point) const {
         return glm::clamp(point, this->getMinimum(), this->getMaximum());
     }

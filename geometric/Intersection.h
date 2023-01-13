@@ -27,6 +27,7 @@ namespace Intersection{
     bool intersect(const AABB &aabb, const Ray &ray);
 
     // AABB-AABB
+    bool intersect(const AABB& firstAABB, const AABB& secondAABB);
     bool intersect(const AABB& firstAABB, const AABB& secondAABB, const glm::mat4 &firstToSecondTransformationMatrix, const glm::mat4 &secondToFirstTransformationMatrix);
 
     // OBB-OBB

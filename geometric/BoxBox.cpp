@@ -7,6 +7,15 @@
 
 namespace Intersection {
 
+    bool intersect(const AABB& firstAABB, const AABB& secondAABB){
+        return firstAABB.getMinimum().x <= secondAABB.getMaximum().x &&
+               firstAABB.getMinimum().y <= secondAABB.getMaximum().y &&
+               firstAABB.getMinimum().z <= secondAABB.getMaximum().z &&
+               secondAABB.getMinimum().x <= firstAABB.getMaximum().x &&
+               secondAABB.getMinimum().y <= firstAABB.getMaximum().y &&
+               secondAABB.getMinimum().z <= firstAABB.getMaximum().z;
+    }
+
     bool intersect(const AABB& firstAABB, const AABB& secondAABB, const glm::mat4 &firstToSecondTransformationMatrix, const glm::mat4 &secondToFirstTransformationMatrix){
 // See sketches on separating axis theorem for AABB's
         std::array<Vertex, 8> otherCorners{};

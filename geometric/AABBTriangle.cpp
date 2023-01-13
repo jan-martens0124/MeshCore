@@ -148,15 +148,8 @@ namespace Intersection{
         /*  that direction -- this is equivalent to testing a minimal AABB around */
         /*  the triangle against the AABB */
 
-        /* test in X-direction */
-
-        const glm::vec3& minv = vertexTriangle.bounds.getMinimum();
-        const glm::vec3& maxv = vertexTriangle.bounds.getMaximum();
-
-        if (minv.x > aabb.getMaximum().x || maxv.x < aabb.getMinimum().x) return 0;
-        if (minv.y > aabb.getMaximum().y || maxv.y < aabb.getMinimum().y) return 0;
-        if (minv.z > aabb.getMaximum().z || maxv.z < aabb.getMinimum().z) return 0;
-
+        if(!Intersection::intersect(vertexTriangle.bounds, aabb)) return 0; // Triangles' AABB completely outside AABB
+        if(aabb.containsAABB(vertexTriangle.bounds)) return 1;    // Triangles' AABB completely inside AABB
 
         /*    use separating axis theorem to test overlap between triangle and box */
         /*    need to test for overlap in these directions: */
