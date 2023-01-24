@@ -9,7 +9,9 @@
 #include "RenderSphere.h"
 #include "RenderWidget.h"
 #include "Exception.h"
+#include "../external/gif/gif.h"
 #include <glm/gtx/hash.hpp>
+#include <QProgressDialog>
 
 [[maybe_unused]] OpenGLWidget::OpenGLWidget(QWidget *parent): QOpenGLWidget(parent) {}
 
@@ -258,11 +260,84 @@ void OpenGLWidget::setLightMode(bool newLightMode){
     this->update();
 }
 
+void OpenGLWidget::captureAnimationSlot() {
+
+    this->makeCurrent();
+    auto initialViewMatrix = this->viewMatrix;
+    QString fileName = QFileDialog::getSaveFileName(this, QString("Save animation"), "example", QString("GIF (*.gif)"));
+
+    // Check if the user has selected a file
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    // Calculate how many steps we need to take to get a full rotation, in radians
+    const float fullRotation = 2 * glm::pi<float>();
+    int delay = 5;
+    int steps = 200;
+    const float rotationSpeed = fullRotation / float(steps);
+    const glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
+
+    // Show processing bar
+    QProgressDialog progressDialog("Exporting GIF animation...", "Abort", 0, steps, this);
+    progressDialog.setWindowModality(Qt::ApplicationModal);
+    progressDialog.show();
+
+    // Write the frames
+    std::vector<uint8_t> pixels(width * height * 4, 0);
+    GifWriter g;
+    GifBegin(&g, fileName.toStdString().c_str(), width, height, delay);
+    for(int i=0;i<steps;i++){
+
+        // Check if aborted
+        if(progressDialog.wasCanceled()){
+            GifEnd(&g);
+            viewMatrix = initialViewMatrix;
+            QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            this->update();
+            QFile::remove(fileName);
+            progressDialog.close();
+            return;
+        }
+
+        progressDialog.setValue(i);
+
+        this->viewMatrix = glm::rotate(viewMatrix, - rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraUp,0.0f)));
+        QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        this->update();
+        auto capture = this->grabFramebuffer();
+        for (int x = 0; x < width; ++x){
+            for (int y = 0; y < height; ++y){
+                auto rgb = capture.pixel(x, y);
+                pixels[4 * (y * width + x) + 0] = (rgb >> 16) & 0xFF;
+                pixels[4 * (y * width + x) + 1] = (rgb >> 8) & 0xFF;
+                pixels[4 * (y * width + x) + 2] = (rgb >> 0) & 0xFF;
+                pixels[4 * (y * width + x) + 3] = 255;
+            }
+        }
+        GifWriteFrame(&g, pixels.data(), width, height, delay);
+    }
+    progressDialog.setValue(steps);
+
+    // Close the file handle and free memory.
+    GifEnd(&g);
+    viewMatrix = initialViewMatrix;
+    QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    this->update();
+    progressDialog.close();
+}
+
 void OpenGLWidget::captureSceneSlot() {
+
     this->makeCurrent();
     auto capture = this->grabFramebuffer();
     QString fileName = QFileDialog::getSaveFileName(this, QString("Save screenshot"), "example", QString("Image Files (*.png)"));
-    std::cout<< fileName.toStdString() << std::endl;
+
+    // Check if the user has selected a file
+    if (fileName.isEmpty()) {
+        return;
+    }
+
     capture.save(fileName);
 }
 

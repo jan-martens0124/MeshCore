@@ -36,10 +36,15 @@ ApplicationWindow::ApplicationWindow() {
     QAction* openAction = fileMenu->addAction(QString("Open..."));
     connect(openAction, &QAction::triggered, this, &ApplicationWindow::loadMesh);
     openAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_O));
+    openAction->setDisabled(true);
 
-    QAction* screenshotAction = fileMenu->addAction(QString("Export openGL screenshot..."));
+    QAction* screenshotAction = fileMenu->addAction(QString("Export OpenGL screenshot..."));
     connect(screenshotAction, &QAction::triggered, renderWidget, &RenderWidget::captureScene);
     screenshotAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_P));
+
+    QAction* animationAction = fileMenu->addAction(QString("Export GIF animation..."));
+    connect(animationAction, &QAction::triggered, renderWidget, &RenderWidget::captureAnimation);
+    animationAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_G));
 
     QAction* exitAction = fileMenu->addAction(QString("Exit"));
     connect(exitAction, &QAction::triggered, this, &QWidget::close);
@@ -72,6 +77,7 @@ ApplicationWindow::ApplicationWindow() {
         });
         toggleAxis->setCheckable(true);
         toggleAxis->setChecked(renderWidget->getOpenGLWidget()->isAxisEnabled());
+        toggleAxis->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_X));
     }
     {
         QAction* toggleLightMode = viewMenu->addAction(QString("Enable Light Mode"));
@@ -81,6 +87,7 @@ ApplicationWindow::ApplicationWindow() {
         });
         toggleLightMode->setCheckable(true);
         toggleLightMode->setChecked(renderWidget->getOpenGLWidget()->isLightMode());
+        toggleLightMode->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_L));
     }
     {
         QAction* togglePerspective = viewMenu->addAction(QString("Enable Perspective"));

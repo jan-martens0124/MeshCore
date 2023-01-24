@@ -38,6 +38,7 @@ private:
 public:
 
     void captureScene();
+    void captureAnimation();
     void captureSceneToFile(const std::string& fileName);
 
     void clear();

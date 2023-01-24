@@ -300,6 +300,11 @@ void RenderWidget::captureSceneToFile(const std::string &fileName) {
                               Q_ARG(QString, QString::fromStdString(fileName)));
 }
 
+void RenderWidget::captureAnimation() {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureAnimationSlot",
+                              Qt::AutoConnection);
+}
+
 [[maybe_unused]] void RenderWidget::setTimeLabelSlot(const QString &time) {
     this->ui->timeLabel->setText(time);
 }

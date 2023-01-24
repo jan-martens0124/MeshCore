@@ -90,6 +90,7 @@ private slots:
     void addOrUpdateRenderModelSlot(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> sharedPtr, RenderWidget* renderWidget);
     void captureSceneSlot();
     void captureSceneToFileSlot(const QString& fileName);
+    void captureAnimationSlot();
 
 private:
     std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>& getOrInsertRenderModelsMap(const std::string &group) const;
