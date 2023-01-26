@@ -293,7 +293,7 @@ void OpenGLWidget::captureAnimationSlot() {
         if(progressDialog.wasCanceled()){
             GifEnd(&g);
             viewMatrix = initialViewMatrix;
-            QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
             this->update();
             QFile::remove(fileName);
             progressDialog.close();

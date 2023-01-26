@@ -312,7 +312,7 @@ float ModelSpaceMesh::getVolume() const {
             vol += (1.0f/6.0f)*(-v210 + v120 + v201 - v021 - v102 + v012);
         }
 
-        assert(vol <= this->getBounds().getVolume() && "Volume of mesh should be smaller than volume of its bounding box");
+        assert(vol/this->getBounds().getVolume() <= (1.0 + 1e-6)  && "Volume of mesh should be smaller than volume of its bounding box");
         volume = vol;
     }
     return volume.value();
