@@ -34,8 +34,9 @@ protected:
     bool split = false;
     bool empty = true;
 
-public:
     AbstractBoundsTree(const Bounds &bounds, unsigned int depth): bounds(bounds), split(false), depth(depth), empty(true) {}
+
+public:
     virtual void splitTopDown(unsigned int maxDepth, unsigned int maxTrianglesPerNode) = 0;
 
     [[nodiscard]] bool intersectsTriangle(const VertexTriangle& vertexTriangle) const;
@@ -164,7 +165,7 @@ std::vector<VertexTriangle> AbstractBoundsTree<Bounds, Degree, UniqueTriangleAss
     else{
         std::unordered_set<VertexTriangle> result;
         this->getIntersectingTriangles(ray, result);
-        return std::vector<VertexTriangle>(result.begin(), result.end());
+        return {result.begin(), result.end()};
     }
 }
 
@@ -255,7 +256,7 @@ std::vector<VertexTriangle> AbstractBoundsTree<Bounds, Degree, UniqueTriangleAss
     else{
         std::unordered_set<VertexTriangle> result;
         this->getIntersectingTriangles(triangle, result);
-        return std::vector<VertexTriangle>(result.begin(), result.end());
+        return {result.begin(), result.end()};
     }
 }
 
