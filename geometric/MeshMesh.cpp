@@ -3,11 +3,41 @@
 //
 
 #include "Intersection.h"
-#include <iostream>
+#include "../acceleration/CachingBoundsTreeFactory.h"
+#include "../acceleration/AABBVolumeHierarchy.h"
 
 namespace Intersection {
 
-    bool intersects(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB){
+    bool intersect(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB){
+
+        const auto& modelSpaceMeshA = worldSpaceMeshA.getModelSpaceMesh();
+        const auto& modelSpaceMeshB = worldSpaceMeshB.getModelSpaceMesh();
+        const auto& modelSpaceTransformationA = worldSpaceMeshA.getModelTransformation();
+        const auto& modelSpaceTransformationB = worldSpaceMeshB.getModelTransformation();
+
+        if(modelSpaceMeshA->getTriangles().size() >= modelSpaceMeshB->getTriangles().size()){
+            const auto modelBToModelASpaceTransformation = modelSpaceTransformationA.getInverseMatrix() * modelSpaceTransformationB.getMatrix();
+
+            const auto &modelBVertices = modelSpaceMeshB->getVertices();
+            const auto &treeA = CachingBoundsTreeFactory<AABBVolumeHierarchy>::getBoundsTree(modelSpaceMeshA);
+            return std::any_of(modelSpaceMeshB->getTriangles().begin(), modelSpaceMeshB->getTriangles().end(), [&](const auto &triangle){
+                VertexTriangle vertexTriangle(modelBVertices[triangle.vertexIndex0], modelBVertices[triangle.vertexIndex1], modelBVertices[triangle.vertexIndex2]);
+                return treeA->intersectsTriangle(vertexTriangle.getTransformed(modelBToModelASpaceTransformation));
+            });
+        }
+        else{
+            const auto modelAToModelBSpaceTransformation = modelSpaceTransformationB.getInverseMatrix() * modelSpaceTransformationA.getMatrix();
+            const auto &modelAVertices = modelSpaceMeshA->getVertices();
+            const auto &treeB = CachingBoundsTreeFactory<AABBVolumeHierarchy>::getBoundsTree(modelSpaceMeshB);
+
+            return std::any_of(modelSpaceMeshA->getTriangles().begin(), modelSpaceMeshA->getTriangles().end(), [&](const auto &triangle){
+                VertexTriangle vertexTriangle(modelAVertices[triangle.vertexIndex0], modelAVertices[triangle.vertexIndex1], modelAVertices[triangle.vertexIndex2]);
+                return treeB->intersectsTriangle(vertexTriangle.getTransformed(modelAToModelBSpaceTransformation));
+            });
+        }
+    }
+
+    bool debugIntersects(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB){
 #if NDEBUG
         std::cout << "[MESHCORE] Using a naive triangleTriangleIntersects implementation -- use for debugging only" << std::endl;
 #endif
