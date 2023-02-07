@@ -38,7 +38,7 @@ private:
 public:
 	virtual ~MoveFactory(){};
     [[nodiscard]] virtual std::shared_ptr<Move<S>> sample(std::shared_ptr<const S> s, const Random& random, double stepSize) const = 0;
-    virtual std::vector<std::shared_ptr<Move<S>>> sampleMoves(std::shared_ptr<const S> s, const Random& random, double stepSize) const {
+    virtual std::vector<std::shared_ptr<Move<S>>> listMoves(std::shared_ptr<const S> s, double stepSize) const {
         return {};
     };
 };
@@ -219,10 +219,10 @@ public:
 	}
 
     std::vector<std::shared_ptr<Move<S>>>
-    sampleMoves(std::shared_ptr<const S> s, const Random &random, double stepSize) const override {
+    listMoves(std::shared_ptr<const S> s, double stepSize) const override {
         std::vector<std::shared_ptr<Move<S>>> moves;
         for(const auto& moveFactory: moveFactories) {
-            const auto factoryMoves = moveFactory->sampleMoves(s, random, stepSize);
+            const auto factoryMoves = moveFactory->listMoves(s, stepSize);
             moves.insert(moves.end(), factoryMoves.begin(), factoryMoves.end());
         }
         return moves;
