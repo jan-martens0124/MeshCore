@@ -11,7 +11,6 @@
 #include "RenderAABB.h"
 #include "RenderOBB.h"
 #include "RenderSphere.h"
-#include "../acceleration/AABBTree.h"
 #include <QCheckBox>
 #include <QSlider>
 #include <QLabel>
@@ -26,8 +25,6 @@ private:
     std::shared_ptr<AbstractRenderModel> renderNodeModel;
 
 public:
-    template <unsigned int Degree>
-    RenderBoundsTree(const AABBTree<Degree>& aabbTree, const Transformation& transformationMatrix, const std::shared_ptr<QOpenGLShaderProgram>& shader);
 
     template <unsigned int Degree, bool UniqueAssignment>
     RenderBoundsTree(const AbstractBoundsTree<AABB, Degree, UniqueAssignment>& aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader);
@@ -55,15 +52,6 @@ private:
 };
 
 // Only define templated functions in this header file:
-
-template<unsigned int Degree>
-RenderBoundsTree::RenderBoundsTree(const AABBTree<Degree> &aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader): AbstractRenderModel(transformation, "aabbTree"), renderNodeModel(std::make_shared<RenderAABB>(aabbTree.getBounds(), transformation, shader)) {
-    if(aabbTree.isSplit()){
-        for (const auto &child : aabbTree.getChildren()){
-            if(child && !child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoundsTree>(*child, transformation, shader));
-        }
-    }
-}
 
 template <unsigned int Degree, bool UniqueAssignment>
 RenderBoundsTree::RenderBoundsTree(const AbstractBoundsTree<AABB, Degree, UniqueAssignment> &aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader): AbstractRenderModel(transformation, "aabbTree"), renderNodeModel(std::make_shared<RenderAABB>(aabbTree.getBounds(), transformation, ambientShader)) {

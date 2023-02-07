@@ -10,7 +10,6 @@
 #include <iostream>
 #include "AbstractRenderModel.h"
 #include "../core/WorldSpaceMesh.h"
-#include "../acceleration/AABBTree.h"
 #include "../tasks/AbstractTaskObserver.h"
 #include "RenderBoundsTree.h"
 #include "OpenGLWidget.h"
