@@ -31,7 +31,7 @@ public:
 
     [[nodiscard]] bool isFeasible() const override {
         // Check if the item doesn't intersect the container
-        return !Intersection::intersects(*item, *container); // This method brute force checks all triangles of the item against all triangles of the container, there are better ways to do collision detection (see CollisionDemo)
+        return !Intersection::intersect(*item, *container);
         // This also doesn't check if the item is actually inside the container, but that's not a problem for this demo
     }
 };
@@ -56,7 +56,7 @@ public:
         this->notifyObserversSolution(solution);
 
         // Loop over a bunch of random transformations
-        auto iterations = 2e3;
+        auto iterations = 2e5;
         Random random;
         notifyObserversStatus("Executing random walk");
         for (int i = 0; i < iterations; ++i){

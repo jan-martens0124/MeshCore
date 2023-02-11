@@ -30,9 +30,9 @@ void run(RenderWidget* renderWidget){
     // Load a container
     std::shared_ptr<WorldSpaceMesh> containerWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../datasets/E. F. Silva et al. 2021/stone_1.obj"));
 
-    containerWorldSpaceMesh->getModelTransformation().factorScale(10.0f);
+    containerWorldSpaceMesh->getModelTransformation().factorScale(2.0f);
 
-    containerWorldSpaceMesh->getModelTransformation().deltaPosition(-10.0f*containerWorldSpaceMesh->getModelSpaceMesh()->getBounds().getCenter()); // Put the container in the center of the world
+    containerWorldSpaceMesh->getModelTransformation().deltaPosition(-2.0f*containerWorldSpaceMesh->getModelSpaceMesh()->getBounds().getCenter()); // Put the container in the center of the world
 
     // Make the item small enough to fit inside the container
     itemWorldSpaceMesh->getModelTransformation().setScale(0.5f);
@@ -78,28 +78,9 @@ void run(RenderWidget* renderWidget){
 
         // 2. Check if none of the triangles of the item intersect the container
         {
-
-            // Here we calculate a single matrix that can transform points from the coordinate system of the item to the coordinate system of the container
-            const auto itemToContainerTransformation = containerWorldSpaceMesh->getModelTransformation().getInverseMatrix() * itemWorldSpaceMesh->getModelTransformation().getMatrix();
-
-            const auto vertices = itemWorldSpaceMesh->getModelSpaceMesh()->getVertices();
-            for (const auto &indexTriangle: itemWorldSpaceMesh->getModelSpaceMesh()->getTriangles()){
-
-                // The IndexTriangle class stores only the indices of the vertices that make up the triangle, the VertexTriangle class stores actual vertices
-                const auto vertexTriangle = VertexTriangle(vertices.at(indexTriangle.vertexIndex0), vertices.at(indexTriangle.vertexIndex1), vertices.at(indexTriangle.vertexIndex2));
-
-                // Transform the triangle to the coordinate system of the container, can be used correctly for the intersection test with the octree
-                const auto transformedTriangle = vertexTriangle.getTransformed(itemToContainerTransformation);
-
-                // Check if the triangle intersects the container
-                bool intersects = octree->intersectsTriangle(transformedTriangle);
-
-                if(intersects){
-                    // This position is not feasible, revert to the previous transformation and go to the next iteration
-                    itemWorldSpaceMesh->getModelTransformation() = originalTransformation;
-                    break;
-                }
-
+            if(Intersection::intersect(*itemWorldSpaceMesh, *containerWorldSpaceMesh)){
+                // This position is not feasible, revert to the previous transformation and go to the next iteration
+                itemWorldSpaceMesh->getModelTransformation() = originalTransformation;
             }
         }
 
