@@ -22,6 +22,7 @@ Q_DECLARE_METATYPE(RenderWidget*)
 Q_DECLARE_METATYPE(AABB)
 Q_DECLARE_METATYPE(Sphere)
 Q_DECLARE_METATYPE(Transformation)
+Q_DECLARE_METATYPE(glm::vec3)
 
 void OpenGLWidget::initializeGL() {
 
@@ -35,6 +36,7 @@ void OpenGLWidget::initializeGL() {
     qRegisterMetaType<RenderWidget*>();
     qRegisterMetaType<AABB>();
     qRegisterMetaType<Transformation>();
+    qRegisterMetaType<glm::vec3>();
     qRegisterMetaType<Sphere>();
 
     GL_CALL(glClearColor(0,0,0,1));
@@ -587,8 +589,8 @@ void OpenGLWidget::renderTriangleSlot(const std::string &group, const std::strin
     this->update();
 }
 
-void OpenGLWidget::renderLineSlot(const std::string &group, const std::string &name, const glm::vec3 &start,
-                                  const glm::vec3 &end, const Color &color, RenderWidget *renderWidget) {
+void OpenGLWidget::renderLineSlot(const std::string &group, const std::string &name, const Vertex &start,
+                                  const Vertex &end, const Color &color, RenderWidget *renderWidget) {
 
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);

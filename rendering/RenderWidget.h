@@ -65,7 +65,7 @@ public:
     void renderBox(const std::string &group, const std::string& name, const AABB &aabb, const Transformation& transformation=Transformation(), const Color& = Color::White());
     void renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const Color &color = Color::White());
     void renderTriangle(const std::string &group, const std::string& name, const VertexTriangle &triangle, const Color &color = Color::White());
-    void renderLine(const std::string &group, const Vertex &vertexA, const Vertex &vertexB, const Color &color = Color::White());
+    void renderLine(const std::string &group,  const std::string& name, const Vertex &vertexA, const Vertex &vertexB, const Color &color = Color::White());
     void addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel);
 
     void observeTask(AbstractTask* task, const std::function<void(RenderWidget* renderWidget, std::shared_ptr<const AbstractSolution> solution)>& onSolutionNotified);

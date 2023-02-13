@@ -169,12 +169,13 @@ void RenderWidget::renderTriangle(const std::string& group, const std::string& n
                               Q_ARG(RenderWidget*, this));
 }
 
-void RenderWidget::renderLine(const std::string &group, const Vertex &vertexA, const Vertex &vertexB,
+void RenderWidget::renderLine(const std::string &group, const std::string& name, const Vertex &vertexA, const Vertex &vertexB,
                               const Color &color) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderLineSlot", Qt::AutoConnection,
                                 Q_ARG(std::string, group),
-                                Q_ARG(Vertex, vertexA),
-                                Q_ARG(Vertex, vertexB),
+                                Q_ARG(std::string, name),
+                                Q_ARG(glm::vec3, vertexA),
+                                Q_ARG(glm::vec3, vertexB),
                                 Q_ARG(Color, color),
                                 Q_ARG(RenderWidget*, this));
 }
