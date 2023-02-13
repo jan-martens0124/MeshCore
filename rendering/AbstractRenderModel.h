@@ -116,6 +116,7 @@ public:
     [[nodiscard]] glm::mat4 getTransformationMatrix() const;
     virtual void setTransformation(const Transformation &transformation);
     const Transformation& getTransformation() const;
+    Transformation& getTransformation();
 
     RenderModelDetailDialog* getDetailsDialog(QWidget* parent);
     virtual RenderModelDetailDialog* createRenderModelDetailDialog(QWidget* parent);

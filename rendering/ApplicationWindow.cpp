@@ -36,7 +36,6 @@ ApplicationWindow::ApplicationWindow() {
     QAction* openAction = fileMenu->addAction(QString("Open..."));
     connect(openAction, &QAction::triggered, this, &ApplicationWindow::loadMesh);
     openAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_O));
-    openAction->setDisabled(true);
 
     QAction* screenshotAction = fileMenu->addAction(QString("Export OpenGL screenshot..."));
     connect(screenshotAction, &QAction::triggered, renderWidget, &RenderWidget::captureScene);
@@ -119,8 +118,8 @@ void ApplicationWindow::loadMesh(){
     QString fileName = QFileDialog::getOpenFileName(this, QString("Select mesh file"), R"(C:\Users\tolle\CLionProjects\MeshCore\data\models)", QString("Mesh Files (*.stl *.obj)"));
     if(std::filesystem::exists(fileName.toStdString())){
         std::shared_ptr<ModelSpaceMesh> modelSpaceMesh = FileParser::loadMeshFile(fileName.toStdString());
-        const WorldSpaceMesh worldSpaceMesh = WorldSpaceMesh(modelSpaceMesh);
-//        taskRenderWidget->addWorldSpaceMesh(worldSpaceMesh);
+        const auto worldSpaceMesh = std::make_shared<WorldSpaceMesh>(modelSpaceMesh);
+        this->renderWidget->renderWorldSpaceMesh("File", worldSpaceMesh);
     }
 }
 

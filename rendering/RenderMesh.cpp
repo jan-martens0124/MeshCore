@@ -286,6 +286,14 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
         boundingBoxCheckBox->setChecked(this->isBoundingBoxEnabled());
     });
 
+    auto volumeWidget = new QLabel(QString::fromStdString("Volume: " + std::to_string(unscaledVolume * this->getTransformation().getScale() * this->getTransformation().getScale() * this->getTransformation().getScale())));
+    detailsLayout->addWidget(volumeWidget, 4, 0);
+    listener->setOnTransformationChanged([&](const Transformation& oldTransformation, const Transformation& newTransformation) {
+        volumeWidget->setText(QString::fromStdString("Volume: " + std::to_string(unscaledVolume * newTransformation.getScale() * newTransformation.getScale() * newTransformation.getScale())));
+    });
+
+
+
     auto* optionsWidget = new QWidget();
     optionsWidget->setLayout(optionsLayout);
     dialog->addTab(optionsWidget, QString("Options"));

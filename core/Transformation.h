@@ -152,9 +152,40 @@ public:
         this->invalidateMatrices();
         this->position = newPosition;
     }
+
+    MC_FUNC_QUALIFIER void setPositionX(const float newX) {
+        this->invalidateMatrices();
+        this->position.x = newX;
+    }
+
+    MC_FUNC_QUALIFIER void setPositionY(const float newY) {
+        this->invalidateMatrices();
+        this->position.y = newY;
+    }
+
+    MC_FUNC_QUALIFIER void setPositionZ(const float newZ) {
+        this->invalidateMatrices();
+        this->position.z = newZ;
+    }
+
     MC_FUNC_QUALIFIER void deltaPosition(const glm::vec3 &deltaPosition) {
         this->invalidateMatrices();
         this->position += deltaPosition;
+    }
+
+    MC_FUNC_QUALIFIER void deltaPositionX(const float deltaX) {
+        this->invalidateMatrices();
+        this->position.x += deltaX;
+    }
+
+    MC_FUNC_QUALIFIER void deltaPositionY(const float deltaY) {
+        this->invalidateMatrices();
+        this->position.y += deltaY;
+    }
+
+    MC_FUNC_QUALIFIER void deltaPositionZ(const float deltaZ) {
+        this->invalidateMatrices();
+        this->position.z += deltaZ;
     }
 
     MC_FUNC_QUALIFIER Vertex transformVertex(const Vertex &vertex) const {

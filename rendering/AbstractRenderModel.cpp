@@ -152,5 +152,9 @@ void AbstractRenderModel::setTransformation(const Transformation &transformation
 
 const Transformation &AbstractRenderModel::getTransformation() const {
     return this->transformation;
+}
+
+Transformation &AbstractRenderModel::getTransformation() {
+    return this->transformation;
 };
 
