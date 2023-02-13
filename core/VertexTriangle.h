@@ -12,14 +12,30 @@
 
 class VertexTriangle{
 public:
-    const Vertex vertex0, vertex1, vertex2;
-    const glm::vec3 edge0, edge1, edge2;
+    union {
+        struct {
+            const Vertex vertex0;
+            const Vertex vertex1;
+            const Vertex vertex2;
+        };
+        const Vertex vertices[3];
+    };
+    union {
+        struct {
+            const Vertex edge0;
+            const Vertex edge1;
+            const Vertex edge2;
+        };
+        const Vertex edges[3];
+    };
     const glm::vec3 normal;
     const AABB bounds;
 
 public:
     MC_FUNC_QUALIFIER VertexTriangle(Vertex vertex0, Vertex vertex1, Vertex vertex2):
-            vertex0(vertex0), vertex1(vertex1), vertex2(vertex2),
+            vertex0(vertex0),
+            vertex1(vertex1),
+            vertex2(vertex2),
             edge0(vertex1-vertex0),
             edge1(vertex2-vertex1),
             edge2(vertex0-vertex2),

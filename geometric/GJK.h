@@ -22,7 +22,7 @@ public:
 
 class GJK {
 public:
-    static std::optional<double> computeDistanceSqr(const GJKConvexShape &convex_shape_A, const GJKConvexShape &convex_shape_B, const glm::vec3& initialDir);
+    static std::optional<float> computeDistanceSqr(const GJKConvexShape &convex_shape_A, const GJKConvexShape &convex_shape_B, const glm::vec3& initialDir);
 
 private:
     static glm::vec3 support(const GJKConvexShape& convex_shape_A, const GJKConvexShape& convex_shape_B, const glm::vec3& D);

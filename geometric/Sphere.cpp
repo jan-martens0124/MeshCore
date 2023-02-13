@@ -88,3 +88,37 @@ namespace Intersection {
         return glm::pi<float>() * intrusion * intrusion * (d*d + 2*d*firstSphere.getRadius() - 3*firstSphere.getRadiusSquared() + 2*d*secondSphere.getRadius() + 6*firstSphere.getRadius()*secondSphere.getRadius() - 3*secondSphere.getRadiusSquared()) / (12*d);
     }
 }
+
+namespace Distance {
+    float distance(const Sphere& firstSphere, const Sphere& secondSphere){
+        auto deltaCenter = firstSphere.getCenter() - secondSphere.getCenter();
+        auto distanceCenterSquared = glm::dot(deltaCenter, deltaCenter);
+        return glm::max(0.0f, glm::sqrt(distanceCenterSquared) - firstSphere.getRadius() - secondSphere.getRadius());
+    }
+
+    float distance(const Sphere& sphere, const AABB& aabb){
+        auto closestPoint = aabb.getClosestPoint(sphere.getCenter());
+        auto deltaCenter = sphere.getCenter() - closestPoint;
+        auto distanceCenterSquared = glm::dot(deltaCenter, deltaCenter);
+        return glm::max(0.0f, glm::sqrt(distanceCenterSquared) - sphere.getRadius());
+    }
+
+    float distanceSquared(const Sphere& sphere, const AABB& aabb){
+        auto d = distance(sphere, aabb);
+        return d * d;
+    }
+
+    float distance(const Sphere& sphere, const OBB& obb){
+        auto closestPoint = obb.getClosestPoint(sphere.getCenter());
+        auto deltaCenter = sphere.getCenter() - closestPoint;
+        auto distanceCenterSquared = glm::dot(deltaCenter, deltaCenter);
+        return glm::max(0.0f, glm::sqrt(distanceCenterSquared) - sphere.getRadius());
+    }
+
+    float distance(const Sphere& sphere, const VertexTriangle& vertexTriangle){
+        auto closestPoint = vertexTriangle.getClosestPoint(sphere.getCenter());
+        auto deltaCenter = sphere.getCenter() - closestPoint;
+        auto distanceCenterSquared = glm::dot(deltaCenter, deltaCenter);
+        return glm::max(0.0f, glm::sqrt(distanceCenterSquared) - sphere.getRadius());
+    }
+}

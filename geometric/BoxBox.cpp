@@ -60,3 +60,15 @@ namespace Intersection {
         return true;
     }
 }
+
+namespace Distance {
+
+    float distanceSquared(const AABB& firstAABB, const AABB& secondAABB){
+        auto delta = glm::max(glm::vec3(0), glm::max(firstAABB.getMinimum(), secondAABB.getMinimum()) - glm::min(firstAABB.getMaximum(), secondAABB.getMaximum()));
+        return glm::dot(delta, delta);
+    }
+
+    float distance(const AABB& firstAABB, const AABB& secondAABB){
+        return glm::sqrt(distanceSquared(firstAABB, secondAABB));
+    }
+}

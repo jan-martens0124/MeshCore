@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 
-std::optional<double>
+std::optional<float>
 GJK::computeDistanceSqr(const GJKConvexShape &convex_shape_A, const GJKConvexShape &convex_shape_B,
                         const glm::vec3 &initialDir) {
 

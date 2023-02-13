@@ -39,3 +39,4 @@ file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric
 add_executable(A-SimpleRenderDemo renderDemo.cpp ${SOURCES})
 add_executable(B-SimpleCollisionDemo collisionDemo.cpp ${SOURCES})
 add_executable(C-TaskDemo taskDemo.cpp ${SOURCES})
+add_executable(D-DistanceDemo distanceDemo.cpp ${SOURCES})

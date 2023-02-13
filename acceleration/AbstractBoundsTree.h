@@ -10,6 +10,7 @@
 #include "../core/VertexTriangle.h"
 #include "../utility/hash.h"
 #include "../geometric/Intersection.h"
+#include "../geometric/Distance.h"
 #include <vector>
 #include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
@@ -26,6 +27,7 @@
 
 template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment=false>
 class AbstractBoundsTree {
+
 protected:
     Bounds bounds;
     std::vector<VertexTriangle> triangles;
@@ -41,9 +43,17 @@ public:
 
     [[nodiscard]] bool intersectsTriangle(const VertexTriangle& vertexTriangle) const;
     [[nodiscard]] bool intersectsRay(const Ray& ray) const;
+
     [[nodiscard]] Vertex getClosestPoint(const Vertex &vertex) const;
     [[nodiscard]] const VertexTriangle* getClosestTriangle(const Vertex& vertex) const;
-    [[nodiscard]] double getShortestDistanceSquared(const Vertex& vertex) const;
+    [[nodiscard]] float getShortestDistanceSquared(const Vertex& vertex) const;
+    [[nodiscard]] bool hasMinimumDistance(const Vertex& vertex, float minimumDistanceSquared) const;
+
+    [[nodiscard]] Vertex getClosestPoint(const VertexTriangle &triangle) const;
+    [[nodiscard]] const VertexTriangle* getClosestTriangle(const VertexTriangle &triangle) const;
+    [[nodiscard]] float getShortestDistanceSquared(const VertexTriangle &triangle) const;
+    [[nodiscard]] bool hasMinimumDistance(const VertexTriangle &triangle, float minimumDistanceSquared) const;
+
     [[nodiscard]] unsigned int getNumberOfRayIntersections(const Ray& ray) const;
     [[nodiscard]] std::vector<VertexTriangle> getIntersectingTriangles(const Ray& ray) const;
     [[nodiscard]] std::vector<VertexTriangle> getIntersectingTriangles(const VertexTriangle& triangle) const;
@@ -55,7 +65,14 @@ private:
     void getIntersectingTriangles(const VertexTriangle& triangle, std::vector<VertexTriangle>& result) const;
     void getIntersectingTriangles(const VertexTriangle& triangle, std::unordered_set<VertexTriangle>& result) const;
 
-    void getClosestTriangle(const Vertex& vertex, const VertexTriangle** result, float* lowerDistanceBoundSquared) const;
+public:
+    struct ClosestTriangleQueryResult{
+        const VertexTriangle* closestTriangle = nullptr;
+        Vertex closestVertex{};
+        float lowerDistanceBoundSquared = std::numeric_limits<float>::max();
+    };
+    void queryClosestTriangle(const Vertex& vertex, ClosestTriangleQueryResult* result) const;
+    void queryClosestTriangle(const VertexTriangle& triangle, ClosestTriangleQueryResult* result) const;
 
 public:
 
@@ -260,38 +277,8 @@ std::vector<VertexTriangle> AbstractBoundsTree<Bounds, Degree, UniqueTriangleAss
     }
 }
 
-template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
-double AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getShortestDistanceSquared(const Vertex &vertex) const{
-    const VertexTriangle* closestTriangle = nullptr;
-    const VertexTriangle** result = &closestTriangle;
-    auto* lowerDistanceBoundSquared = new float(std::numeric_limits<float>::max());
-    this->getClosestTriangle(vertex, result, lowerDistanceBoundSquared);
-    assert(*result);
-    return *lowerDistanceBoundSquared;
-}
-
-template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
-const VertexTriangle* AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestTriangle(const Vertex &vertex) const{
-    const VertexTriangle* closestTriangle = nullptr;
-    const VertexTriangle** result = &closestTriangle;
-    auto* lowerDistanceBoundSquared = new float(std::numeric_limits<float>::max());
-    this->getClosestTriangle(vertex, result, lowerDistanceBoundSquared);
-    assert(*result);
-    return *result;
-}
-
-template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
-Vertex AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestPoint(const Vertex &vertex) const{
-    const VertexTriangle* closestTriangle = nullptr;
-    const VertexTriangle** result = &closestTriangle;
-    auto* lowerDistanceBoundSquared = new float(std::numeric_limits<float>::max());
-    this->getClosestTriangle(vertex, result, lowerDistanceBoundSquared);
-    assert(*result);
-    return (*result)->getClosestPoint(vertex);
-}
-
-template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
-void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestTriangle(const Vertex &vertex, const VertexTriangle** result, float* lowerDistanceBoundSquared) const {
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::queryClosestTriangle(const VertexTriangle &triangle, ClosestTriangleQueryResult *result) const {
     if(split){
         // We calculate the closest distance for each child first, as we will calculate them all anyway
         std::array<float, Degree> squaredDistances;
@@ -300,7 +287,7 @@ void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestTri
 
             // Calculate minimal distance to the bounding box
             auto child = children[childIndex];
-            squaredDistances[childIndex] = child->bounds.getDistanceSquaredTo(vertex);
+            squaredDistances[childIndex] = child ? Distance::distanceSquared(child->bounds, triangle.bounds) : std::numeric_limits<float>::max(); // TODO change to bounds.getDistanceSquaredTo(triangle) in the future
             indices[childIndex] = childIndex; // Sorted later
         }
 
@@ -312,8 +299,54 @@ void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestTri
 
         // Visit only children that can lead to improvement
         for (const auto &childIndex : indices){
-            if(squaredDistances[childIndex] < *lowerDistanceBoundSquared){
-                children[childIndex]->getClosestTriangle(vertex, result, lowerDistanceBoundSquared);
+            if(squaredDistances[childIndex] < result->lowerDistanceBoundSquared){
+                children[childIndex]->queryClosestTriangle(triangle, result);
+            }
+            else{
+                break; // Because of the sorting, the next children shouldn't be visited either
+            }
+        }
+    }
+    else{
+        for (auto &otherTriangle : triangles){
+            Vertex closestPointTriangle, closestPointOtherTriangle;
+            auto distanceSquared = Distance::distanceSquared(triangle, otherTriangle, &closestPointTriangle, &closestPointOtherTriangle);
+            if(distanceSquared < result->lowerDistanceBoundSquared){ // If multiple triangles are equally close, the first one will be returned
+                result->closestTriangle = &otherTriangle;
+                result->lowerDistanceBoundSquared = distanceSquared;
+                result->closestVertex = closestPointOtherTriangle;
+            }
+        }
+    }
+}
+
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::queryClosestTriangle(const Vertex& vertex, ClosestTriangleQueryResult* result) const {
+    if(split){
+        // We calculate the closest distance for each child first, as we will calculate them all anyway
+        std::array<float, Degree> squaredDistances;
+        std::array<unsigned int, Degree> indices;
+        for(unsigned int childIndex = 0; childIndex < Degree; childIndex++){
+
+            // Calculate minimal distance to the bounding box
+            auto child = children[childIndex];
+            squaredDistances[childIndex] = child ? child->bounds.getDistanceSquaredTo(vertex) : std::numeric_limits<float>::max();
+            indices[childIndex] = childIndex; // Sorted later
+        }
+
+        // We can then sort to visit closer distances first and pruning more work
+        // This is much faster than not storing the distances and then sorting them
+        std::sort(indices.begin(), indices.end(), [squaredDistances](const auto& indexA, const auto& indexB){
+            return squaredDistances[indexA] < squaredDistances[indexB];
+        });
+
+        // Visit only children that can lead to improvement
+        for (const auto &childIndex : indices){
+            if(squaredDistances[childIndex] < result->lowerDistanceBoundSquared){
+                children[childIndex]->queryClosestTriangle(vertex, result);
+                if(result->lowerDistanceBoundSquared <= 0.0){
+                    return;
+                }
             }
             else{
                 break; // Because of the sorting, the next children won't be visited either
@@ -325,12 +358,81 @@ void AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestTri
             auto closestPoint = triangle.getClosestPoint(vertex);
             auto delta = closestPoint - vertex;
             auto distanceSquared = glm::dot(delta, delta);
-            if(distanceSquared < *lowerDistanceBoundSquared){ // If multiple triangles are equally close, the first one will be returned
-                *result = &triangle;
-                *lowerDistanceBoundSquared = distanceSquared;
+            if(distanceSquared < result->lowerDistanceBoundSquared){ // If multiple triangles are equally close, the first one will be returned
+                result->closestTriangle = &triangle;
+                result->lowerDistanceBoundSquared = distanceSquared;
+                result->closestVertex = closestPoint;
+                if(distanceSquared <= 0.0){
+                    return;
+                }
             }
         }
     }
+}
+
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::hasMinimumDistance(const Vertex& vertex, float minimumDistanceSquared) const{
+    ClosestTriangleQueryResult queryResult;
+    queryResult.lowerDistanceBoundSquared = minimumDistanceSquared;
+    queryClosestTriangle(vertex, &queryResult);
+    return queryResult.closestTriangle; // True if the result is set, meaning a triangle was found < minimumDistanceSquared
+}
+
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+float AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getShortestDistanceSquared(const Vertex &vertex) const{
+    ClosestTriangleQueryResult queryResult;
+    queryClosestTriangle(vertex, &queryResult);
+    assert(queryResult.closestTriangle); // Assert the result is set
+    return queryResult.lowerDistanceBoundSquared;
+}
+
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+const VertexTriangle* AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestTriangle(const Vertex &vertex) const{
+    ClosestTriangleQueryResult queryResult;
+    queryClosestTriangle(vertex, &queryResult);
+    assert(queryResult.closestTriangle); // Assert the result is set
+    return queryResult.closestTriangle;
+}
+
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+Vertex AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestPoint(const Vertex &vertex) const{
+    ClosestTriangleQueryResult queryResult;
+    queryClosestTriangle(vertex, &queryResult);
+    assert(queryResult.closestTriangle); // Assert the result is set
+    return queryResult.closestVertex;
+}
+
+
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::hasMinimumDistance(const VertexTriangle &triangle, float minimumDistanceSquared) const {
+    ClosestTriangleQueryResult queryResult;
+    queryResult.lowerDistanceBoundSquared = minimumDistanceSquared;
+    queryClosestTriangle(triangle, &queryResult);
+    return queryResult.closestTriangle; // True if the result is set, meaning a triangle was found < minimumDistanceSquared
+}
+
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+float AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getShortestDistanceSquared(const VertexTriangle &triangle) const {
+    ClosestTriangleQueryResult queryResult;
+    queryClosestTriangle(triangle, &queryResult);
+    assert(queryResult.closestTriangle); // Assert the result is set
+    return queryResult.lowerDistanceBoundSquared;
+}
+
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+const VertexTriangle* AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestTriangle(const VertexTriangle &triangle) const {
+    ClosestTriangleQueryResult queryResult;
+    queryClosestTriangle(triangle, &queryResult);
+    assert(queryResult.closestTriangle); // Assert the result is set
+    return queryResult.closestTriangle;
+}
+
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+Vertex AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestPoint(const VertexTriangle &triangle) const {
+    ClosestTriangleQueryResult queryResult;
+    queryClosestTriangle(triangle, &queryResult);
+    assert(queryResult.closestTriangle); // Assert the result is set
+    return queryResult.closestVertex;
 }
 
 #endif //OPTIXMESHCORE_ABSTRACTBOUNDSTREE_H
