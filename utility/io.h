@@ -47,7 +47,7 @@ static std::ostream & operator<<(std::ostream & os, const OBB& obb){
 }
 
 static std::ostream& operator<<(std::ostream& o, const VertexTriangle& vertexTriangle) {
-    return o << "VertexTriangle(" << vertexTriangle.vertex0 << ", " << vertexTriangle.vertex1 << ", " << vertexTriangle.vertex2 << ")";
+    return o << "VertexTriangle(" << vertexTriangle.vertices[0] << ", " << vertexTriangle.vertices[1] << ", " << vertexTriangle.vertices[2] << ")";
 }
 
 #endif //MESHCORE_IO_H

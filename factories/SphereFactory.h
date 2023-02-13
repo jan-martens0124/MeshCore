@@ -21,9 +21,9 @@ public:
         std::vector<Vertex> vertices;
         vertices.reserve(triangles.size() * 3);
         for(auto& triangle : triangles){
-            vertices.push_back(triangle.vertex0);
-            vertices.push_back(triangle.vertex1);
-            vertices.push_back(triangle.vertex2);
+            vertices.push_back(triangle.vertices[0]);
+            vertices.push_back(triangle.vertices[1]);
+            vertices.push_back(triangle.vertices[2]);
         }
 
         auto result = createMinimumBoundingSphereGaertner(vertices);

@@ -25,10 +25,8 @@ public:
     static OBB createOBB(const VertexTriangle& vertexTriangle){
 
         // We look for the quaternion that aligns the axis with the normal and one edge of the triangle
-        auto edge0 = vertexTriangle.edge0;
-        auto normal = vertexTriangle.normal;
-        auto axisX = glm::normalize(edge0);
-        auto axisY = glm::normalize(normal);
+        auto axisX = glm::normalize( vertexTriangle.edges[0]);
+        auto axisY = glm::normalize(vertexTriangle.normal);
         auto axisZ = glm::normalize(glm::cross(axisX, axisY));
         Quaternion quaternion({axisX, axisY, axisZ});
 
@@ -38,13 +36,13 @@ public:
         assert(glm::all(glm::epsilonEqual(quaternion.rotateVertex(glm::vec3(0.0f,0.0f,1.0f)), axisZ, 1e-6f)));
 
         // This quaternion should align the triangles edge and normal with the primary ones in OBB space
-        assert(glm::all(glm::epsilonEqual(quaternion.inverseRotateVertex(glm::normalize(vertexTriangle.edge0)), glm::vec3(1.0f,0.0f,0.0f), 1e-6f)));
+        assert(glm::all(glm::epsilonEqual(quaternion.inverseRotateVertex(glm::normalize(vertexTriangle.edges[0])), glm::vec3(1.0f,0.0f,0.0f), 1e-6f)));
         assert(glm::all(glm::epsilonEqual(quaternion.inverseRotateVertex(glm::normalize(vertexTriangle.normal)), glm::vec3(0.0f,1.0f,0.0f), 1e-6f)));
 
         // Rotate the vertices of the triangle to OBB space
-        auto rotatedVertex0 = quaternion.inverseRotateVertex(vertexTriangle.vertex0);
-        auto rotatedVertex1 = quaternion.inverseRotateVertex(vertexTriangle.vertex1);
-        auto rotatedVertex2 = quaternion.inverseRotateVertex(vertexTriangle.vertex2);
+        auto rotatedVertex0 = quaternion.inverseRotateVertex(vertexTriangle.vertices[0]);
+        auto rotatedVertex1 = quaternion.inverseRotateVertex(vertexTriangle.vertices[1]);
+        auto rotatedVertex2 = quaternion.inverseRotateVertex(vertexTriangle.vertices[2]);
 
         // The vertices should lie in the same XZ plane
         assert(glm::epsilonEqual(rotatedVertex0.y, rotatedVertex1.y, 1e-6f));
@@ -67,32 +65,32 @@ public:
         std::vector<Quaternion> alignmentsToEvaluate;
         // This is O(N^2), but probably won't yield exact solutions for more triangles // TODO test
         // Add the quaternions that align with the edges of the first triangle
-        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle0.edge0),glm::normalize(vertexTriangle0.normal),
-                                                      glm::normalize(glm::cross(vertexTriangle0.edge0, vertexTriangle0.normal))}));
-        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle0.edge1),glm::normalize(vertexTriangle0.normal),
-                                                      glm::normalize(glm::cross(vertexTriangle0.edge1, vertexTriangle0.normal))}));
-        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle0.edge2),glm::normalize(vertexTriangle0.normal),
-                                                      glm::normalize(glm::cross(vertexTriangle0.edge2, vertexTriangle0.normal))}));
+        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle0.edges[0]),glm::normalize(vertexTriangle0.normal),
+                                                      glm::normalize(glm::cross(vertexTriangle0.edges[0], vertexTriangle0.normal))}));
+        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle0.edges[1]),glm::normalize(vertexTriangle0.normal),
+                                                      glm::normalize(glm::cross(vertexTriangle0.edges[1], vertexTriangle0.normal))}));
+        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle0.edges[2]),glm::normalize(vertexTriangle0.normal),
+                                                      glm::normalize(glm::cross(vertexTriangle0.edges[2], vertexTriangle0.normal))}));
 
         // Add the quaternions that align with the edges of the second triangle
-        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle1.edge0),glm::normalize(vertexTriangle1.normal),
-                                                      glm::normalize(glm::cross(vertexTriangle1.edge0, vertexTriangle1.normal))}));
-        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle1.edge1),glm::normalize(vertexTriangle1.normal),
-                                                      glm::normalize(glm::cross(vertexTriangle1.edge1, vertexTriangle1.normal))}));
-        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle1.edge2),glm::normalize(vertexTriangle1.normal),
-                                                      glm::normalize(glm::cross(vertexTriangle1.edge2, vertexTriangle1.normal))}));
+        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle1.edges[0]),glm::normalize(vertexTriangle1.normal),
+                                                      glm::normalize(glm::cross(vertexTriangle1.edges[0], vertexTriangle1.normal))}));
+        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle1.edges[1]),glm::normalize(vertexTriangle1.normal),
+                                                      glm::normalize(glm::cross(vertexTriangle1.edges[1], vertexTriangle1.normal))}));
+        alignmentsToEvaluate.emplace_back(Quaternion({glm::normalize(vertexTriangle1.edges[2]),glm::normalize(vertexTriangle1.normal),
+                                                      glm::normalize(glm::cross(vertexTriangle1.edges[2], vertexTriangle1.normal))}));
 
         auto smallestVolume = std::numeric_limits<float>::max();
         AABB smallestAABB;
         Quaternion bestAlignment;
         for (const auto &quaternion: alignmentsToEvaluate){
             auto aabb = AABBFactory::createAABB({
-                quaternion.inverseRotateVertex(vertexTriangle0.vertex0),
-                quaternion.inverseRotateVertex(vertexTriangle0.vertex1),
-                quaternion.inverseRotateVertex(vertexTriangle0.vertex2),
-                quaternion.inverseRotateVertex(vertexTriangle1.vertex0),
-                quaternion.inverseRotateVertex(vertexTriangle1.vertex1),
-                quaternion.inverseRotateVertex(vertexTriangle1.vertex2)
+                quaternion.inverseRotateVertex(vertexTriangle0.vertices[0]),
+                quaternion.inverseRotateVertex(vertexTriangle0.vertices[1]),
+                quaternion.inverseRotateVertex(vertexTriangle0.vertices[2]),
+                quaternion.inverseRotateVertex(vertexTriangle1.vertices[0]),
+                quaternion.inverseRotateVertex(vertexTriangle1.vertices[1]),
+                quaternion.inverseRotateVertex(vertexTriangle1.vertices[2])
             });
 
             if(aabb.getVolume() < smallestVolume){
@@ -115,9 +113,9 @@ public:
         } else {
             std::unordered_set<Vertex> vertices;
             for (const auto &item : triangles){ // Is this set worth it? We might as well just count every vertex twice instead of hashing it (PCA works in O(n) anyway)
-                vertices.insert(item.vertex0);
-                vertices.insert(item.vertex1);
-                vertices.insert(item.vertex2);
+                vertices.insert(item.vertices[0]);
+                vertices.insert(item.vertices[1]);
+                vertices.insert(item.vertices[2]);
             }
             return createOBB(vertices.begin(), vertices.end(), vertices.size());
         }

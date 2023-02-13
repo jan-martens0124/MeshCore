@@ -128,7 +128,7 @@
         else \
         { \
                 /* triangles are coplanar */ \
-                return coplanar_tri_tri(triangleA.normal,triangleA.vertex0,triangleA.vertex1,triangleA.vertex2,triangleB.vertex0,triangleB.vertex1,triangleB.vertex2); \
+                return coplanar_tri_tri(triangleA.normal,triangleA.vertices[0],triangleA.vertices[1],triangleA.vertices[2],triangleB.vertices[0],triangleB.vertices[1],triangleB.vertices[2]); \
         } \
 }
 
@@ -189,13 +189,13 @@ namespace Intersection
     {
         /* compute plane equation of triangle(V0,V1,V2) */
 
-        float d1 = - glm::dot(triangleA.normal, triangleA.vertex0);   // TODO use precalculated normals in VertexTriangle class
+        float d1 = - glm::dot(triangleA.normal, triangleA.vertices[0]);
         /* plane equation 1: N1.X+d1=0 */
 
         /* put U0,U1,U2 into plane equation 1 to compute signed distances to the plane*/
-        float du0 = glm::dot(triangleA.normal, triangleB.vertex0) + d1;
-        float du1 = glm::dot(triangleA.normal, triangleB.vertex1) + d1;
-        float du2 = glm::dot(triangleA.normal, triangleB.vertex2) + d1;
+        float du0 = glm::dot(triangleA.normal, triangleB.vertices[0]) + d1;
+        float du1 = glm::dot(triangleA.normal, triangleB.vertices[1]) + d1;
+        float du2 = glm::dot(triangleA.normal, triangleB.vertices[2]) + d1;
 
         /* coplanarity robustness check */
 #if USE_EPSILON_TEST==TRUE
@@ -210,13 +210,13 @@ namespace Intersection
             return false; /* no intersection occurs */
 
         /* compute plane of triangle (U0,U1,U2) */
-        float d2 = - glm::dot(triangleB.normal, triangleB.vertex0);
+        float d2 = - glm::dot(triangleB.normal, triangleB.vertices[0]);
         /* plane equation 2: N2.X+d2=0 */
 
         /* put V0,V1,V2 into plane equation 2 */
-        float dv0 = glm::dot(triangleB.normal, triangleA.vertex0) + d2;
-        float dv1 = glm::dot(triangleB.normal, triangleA.vertex1) + d2;
-        float dv2 = glm::dot(triangleB.normal, triangleA.vertex2) + d2;
+        float dv0 = glm::dot(triangleB.normal, triangleA.vertices[0]) + d2;
+        float dv1 = glm::dot(triangleB.normal, triangleA.vertices[1]) + d2;
+        float dv2 = glm::dot(triangleB.normal, triangleA.vertices[2]) + d2;
 
 #if USE_EPSILON_TEST==TRUE
         if (FABS(dv0) < EPSILON) dv0 = 0.0;
@@ -242,13 +242,13 @@ namespace Intersection
         if (cc > max) index = 2;
 
         /* this is the simplified projection onto L*/
-        float vp0 = triangleA.vertex0[index];
-        float vp1 = triangleA.vertex1[index];
-        float vp2 = triangleA.vertex2[index];
+        float vp0 = triangleA.vertices[0][index];
+        float vp1 = triangleA.vertices[1][index];
+        float vp2 = triangleA.vertices[2][index];
 
-        float up0 = triangleB.vertex0[index];
-        float up1 = triangleB.vertex1[index];
-        float up2 = triangleB.vertex2[index];
+        float up0 = triangleB.vertices[0][index];
+        float up1 = triangleB.vertices[1][index];
+        float up2 = triangleB.vertices[2][index];
 
         /* compute interval for triangle 1 */
         float a, b, c, x0, x1;

@@ -14,9 +14,9 @@
         size_t operator()(const VertexTriangle &vertexTriangle) const {
             size_t result = 0;
             auto hash = std::hash<Vertex>();
-            glm::detail::hash_combine(result, hash(vertexTriangle.vertex0));
-            glm::detail::hash_combine(result, hash(vertexTriangle.vertex1));
-            glm::detail::hash_combine(result, hash(vertexTriangle.vertex2));
+            glm::detail::hash_combine(result, hash(vertexTriangle.vertices[0]));
+            glm::detail::hash_combine(result, hash(vertexTriangle.vertices[1]));
+            glm::detail::hash_combine(result, hash(vertexTriangle.vertices[2]));
             return result;
         }
     };
@@ -53,9 +53,9 @@
 
     template<> struct std::hash<VertexTriangle> {
         size_t operator()(const VertexTriangle &vertexTriangle) const {
-            return std::hash<float>()(vertexTriangle.vertex0.x +  vertexTriangle.vertex0.y + vertexTriangle.vertex0.z +
-                                      vertexTriangle.vertex1.x +  vertexTriangle.vertex1.y + vertexTriangle.vertex1.z +
-                                      vertexTriangle.vertex2.x +  vertexTriangle.vertex2.y + vertexTriangle.vertex2.z);
+            return std::hash<float>()(vertexTriangle.vertices[0].x +  vertexTriangle.vertices[0].y + vertexTriangle.vertices[0].z +
+                                      vertexTriangle.vertices[1].x +  vertexTriangle.vertices[1].y + vertexTriangle.vertices[1].z +
+                                      vertexTriangle.vertices[2].x +  vertexTriangle.vertices[2].y + vertexTriangle.vertices[2].z);
         }
     };
 

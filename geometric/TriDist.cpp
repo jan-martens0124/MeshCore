@@ -54,10 +54,7 @@
 
 #include "Distance.h"
 
-#ifdef _WIN32
-#include <float.h>
-#define isnan _isnan
-#endif
+#include <math.h>
 
 //--------------------------------------------------------------------------
 // SegPoints() 
@@ -195,7 +192,7 @@ float TriDistSqr(glm::vec3* P, glm::vec3* Q, const VertexTriangle& S, const Vert
     int shown_disjoint = 0;
 
     {
-        auto delta = S.vertex0 - T.vertex0;
+        auto delta = S.vertices[0] - T.vertices[0];
         mindd = glm::dot(delta, delta) + 1; // Set first minimum safely high
     }
 
@@ -254,13 +251,13 @@ float TriDistSqr(glm::vec3* P, glm::vec3* Q, const VertexTriangle& S, const Vert
         // Get projection lengths of T points
         glm::vec3 Tp;
 
-        V = S.vertex0 - T.vertex0;
+        V = S.vertices[0] - T.vertices[0];
         Tp[0] = glm::dot(V,S.normal);
 
-        V = S.vertex0 - T.vertex1;
+        V = S.vertices[0] - T.vertices[1];
         Tp[1] = glm::dot(V,S.normal);
 
-        V = S.vertex0 - T.vertex2;
+        V = S.vertices[0] - T.vertices[2];
         Tp[2] = glm::dot(V,S.normal);
 
         // If Sn is a separating direction,
@@ -285,15 +282,15 @@ float TriDistSqr(glm::vec3* P, glm::vec3* Q, const VertexTriangle& S, const Vert
 
             // Test whether the point found, when projected onto the
             // other triangle, lies within the face.
-            V = T.vertices[point] - S.vertex0;
-            Z = glm::cross(S.normal,S.edge0);
+            V = T.vertices[point] - S.vertices[0];
+            Z = glm::cross(S.normal,S.edges[0]);
             if (glm::dot(V,Z) > 0){
-                V  = T.vertices[point] - S.vertex1;
-                Z = glm::cross(S.normal, S.edge1);
+                V  = T.vertices[point] - S.vertices[1];
+                Z = glm::cross(S.normal, S.edges[1]);
 
                 if (glm::dot(V,Z) > 0){
-                    V  = T.vertices[point] - S.vertex2;
-                    Z = glm::cross(S.normal,S.edge2);
+                    V  = T.vertices[point] - S.vertices[2];
+                    Z = glm::cross(S.normal,S.edges[2]);
 
                     if (glm::dot(V,Z) > 0) {
 
@@ -315,13 +312,13 @@ float TriDistSqr(glm::vec3* P, glm::vec3* Q, const VertexTriangle& S, const Vert
     if (Tnl > 1e-15) {
         glm::vec3 Sp;
 
-        V = T.vertex0 - S.vertex0;
+        V = T.vertices[0] - S.vertices[0];
         Sp[0] = glm::dot(V,T.normal);
 
-        V = T.vertex0 - S.vertex1;
+        V = T.vertices[0] - S.vertices[1];
         Sp[1] = glm::dot(V,T.normal);
 
-        V = T.vertex0 - S.vertex2;
+        V = T.vertices[0] - S.vertices[2];
         Sp[2] = glm::dot(V,T.normal);
 
         int point = -1;
@@ -338,16 +335,16 @@ float TriDistSqr(glm::vec3* P, glm::vec3* Q, const VertexTriangle& S, const Vert
 
         if (point >= 0) {
             shown_disjoint = 1;
-            V = S.vertices[point] - T.vertex0;
-            Z = glm::cross(T.normal,T.edge0);
+            V = S.vertices[point] - T.vertices[0];
+            Z = glm::cross(T.normal,T.edges[0]);
 
             if (glm::dot(V,Z) > 0) {
-                V = S.vertices[point] - T.vertex1;
-                Z = glm::cross(T.normal,T.edge1);
+                V = S.vertices[point] - T.vertices[1];
+                Z = glm::cross(T.normal,T.edges[1]);
 
                 if (glm::dot(V,Z) > 0) {
-                    V = S.vertices[point] - T.vertex2;
-                    Z = glm::cross(T.normal,T.edge2);
+                    V = S.vertices[point] - T.vertices[2];
+                    Z = glm::cross(T.normal,T.edges[2]);
                     if (glm::dot(V,Z) > 0) {
                         *P = S.vertices[point];
                         *Q = S.vertices[point] + T.normal * Sp[point]/Tnl;

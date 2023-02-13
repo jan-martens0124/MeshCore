@@ -175,9 +175,9 @@ namespace Intersection{
         /* move everything so that the boxcenter is in (0,0,0) */
 
         glm::vec3 center = aabb.getCenter();
-        v0 = vertexTriangle.vertex0 - center;
-        v1 = vertexTriangle.vertex1 - center;
-        v2 = vertexTriangle.vertex2 - center;
+        v0 = vertexTriangle.vertices[0] - center;
+        v1 = vertexTriangle.vertices[1] - center;
+        v2 = vertexTriangle.vertices[2] - center;
 
 
 
@@ -193,45 +193,45 @@ namespace Intersection{
 
         /*  test the 9 tests first (this was faster) */
 
-        fex = fabs(vertexTriangle.edge0[0]);
+        fex = fabs(vertexTriangle.edges[0][0]);
 
-        fey = fabs(vertexTriangle.edge0[1]);
+        fey = fabs(vertexTriangle.edges[0][1]);
 
-        fez = fabs(vertexTriangle.edge0[2]);
+        fez = fabs(vertexTriangle.edges[0][2]);
 
-        AXISTEST_X01(vertexTriangle.edge0[2], vertexTriangle.edge0[1], fez, fey);
+        AXISTEST_X01(vertexTriangle.edges[0][2], vertexTriangle.edges[0][1], fez, fey);
 
-        AXISTEST_Y02(vertexTriangle.edge0[2], vertexTriangle.edge0[0], fez, fex);
+        AXISTEST_Y02(vertexTriangle.edges[0][2], vertexTriangle.edges[0][0], fez, fex);
 
-        AXISTEST_Z12(vertexTriangle.edge0[1], vertexTriangle.edge0[0], fey, fex);
-
-
-
-        fex = fabs(vertexTriangle.edge1[0]);
-
-        fey = fabs(vertexTriangle.edge1[1]);
-
-        fez = fabs(vertexTriangle.edge1[2]);
-
-        AXISTEST_X01(vertexTriangle.edge1[2], vertexTriangle.edge1[1], fez, fey);
-
-        AXISTEST_Y02(vertexTriangle.edge1[2], vertexTriangle.edge1[0], fez, fex);
-
-        AXISTEST_Z0(vertexTriangle.edge1[1], vertexTriangle.edge1[0], fey, fex);
+        AXISTEST_Z12(vertexTriangle.edges[0][1], vertexTriangle.edges[0][0], fey, fex);
 
 
 
-        fex = fabs(vertexTriangle.edge2[0]);
+        fex = fabs(vertexTriangle.edges[1][0]);
 
-        fey = fabs(vertexTriangle.edge2[1]);
+        fey = fabs(vertexTriangle.edges[1][1]);
 
-        fez = fabs(vertexTriangle.edge2[2]);
+        fez = fabs(vertexTriangle.edges[1][2]);
 
-        AXISTEST_X2(vertexTriangle.edge2[2], vertexTriangle.edge2[1], fez, fey);
+        AXISTEST_X01(vertexTriangle.edges[1][2], vertexTriangle.edges[1][1], fez, fey);
 
-        AXISTEST_Y1(vertexTriangle.edge2[2], vertexTriangle.edge2[0], fez, fex);
+        AXISTEST_Y02(vertexTriangle.edges[1][2], vertexTriangle.edges[1][0], fez, fex);
 
-        AXISTEST_Z12(vertexTriangle.edge2[1], vertexTriangle.edge2[0], fey, fex);
+        AXISTEST_Z0(vertexTriangle.edges[1][1], vertexTriangle.edges[1][0], fey, fex);
+
+
+
+        fex = fabs(vertexTriangle.edges[2][0]);
+
+        fey = fabs(vertexTriangle.edges[2][1]);
+
+        fez = fabs(vertexTriangle.edges[2][2]);
+
+        AXISTEST_X2(vertexTriangle.edges[2][2], vertexTriangle.edges[2][1], fez, fey);
+
+        AXISTEST_Y1(vertexTriangle.edges[2][2], vertexTriangle.edges[2][0], fez, fex);
+
+        AXISTEST_Z12(vertexTriangle.edges[2][1], vertexTriangle.edges[2][0], fey, fex);
 
 
         /* Bullet 2: */

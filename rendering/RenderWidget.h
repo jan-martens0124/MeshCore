@@ -81,7 +81,7 @@ private:
     AbstractTask* currentTask = nullptr;
     std::function<void(RenderWidget* renderWidget, const std::shared_ptr<const AbstractSolution>& solution)> onSolutionNotified  = {};
     std::thread timerThread{};
-    std::atomic<boolean> taskRunning = false;
+    std::atomic<bool> taskRunning = false;
 private slots:
     [[maybe_unused]] void updateProgressBarSlot(int progress);
     [[maybe_unused]] void setStartButtonEnabledSlot(bool enabled);
