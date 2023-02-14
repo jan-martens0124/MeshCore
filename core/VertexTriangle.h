@@ -92,11 +92,11 @@ public:
         auto va = d3*d6 - d5*d4;
         if(va <= 0.0f && (d4-d3) >= 0.0f && (d5 - d6) >= 0.0f){
             auto w = (d4-d3) / ((d4-d3) + (d5-d6));
-            return vertices[1] + w * (vertices[2] - vertices[1]);
+            return vertices[1] + w * edges[1];
         }
 
         // The point lies in the face region. Compute the closest point through barycentric coordinates
-        auto denom = 1.0f / (va + va + vc);
+        auto denom = 1.0f / (va + vb + vc);
         auto v = vb * denom;
         auto w = vc * denom;
         return vertices[0] + ab*v + ac*w;
