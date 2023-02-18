@@ -7,7 +7,7 @@
 #include <utility>
 #include <unordered_set>
 #include <iostream>
-#include "../convexhull/convexhull.h"
+#include "../external/convexhull/convexhull.h"
 #include "../factories/AABBFactory.h"
 
 #define EPSILON 1e-4
