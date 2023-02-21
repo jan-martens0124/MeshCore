@@ -69,6 +69,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::loadMeshFile(const std::string &file
     // Parse the file according to its extension
     std::shared_ptr<ModelSpaceMesh> returnModelSpaceMesh;
     std::string extension = filePath.substr(filePath.find_last_of('.') + 1);
+    std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c){ return std::tolower(c); });
     if (extension ==  "stl") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileSTL(filePath));
     else if( extension == "obj") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileOBJ(filePath));
     else{
