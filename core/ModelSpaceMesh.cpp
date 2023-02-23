@@ -321,34 +321,33 @@ float ModelSpaceMesh::getVolume() const {
 bool ModelSpaceMesh::isConvex() const{
 
     // Return the value if already calculated before
-    if(convex.has_value()){
-        return convex.value();
-    }
+    if(!convex.has_value()){
+        // Calculate the convexity
+        for (const auto &indexTriangle: this->triangles){
 
-    // Calculate the convexity
-    for (const auto &indexTriangle: this->triangles){
+            Vertex vertex0 = this->vertices.at(indexTriangle.vertexIndex0);
+            Vertex vertex1 = this->vertices.at(indexTriangle.vertexIndex1);
+            Vertex vertex2 = this->vertices.at(indexTriangle.vertexIndex2);
 
-        Vertex vertex0 = this->vertices.at(indexTriangle.vertexIndex0);
-        Vertex vertex1 = this->vertices.at(indexTriangle.vertexIndex1);
-        Vertex vertex2 = this->vertices.at(indexTriangle.vertexIndex2);
+            VertexTriangle triangle({vertex0, vertex1, vertex2});
 
-        VertexTriangle triangle({vertex0, vertex1, vertex2});
+            for (const auto &vertex : this->vertices){
 
-        for (const auto &vertex : this->vertices){
+                // The dot product between the triangle's normal and the vector from the triangle to the vertex should be negative
+                auto normal = glm::normalize(triangle.normal);
+                auto delta = glm::normalize(vertex - vertex0);
+                auto dot = glm::dot(normal, delta);
 
-            // The dot product between the triangle's normal and the vector from the triangle to the vertex should be negative
-            auto normal = glm::normalize(triangle.normal);
-            auto delta = glm::normalize(vertex - vertex0);
-            auto dot = glm::dot(normal, delta);
-
-            if(dot > EPSILON){
-                convex = false;
-                return false;
+                if(dot > EPSILON){
+                    convex = false;
+                    return false;
+                }
             }
         }
+        convex = true;
     }
-    convex = true;
-    return true;
+
+    return convex.value();
 }
 
 float ModelSpaceMesh::getSurfaceArea() const {
@@ -370,4 +369,28 @@ float ModelSpaceMesh::getSurfaceArea() const {
         surfaceArea = doubleArea / 2.0f;
     }
     return surfaceArea.value();
+}
+
+Vertex ModelSpaceMesh::getVolumeCentroid() const {
+
+    if(!volumeCentroid.has_value()){
+        auto meshVolume = 0.0f;
+        auto centroid = Vertex(0.0f, 0.0f, 0.0f);
+
+        for (const auto &triangle: triangles){
+            auto v1 = vertices.at(triangle.vertexIndex0);
+            auto v2 = vertices.at(triangle.vertexIndex1);
+            auto v3 = vertices.at(triangle.vertexIndex2);
+            auto center = (v1 + v2 + v3) / 4.0f;         // center of tetrahedron
+            auto _volume = dot(v1, cross(v2, v3)) / 6.0f;  // signed volume of tetrahedron
+            meshVolume += _volume;
+            centroid += center * _volume;
+        }
+        if(!volume.has_value()){
+            volume = meshVolume;
+        }
+        assert(glm::epsilonEqual(meshVolume/getVolume(), 1.0f, 1e-6f));
+        volumeCentroid = centroid / meshVolume;
+    }
+    return volumeCentroid.value();
 }
