@@ -72,9 +72,9 @@ void OpenGLWidget::initializeGL() {
     ambientShader->link();
 
     // Store the axis render line
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(100,0,0), Transformation(), ambientShader));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,100,0), Transformation(), ambientShader));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,100), Transformation(), ambientShader));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(1e8,0,0), Transformation(), ambientShader));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,1e8,0), Transformation(), ambientShader));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,1e8), Transformation(), ambientShader));
     axisRenderLines[0]->setColor(Color(1,0,0,1));
     axisRenderLines[1]->setColor(Color(0,1,0,1));
     axisRenderLines[2]->setColor(Color(0,0,1,1));
@@ -340,14 +340,31 @@ void OpenGLWidget::captureSceneSlot() {
         return;
     }
 
-    capture.save(fileName);
+    // Eliminate the alpha channel
+    QImage rgbImage(capture.size(), QImage::Format_ARGB32);
+    for (int x = 0; x < width; ++x){
+        for (int y = 0; y < height; ++y){
+            auto rgb = capture.pixel(x, y);
+            rgbImage.setPixelColor(x,y, QColor(rgb));
+        }
+    }
+    rgbImage.save(fileName);
 }
 
 void OpenGLWidget::captureSceneToFileSlot(const QString& fileName) {
     this->makeCurrent();
     auto capture = this->grabFramebuffer();
     std::cout<< fileName.toStdString() << std::endl;
-    capture.save(fileName, nullptr, 100);
+
+    // Eliminate the alpha channel
+    QImage rgbImage(capture.size(), QImage::Format_ARGB32);
+    for (int x = 0; x < width; ++x){
+        for (int y = 0; y < height; ++y){
+            auto rgb = capture.pixel(x, y);
+            rgbImage.setPixelColor(x,y, QColor(rgb));
+        }
+    }
+    rgbImage.save(fileName);
 }
 
 bool OpenGLWidget::isUsePerspective() const {
@@ -679,6 +696,8 @@ void OpenGLWidget::addOrUpdateRenderModelSlot(const std::string& group, const st
 
         this->updateSortedRenderModels();
     }
+
+    modelIterator->second->setTransformation(renderModel->getTransformation());
 
     this->update();
 }
