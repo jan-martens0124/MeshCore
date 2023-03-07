@@ -67,9 +67,11 @@ void AABBVolumeHierarchy::doSplit() {
                 std::shared_ptr<AABB> aabb1 = std::make_shared<AABB>(AABBFactory::createAABB(*vertexTriangles1));
                 std::shared_ptr<AABB> aabb2 = std::make_shared<AABB>(AABBFactory::createAABB(*vertexTriangles2));
 
-//                float cost = aabb1->getSurfaceArea() * vertexTriangles1->size() + aabb2->getSurfaceArea()*vertexTriangles2->size();
+                float cost = aabb1->getSurfaceArea() * float(vertexTriangles1->size()) + aabb2->getSurfaceArea()*float(vertexTriangles2->size());
 
-                float cost = aabb1->getVolume() * float(vertexTriangles1->size()) + aabb2->getVolume() * float(vertexTriangles2->size());
+//                float cost = aabb1->getVolume() * float(vertexTriangles1->size()) + aabb2->getVolume() * float(vertexTriangles2->size());
+//                float cost = aabb1->getVolume() + aabb2->getVolume();
+//                float cost = aabb1->getSurfaceArea() + aabb2->getSurfaceArea();
 
                 if(cost < bestCost){
                     bestCost = cost;
