@@ -75,6 +75,10 @@ public:
     MC_FUNC_QUALIFIER bool operator!=(const AABB &other) const {
         return !(other == *this);
     }
+
+    MC_FUNC_QUALIFIER const AABB getTranslated(const glm::vec3 &translation) const {
+        return {minimum + translation, maximum + translation};
+    }
 };
 
 #endif //MESHCORE_AABB_H
