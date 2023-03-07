@@ -17,7 +17,6 @@
 class ModelSpaceMesh {
 private:
     std::string name;
-    AABB bounds;
     std::vector<Vertex> vertices;
     std::vector<IndexTriangle> triangles;
 
@@ -27,9 +26,17 @@ private:
     mutable std::optional<float> volume;
     mutable std::optional<float> surfaceArea;
     mutable std::optional<Vertex> volumeCentroid;
+    mutable std::optional<Vertex> surfaceCentroid;
+    mutable std::optional<AABB> bounds;
     mutable std::optional<std::shared_ptr<ModelSpaceMesh>> convexHull;
 //    mutable std::optional<GJKMesh> gjkMesh;
     // TODO add AABB bounds as well?
+
+private:
+    void computeVolumeAndCentroid() const;
+    void computeSurfaceAreaAndCentroid() const;
+    void computeConvexity() const;
+
 public:
     ModelSpaceMesh() = default;
     ModelSpaceMesh(std::vector<Vertex> vertices, std::vector<IndexTriangle> triangles);
@@ -47,6 +54,7 @@ public:
     bool isConvex() const;
     float getVolume() const;
     Vertex getVolumeCentroid() const;
+    Vertex getSurfaceCentroid() const;
     float getSurfaceArea() const; //https://people.eecs.berkeley.edu/~wkahan/Triangle.pdf
 
     const std::string &getName() const;

@@ -14,11 +14,9 @@
 
 ModelSpaceMesh::ModelSpaceMesh(std::vector<Vertex> vertices, std::vector<IndexTriangle> triangles):
 vertices(std::move(vertices)),
-triangles(std::move(triangles)),
-bounds()
+triangles(std::move(triangles))
 {
     assert(!this->vertices.empty());
-    this->bounds = AABBFactory::createAABB(this->vertices);
 }
 
 const std::vector<Vertex>& ModelSpaceMesh::getVertices() const {
@@ -143,10 +141,6 @@ std::vector<IndexEdge> ModelSpaceMesh::getSufficientIntersectionEdges() const {
 
 #endif
     return returnVector;
-}
-
-const AABB &ModelSpaceMesh::getBounds() const {
-    return bounds;
 }
 
 // inspired by https://codeforces.com/blog/entry/81768
@@ -294,26 +288,7 @@ void ModelSpaceMesh::setName(const std::string &newName) {
 
 float ModelSpaceMesh::getVolume() const {
     if(!volume.has_value()){
-
-        float vol = 0.0f;
-
-        for (const auto &indexTriangle: this->triangles){
-            const auto v0 = this->vertices.at(indexTriangle.vertexIndex0);
-            const auto v1 = this->vertices.at(indexTriangle.vertexIndex1);
-            const auto v2 = this->vertices.at(indexTriangle.vertexIndex2);
-
-            auto v210 = v2.x * v1.y * v0.z;
-            auto v120 = v1.x * v2.y * v0.z;
-            auto v201 = v2.x * v0.y * v1.z;
-            auto v021 = v0.x * v2.y * v1.z;
-            auto v102 = v1.x * v0.y * v2.z;
-            auto v012 = v0.x * v1.y * v2.z;
-
-            vol += (1.0f/6.0f)*(-v210 + v120 + v201 - v021 - v102 + v012);
-        }
-
-        assert(vol/this->getBounds().getVolume() <= (1.0 + 1e-6)  && "Volume of mesh should be smaller than volume of its bounding box");
-        volume = vol;
+        computeVolumeAndCentroid();
     }
     return volume.value();
 }
@@ -322,75 +297,106 @@ bool ModelSpaceMesh::isConvex() const{
 
     // Return the value if already calculated before
     if(!convex.has_value()){
-        // Calculate the convexity
-        for (const auto &indexTriangle: this->triangles){
-
-            Vertex vertex0 = this->vertices.at(indexTriangle.vertexIndex0);
-            Vertex vertex1 = this->vertices.at(indexTriangle.vertexIndex1);
-            Vertex vertex2 = this->vertices.at(indexTriangle.vertexIndex2);
-
-            VertexTriangle triangle({vertex0, vertex1, vertex2});
-
-            for (const auto &vertex : this->vertices){
-
-                // The dot product between the triangle's normal and the vector from the triangle to the vertex should be negative
-                auto normal = glm::normalize(triangle.normal);
-                auto delta = glm::normalize(vertex - vertex0);
-                auto dot = glm::dot(normal, delta);
-
-                if(dot > EPSILON){
-                    convex = false;
-                    return false;
-                }
-            }
-        }
-        convex = true;
+        computeConvexity();
     }
 
     return convex.value();
 }
 
+void ModelSpaceMesh::computeConvexity() const {
+    // Calculate the convexity
+    for (const auto &indexTriangle: this->triangles){
+
+        Vertex vertex0 = this->vertices.at(indexTriangle.vertexIndex0);
+        Vertex vertex1 = this->vertices.at(indexTriangle.vertexIndex1);
+        Vertex vertex2 = this->vertices.at(indexTriangle.vertexIndex2);
+
+        VertexTriangle triangle({vertex0, vertex1, vertex2});
+
+        for (const auto &vertex : this->vertices){
+
+            // The dot product between the triangle's normal and the vector from the triangle to the vertex should be negative
+            auto normal = glm::normalize(triangle.normal);
+            auto delta = glm::normalize(vertex - vertex0);
+            auto dot = glm::dot(normal, delta);
+
+            if(dot > EPSILON){
+                convex = false;
+                break;
+            }
+        }
+    }
+    convex = true;
+}
+
+void ModelSpaceMesh::computeSurfaceAreaAndCentroid() const {
+    auto meshSurfaceArea = 0.0f;
+    auto centroid = Vertex(0.0f, 0.0f, 0.0f);
+    for (const auto &indexTriangle: this->triangles){
+
+        const auto v0 = this->vertices.at(indexTriangle.vertexIndex0);
+        const auto v1 = this->vertices.at(indexTriangle.vertexIndex1);
+        const auto v2 = this->vertices.at(indexTriangle.vertexIndex2);
+
+        auto edge0(v1-v0);
+        auto edge1(v2-v1);
+        auto triangleArea = glm::length(glm::cross(edge0, edge1)); // 2.0f * the area of the triangle
+        auto center = (v0 + v1 + v2); // 3.0f * the center of the triangle
+
+        centroid += center * triangleArea;
+        meshSurfaceArea += glm::length(glm::cross(edge0, edge1));
+    }
+    surfaceArea = meshSurfaceArea / 2.0f;
+    surfaceCentroid = centroid / (meshSurfaceArea*3.0f);
+    assert(getBounds().containsPoint(surfaceCentroid.value()) && "The surface centroid should be inside the bounding box");
+}
+
+Vertex ModelSpaceMesh::getVolumeCentroid() const {
+    if(!volumeCentroid.has_value()){
+        computeVolumeAndCentroid();
+    }
+    return volumeCentroid.value();
+}
+
+Vertex ModelSpaceMesh::getSurfaceCentroid() const {
+    if(!surfaceCentroid.has_value()){
+        computeSurfaceAreaAndCentroid();
+    }
+    return surfaceCentroid.value();
+}
+
+const AABB &ModelSpaceMesh::getBounds() const {
+    if(!this->bounds.has_value()){
+        this->bounds = AABBFactory::createAABB(this->vertices);
+    }
+    return this->bounds.value();
+}
+
 float ModelSpaceMesh::getSurfaceArea() const {
     if(!surfaceArea.has_value()){
-
-        // TODO validate
-        float doubleArea = 0.0f;
-        for (const auto &indexTriangle: this->triangles){
-
-            const auto v0 = this->vertices.at(indexTriangle.vertexIndex0);
-            const auto v1 = this->vertices.at(indexTriangle.vertexIndex1);
-            const auto v2 = this->vertices.at(indexTriangle.vertexIndex2);
-
-            auto edge0(v1-v0);
-            auto edge1(v2-v1);
-
-            doubleArea += glm::length(glm::cross(edge0, edge1));
-        }
-        surfaceArea = doubleArea / 2.0f;
+        computeSurfaceAreaAndCentroid();
     }
     return surfaceArea.value();
 }
 
-Vertex ModelSpaceMesh::getVolumeCentroid() const {
+void ModelSpaceMesh::computeVolumeAndCentroid() const {
+    auto meshVolume = 0.0f;
+    auto centroid = Vertex(0.0f, 0.0f, 0.0f);
 
-    if(!volumeCentroid.has_value()){
-        auto meshVolume = 0.0f;
-        auto centroid = Vertex(0.0f, 0.0f, 0.0f);
+    for (const auto &triangle: triangles){
+        auto v0 = vertices.at(triangle.vertexIndex0);
+        auto v1 = vertices.at(triangle.vertexIndex1);
+        auto v2 = vertices.at(triangle.vertexIndex2);
 
-        for (const auto &triangle: triangles){
-            auto v1 = vertices.at(triangle.vertexIndex0);
-            auto v2 = vertices.at(triangle.vertexIndex1);
-            auto v3 = vertices.at(triangle.vertexIndex2);
-            auto center = (v1 + v2 + v3) / 4.0f;         // center of tetrahedron
-            auto _volume = dot(v1, cross(v2, v3)) / 6.0f;  // signed volume of tetrahedron
-            meshVolume += _volume;
-            centroid += center * _volume;
-        }
-        if(!volume.has_value()){
-            volume = meshVolume;
-        }
-        assert(glm::epsilonEqual(meshVolume/getVolume(), 1.0f, 1e-6f));
-        volumeCentroid = centroid / meshVolume;
+        auto center = (v0 + v1 + v2);         // 4.0f * the center of tetrahedron resembled by triangle and origin
+        auto _volume = dot(v0, cross(v1, v2));  // 6.0f * the signed volume of the
+
+        meshVolume += _volume;
+        centroid += center * _volume;
     }
-    return volumeCentroid.value();
+    volume = meshVolume/6.0f;
+    assert(volume.value()/this->getBounds().getVolume() <= (1.0 + 1e-6)  && "Volume of mesh should be smaller than volume of its bounding box");
+    volumeCentroid = centroid / (meshVolume*4.0f);
+    assert(getBounds().containsPoint(volumeCentroid.value()) && "Volume centroid should be inside the bounding box of the mesh");
 }
+
