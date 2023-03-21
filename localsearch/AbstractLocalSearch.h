@@ -187,6 +187,26 @@ protected:
 };
 
 template <class S>
+class CompositeMove: public Move<S> {
+    std::vector<std::shared_ptr<Move<S>>> moves;
+public:
+    explicit CompositeMove(const std::vector<std::shared_ptr<Move<S>>>& moves) : moves(moves) {}
+    virtual ~CompositeMove() = default;
+
+    void doMove(std::shared_ptr<S> solution) override {
+        for(auto& move : moves){
+            move->doMove(solution);
+        }
+    }
+
+    void undoMove(std::shared_ptr<S> solution) override {
+        for(auto it = moves.rbegin(); it != moves.rend(); ++it){
+            (*it)->undoMove(solution);
+        }
+    }
+};
+
+template <class S>
 class CompositeMoveFactory: public MoveFactory<S> {
 private:
     std::vector<std::shared_ptr<MoveFactory<S>>> moveFactories;
