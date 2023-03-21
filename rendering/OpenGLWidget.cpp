@@ -81,7 +81,15 @@ void OpenGLWidget::initializeGL() {
 }
 
 void OpenGLWidget::resetView() {
-    viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f,0.0f, - INITIAL_VIEW_DISTANCE));
+    viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-INITIAL_VIEW_DISTANCE, 0.0f, 0.0f));
+
+    // Default rotation: y-axis to the right and z-axis upwards
+    viewMatrix = glm::mat4({0, 0, 1, 0,
+                            1, 0, 0, 0,
+                            0, 1, 0, 0,
+                            0, 0, 0, 1
+                            }) * viewMatrix;
+
     this->update();
 }
 

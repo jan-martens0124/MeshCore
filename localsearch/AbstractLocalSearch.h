@@ -37,7 +37,7 @@ private:
     static_assert(std::is_base_of<AbstractSolution, S>::value, "MoveFactory template type should be a solution derived from AbstractSolution class");
 public:
 	virtual ~MoveFactory(){};
-    [[nodiscard]] virtual std::shared_ptr<Move<S>> sample(std::shared_ptr<const S> s, const Random& random, double stepSize) const = 0;
+    [[nodiscard]] virtual std::shared_ptr<Move<S>> sample(std::shared_ptr<const S> s, const Random& random, double stepSize=1.0) const = 0;
     virtual std::vector<std::shared_ptr<Move<S>>> listMoves(std::shared_ptr<const S> s, double stepSize) const {
         return {};
     };
