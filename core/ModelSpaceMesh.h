@@ -29,8 +29,6 @@ private:
     mutable std::optional<Vertex> surfaceCentroid;
     mutable std::optional<AABB> bounds;
     mutable std::optional<std::shared_ptr<ModelSpaceMesh>> convexHull;
-//    mutable std::optional<GJKMesh> gjkMesh;
-    // TODO add AABB bounds as well?
 
 private:
     void computeVolumeAndCentroid() const;

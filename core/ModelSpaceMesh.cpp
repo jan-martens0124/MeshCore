@@ -305,6 +305,7 @@ bool ModelSpaceMesh::isConvex() const{
 
 void ModelSpaceMesh::computeConvexity() const {
     // Calculate the convexity
+    convex = true;
     for (const auto &indexTriangle: this->triangles){
 
         Vertex vertex0 = this->vertices.at(indexTriangle.vertexIndex0);
@@ -322,11 +323,10 @@ void ModelSpaceMesh::computeConvexity() const {
 
             if(dot > EPSILON){
                 convex = false;
-                break;
+                return;
             }
         }
     }
-    convex = true;
 }
 
 void ModelSpaceMesh::computeSurfaceAreaAndCentroid() const {
