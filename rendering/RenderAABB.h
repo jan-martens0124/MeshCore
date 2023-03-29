@@ -12,8 +12,7 @@
 
 class RenderAABB: public AbstractRenderModel {
 private:
-    float unscaledSurfaceArea;
-    float unscaledVolume;
+    AABB aabb;
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
 public:
 

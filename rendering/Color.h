@@ -21,6 +21,7 @@ public:
     [[maybe_unused]] static Color Magenta(){return {1.0f, 0.0f, 1.0f, 1.0f};}
     [[maybe_unused]] static Color Orange(){return {1.0f, 0.5f, 0.0f, 1.0f};}
     [[maybe_unused]] static Color LightBlue(){return {0.333, 1.0f, 1.0f, 1.0f};}
+    [[maybe_unused]] static Color Brown(){return {0.666, 0.333f, 0.0f, 1.0f};}
 
 };
 

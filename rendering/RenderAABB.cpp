@@ -7,6 +7,7 @@
 #include "Exception.h"
 #include <QGridLayout>
 #include <QLabel>
+#include "../utility/io.h"
 
 void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
 
@@ -43,14 +44,12 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
 
 RenderAABB::RenderAABB(const AABB &aabb, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader):
         AbstractRenderModel(transformation, "AABB"),
+        aabb(aabb),
         ambientShader(shader){
 
     std::vector<unsigned int> indices;
     std::vector<Vertex> vertices;
     std::vector<float> vertexData;
-
-    this->unscaledVolume = aabb.getVolume();
-    this->unscaledSurfaceArea = aabb.getSurfaceArea();
 
     Vertex min = aabb.getMinimum();
     Vertex max = aabb.getMaximum();
@@ -133,12 +132,18 @@ RenderModelDetailDialog *RenderAABB::createRenderModelDetailDialog(QWidget* pare
     auto dialog = AbstractRenderModel::createRenderModelDetailDialog(parent);
 
     auto* detailsLayout = new QGridLayout();
-    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled surface area: " + std::to_string(unscaledSurfaceArea))), 0, 0);
-    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled volume: " + std::to_string(unscaledVolume))), 1, 0);
+
+    auto min = aabb.getMinimum();
+    auto max = aabb.getMaximum();
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Minimum: (" + std::to_string(min.x) + "," + std::to_string(min.y) + "," + std::to_string(min.z) + ")")), 0, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Maximum: (" + std::to_string(max.x) + "," + std::to_string(max.y) + "," + std::to_string(max.z) + ")")), 1, 0);
+
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled surface area: " + std::to_string(aabb.getSurfaceArea()))), 2, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled volume: " + std::to_string(aabb.getVolume()))), 3, 0);
 
     const auto scale = this->getTransformation().getScale();
-    detailsLayout->addWidget(new QLabel(QString::fromStdString("Surface area: " + std::to_string(unscaledSurfaceArea * scale * scale))), 2, 0);
-    detailsLayout->addWidget(new QLabel(QString::fromStdString("Volume: " + std::to_string(unscaledVolume * scale * scale * scale))), 3, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Surface area: " + std::to_string(aabb.getSurfaceArea() * scale * scale))), 4, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Volume: " + std::to_string(aabb.getVolume() * scale * scale * scale))), 5, 0);
 
     auto* detailsWidget = new QWidget();
     detailsWidget->setLayout(detailsLayout);
