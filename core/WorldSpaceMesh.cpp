@@ -15,8 +15,8 @@ modelSpaceMesh(std::make_shared<ModelSpaceMesh>(ModelSpaceMesh())),
 id(std::to_string(nextId++))
 {}
 
-WorldSpaceMesh::WorldSpaceMesh(std::shared_ptr<ModelSpaceMesh> modelSpaceMesh):
-        modelSpaceMesh(std::move(modelSpaceMesh)),
+WorldSpaceMesh::WorldSpaceMesh(const std::shared_ptr<ModelSpaceMesh>& modelSpaceMesh):
+        modelSpaceMesh(modelSpaceMesh),
         modelTransformation(),
         id(std::to_string(nextId++))
 {}
@@ -34,8 +34,11 @@ std::shared_ptr<ModelSpaceMesh> WorldSpaceMesh::getModelSpaceMesh() const {
 }
 
 std::shared_ptr<WorldSpaceMesh> WorldSpaceMesh::clone() const{
+    return std::make_shared<WorldSpaceMesh>(*this);
+}
+
+std::shared_ptr<WorldSpaceMesh> WorldSpaceMesh::duplicate() const {
     std::shared_ptr<WorldSpaceMesh> returnWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(*this);
-    returnWorldSpaceMesh->modelTransformation = this->modelTransformation;
     returnWorldSpaceMesh->id = std::to_string(nextId++);
     return returnWorldSpaceMesh;
 }

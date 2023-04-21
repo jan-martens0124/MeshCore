@@ -20,7 +20,7 @@ private:
 
 public:
     WorldSpaceMesh();
-    explicit WorldSpaceMesh(std::shared_ptr<ModelSpaceMesh> modelSpaceMesh);
+    explicit WorldSpaceMesh(const std::shared_ptr<ModelSpaceMesh>& modelSpaceMesh);
     explicit WorldSpaceMesh(ModelSpaceMesh&& modelSpaceMesh);
     WorldSpaceMesh(const WorldSpaceMesh &other) = default;
 
@@ -28,6 +28,7 @@ public:
     WorldSpaceMesh& operator=(WorldSpaceMesh &&other) = default;
     ~WorldSpaceMesh() = default;
 
+    [[nodiscard]] std::shared_ptr<WorldSpaceMesh> duplicate () const;
     [[nodiscard]] std::shared_ptr<WorldSpaceMesh> clone () const;
 
     [[nodiscard]] const std::string& getId() const;
