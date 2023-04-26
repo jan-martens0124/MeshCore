@@ -29,7 +29,7 @@ link_libraries(OpenGL::GL)
 
 ### GLEW ###
 find_package(GLEW REQUIRED)
-link_libraries(GLEW::glew)
+link_libraries(GLEW::GLEW)
 
 ### GSL ###
 find_package(GSL REQUIRED)
