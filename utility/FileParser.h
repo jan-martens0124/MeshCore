@@ -23,6 +23,7 @@ private:
 
     static ModelSpaceMesh parseFileSTL(const std::string& filePath);
     static ModelSpaceMesh parseFileOBJ(const std::string& filePath);
+    static ModelSpaceMesh parseFileBinvox(const std::string& filePath);
     static void saveFileOBJ(const std::string& filePath, const std::shared_ptr<ModelSpaceMesh>& mesh);
     static ModelSpaceMesh parseFileBinarySTL(const std::string &filePath);
     static std::vector<IndexTriangle> triangulate(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);

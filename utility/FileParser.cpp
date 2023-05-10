@@ -71,7 +71,8 @@ std::shared_ptr<ModelSpaceMesh> FileParser::loadMeshFile(const std::string &file
     std::string extension = filePath.substr(filePath.find_last_of('.') + 1);
     std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c){ return std::tolower(c); });
     if (extension ==  "stl") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileSTL(filePath));
-    else if( extension == "obj") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileOBJ(filePath));
+    else if(extension == "obj") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileOBJ(filePath));
+    else if(extension == "binvox") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileBinvox(filePath));
     else{
         // Return empty mesh if file extension not supported
         std::cout << "Warning: Extension ." << extension << " of file " << filePath << " not supported!" << std::endl;
@@ -448,4 +449,164 @@ void FileParser::saveFileOBJ(const std::string &filePath, const std::shared_ptr<
         basicOfstream << "f " << triangle.vertexIndex0 + 1 << " " << triangle.vertexIndex1 + 1 << " " << triangle.vertexIndex2 + 1 << std::endl;
     }
     basicOfstream.close();
+}
+
+ModelSpaceMesh FileParser::parseFileBinvox(const std::string &filePath) {
+    std::ifstream stream(filePath);
+    std::string line;
+
+    // Parse the first line
+    std::getline(stream, line);
+    if(line!="#binvox 1"){
+        std::cout << "Warning: File " << filePath << " is not a valid binvox file" << std::endl;
+    }
+
+    // Parse the dimensions of the grid
+    std::getline(stream, line);
+    assert(line.substr(0, line.find_first_of(' '))=="dim");
+    unsigned int dimensions[3];
+    for(unsigned int & dimension : dimensions){
+        line = line.substr(line.find_first_of(' ')+1);
+        auto currentString = line.substr(0, line.find_first_of(' '));
+        dimension = std::stoul(currentString);
+    }
+
+    // Parse the translation
+    std::getline(stream, line);
+    assert(line.substr(0, line.find_first_of(' '))=="translate");
+    float translation[3];
+    for(float & translationComponent : translation){
+        line = line.substr(line.find_first_of(' ')+1);
+        auto currentString = line.substr(0, line.find_first_of(' '));
+        translationComponent = std::stof(currentString);
+    }
+
+    // Parse the scale
+    std::getline(stream, line);
+    assert(line.substr(0, line.find_first_of(' '))=="scale");
+    line = line.substr(line.find_first_of(' ')+1);
+    float scale = std::stof(line);
+    glm::vec3 scalingVector(scale/float(dimensions[0]), scale/float(dimensions[1]), scale/float(dimensions[2]));
+
+    // Read the data line
+    std::getline(stream, line);
+    assert(line=="data");
+
+    // Start reading voxel data
+    unsigned int voxelCount = dimensions[0]*dimensions[1]*dimensions[2];
+    std::vector<bool> voxels;
+    voxels.reserve(voxelCount);
+    stream.unsetf(std::ios::skipws); // No white space skipping!
+    while(!stream.eof()){
+        unsigned char isVoxelByte;
+        stream >> isVoxelByte;
+        if(stream.eof()) break;
+        unsigned char newVoxelsByte;
+        stream >> newVoxelsByte;
+        if(stream.eof()) break;
+        bool isVoxel = (isVoxelByte & 0b00000001);
+        unsigned int newVoxels = newVoxelsByte;
+        assert(newVoxels >= 1u);
+        assert(newVoxels <= 255);
+        for(unsigned int i=0; i < newVoxels; i++){
+            voxels.emplace_back(isVoxel);
+        }
+    }
+    assert(voxels.size() == voxelCount);
+
+    // Convert the voxels to a mesh
+    std::vector<Vertex> vertices;
+    std::vector<IndexTriangle> triangles;
+    for (unsigned int x = 0; x < dimensions[0]; ++x) {
+        for (unsigned int z = 0; z < dimensions[1]; ++z) {
+            for (unsigned int y = 0; y < dimensions[2]; ++y) {
+
+                // depth, width, height
+                // dimensions[0], dimensions[1], dimensions[2]
+                // x, z, y
+                unsigned int index = x * dimensions[1] * dimensions[2] + z * dimensions[1] + y;  // wxh = width * height = d * d
+                if(voxels[index]){
+//                if(voxels[z + y * dimensions[0] + x * dimensions[0] * dimensions[1]]){
+
+                    // Add the vertices
+                    auto min = glm::vec3(translation[0] + float(x), translation[1] + float(y),translation[2] + float(z));
+                    auto max = glm::vec3(translation[0] + float(x + 1), translation[1] + float(y + 1),translation[2] + float(z + 1));
+                    min *= scalingVector;
+                    max *= scalingVector;
+
+                    vertices.emplace_back(min.x, min.y, min.z);
+                    vertices.emplace_back(max.x, min.y, min.z);
+                    vertices.emplace_back(max.x, max.y, min.z);
+                    vertices.emplace_back(min.x, max.y, min.z);
+                    vertices.emplace_back(min.x, min.y, max.z);
+                    vertices.emplace_back(max.x, min.y, max.z);
+                    vertices.emplace_back(max.x, max.y, max.z);
+                    vertices.emplace_back(min.x, max.y, max.z);
+
+                    bool nextVoxelX = (x + 1 < dimensions[0]) && voxels[index + dimensions[1] * dimensions[2]];
+                    bool previousVoxelX = (x > 0) && voxels[index - dimensions[1] * dimensions[2]];
+
+                    bool nextVoxelY = (y + 1 < dimensions[2]) && voxels[index + 1];
+                    bool previousVoxelY = (y > 0) && voxels[index - 1];
+
+                    bool nextVoxelZ = (z + 1 < dimensions[1]) && voxels[index + dimensions[1]];
+                    bool previousVoxelZ = (z > 0) && voxels[index - dimensions[1]];
+
+                    // Add the triangles
+                    unsigned int numberOfVertices = vertices.size();
+                    if(!previousVoxelZ){
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 7, numberOfVertices - 8, numberOfVertices - 6});
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 6, numberOfVertices - 8, numberOfVertices - 5});
+                    }
+                    if(!nextVoxelZ){
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 1, numberOfVertices - 4, numberOfVertices - 2});
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 2, numberOfVertices - 4, numberOfVertices - 3});
+                    }
+                    if(!previousVoxelX){
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 5, numberOfVertices - 8, numberOfVertices - 4});
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 1, numberOfVertices - 5, numberOfVertices - 4});
+                    }
+                    if(!nextVoxelY){
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 2, numberOfVertices - 6, numberOfVertices - 5});
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 2, numberOfVertices - 5, numberOfVertices - 1});
+                    }
+                    if(!previousVoxelY){
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 4, numberOfVertices - 7, numberOfVertices - 3});
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 4, numberOfVertices - 8, numberOfVertices - 7});
+                    }
+
+                    if(!nextVoxelX){
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 3, numberOfVertices - 7, numberOfVertices - 6});
+                        triangles.emplace_back(IndexTriangle{numberOfVertices - 3, numberOfVertices - 6, numberOfVertices - 2});
+                    }
+
+                }
+            }
+        }
+    }
+
+    // Remove unused vertices O(V) in time, O(V) in memory
+    std::vector<Vertex> finalVertices;
+    std::vector<IndexTriangle> finalTriangles;
+    std::vector<unsigned int> vertexMapping(vertices.size(), -1); // Element at position i contains the index of vertex i in the hullVertices vector, -1 if not present in hullVertices
+    auto addVertexIfNotPresent = [&](unsigned int index){
+        if(vertexMapping.at(index)==-1){
+            vertexMapping.at(index) = finalVertices.size();
+            finalVertices.emplace_back(vertices.at(index));
+        }
+    };
+
+    for (const auto &indexTriangle : triangles){
+        // Put the vertices in the hullVertices vector if not present yet
+        addVertexIfNotPresent(indexTriangle.vertexIndex0);
+        addVertexIfNotPresent(indexTriangle.vertexIndex1);
+        addVertexIfNotPresent(indexTriangle.vertexIndex2);
+
+        unsigned int newIndex0 = vertexMapping.at(indexTriangle.vertexIndex0);
+        unsigned int newIndex1 = vertexMapping.at(indexTriangle.vertexIndex1);
+        unsigned int newIndex2 = vertexMapping.at(indexTriangle.vertexIndex2);
+        finalTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
+    }
+
+    return {finalVertices, finalTriangles};
 }
