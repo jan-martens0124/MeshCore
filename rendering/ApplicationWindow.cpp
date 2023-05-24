@@ -37,7 +37,7 @@ ApplicationWindow::ApplicationWindow() {
     connect(openAction, &QAction::triggered, this, &ApplicationWindow::loadMesh);
     openAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_O));
 
-    QAction* screenshotAction = fileMenu->addAction(QString("Export OpenGL screenshot..."));
+    QAction* screenshotAction = fileMenu->addAction(QString("Export current frame..."));
     connect(screenshotAction, &QAction::triggered, renderWidget, &RenderWidget::captureScene);
     screenshotAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_P));
 

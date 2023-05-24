@@ -340,7 +340,12 @@ void OpenGLWidget::captureAnimationSlot() {
 void OpenGLWidget::captureSceneSlot() {
 
     this->makeCurrent();
+
+    // We grab the frame before the user inputs the file name
+    QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    this->update();
     auto capture = this->grabFramebuffer();
+
     QString fileName = QFileDialog::getSaveFileName(this, QString("Save screenshot"), "example", QString("Image Files (*.png)"));
 
     // Check if the user has selected a file
@@ -361,6 +366,8 @@ void OpenGLWidget::captureSceneSlot() {
 
 void OpenGLWidget::captureSceneToFileSlot(const QString& fileName) {
     this->makeCurrent();
+    QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    this->update();
     auto capture = this->grabFramebuffer();
     std::cout<< fileName.toStdString() << std::endl;
 
