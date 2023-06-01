@@ -70,9 +70,9 @@ std::shared_ptr<ModelSpaceMesh> FileParser::loadMeshFile(const std::string &file
     std::shared_ptr<ModelSpaceMesh> returnModelSpaceMesh;
     std::string extension = filePath.substr(filePath.find_last_of('.') + 1);
     std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c){ return std::tolower(c); });
-    if (extension ==  "stl") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileSTL(filePath));
-    else if(extension == "obj") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileOBJ(filePath));
-    else if(extension == "binvox") returnModelSpaceMesh = std::make_shared<ModelSpaceMesh>(parseFileBinvox(filePath));
+    if (extension ==  "stl") returnModelSpaceMesh = parseFileSTL(filePath);
+    else if(extension == "obj") returnModelSpaceMesh = parseFileOBJ(filePath);
+    else if(extension == "binvox") returnModelSpaceMesh = parseFileBinvox(filePath);
     else{
         // Return empty mesh if file extension not supported
         std::cout << "Warning: Extension ." << extension << " of file " << filePath << " not supported!" << std::endl;
@@ -107,7 +107,7 @@ void FileParser::saveFile(const std::string &filePath, const std::shared_ptr<Mod
     }
 }
 
-ModelSpaceMesh FileParser::parseFileOBJ(const std::string &filePath) {
+std::shared_ptr<ModelSpaceMesh> FileParser::parseFileOBJ(const std::string &filePath) {
 
     std::ifstream stream(filePath);
     std::vector<Vertex> vertices;
@@ -181,7 +181,7 @@ ModelSpaceMesh FileParser::parseFileOBJ(const std::string &filePath) {
         finalTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
     }
 
-    return {finalVertices, finalTriangles};
+    return std::make_shared<ModelSpaceMesh>(finalVertices, finalTriangles);
 }
 
 glm::vec3 readASCIISTLNormalLine(std::string line){
@@ -230,7 +230,7 @@ Vertex readASCIISTLVertexLine(std::ifstream& stream){
     return {x,y,z};
 }
 
-ModelSpaceMesh FileParser::parseFileSTL(const std::string &filePath) {
+std::shared_ptr<ModelSpaceMesh> FileParser::parseFileSTL(const std::string &filePath) {
 
     std::ifstream stream(filePath);
     std::string line;
@@ -293,7 +293,7 @@ ModelSpaceMesh FileParser::parseFileSTL(const std::string &filePath) {
             assert(line.find("endfacet") != std::string::npos);
         }
     }
-    return {vertices, triangles};
+    return std::make_shared<ModelSpaceMesh>(vertices, triangles);
 }
 
 float readBinaryFloatLittleEndian(std::ifstream& stream){
@@ -322,7 +322,7 @@ unsigned int readBinaryUnsignedIntegerLittleEndian(std::ifstream& stream){
     return i;
 }
 
-ModelSpaceMesh FileParser::parseFileBinarySTL(const std::string &filePath) {
+std::shared_ptr<ModelSpaceMesh> FileParser::parseFileBinarySTL(const std::string &filePath) {
 
     std::ifstream stream(filePath, std::ios::binary);
 
@@ -358,7 +358,7 @@ ModelSpaceMesh FileParser::parseFileBinarySTL(const std::string &filePath) {
         triangles.emplace_back(IndexTriangle{indices[0], indices[1], indices[2]});
         stream.read(attributes, 2);
     }
-    return {vertices, triangles};
+    return std::make_shared<ModelSpaceMesh>(vertices, triangles);
 }
 
 std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) {
@@ -451,7 +451,7 @@ void FileParser::saveFileOBJ(const std::string &filePath, const std::shared_ptr<
     basicOfstream.close();
 }
 
-ModelSpaceMesh FileParser::parseFileBinvox(const std::string &filePath) {
+std::shared_ptr<ModelSpaceMesh> FileParser::parseFileBinvox(const std::string &filePath) {
     std::ifstream stream(filePath);
     std::string line;
 
@@ -608,5 +608,11 @@ ModelSpaceMesh FileParser::parseFileBinvox(const std::string &filePath) {
         finalTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
     }
 
-    return {finalVertices, finalTriangles};
+    return std::make_shared<ModelSpaceMesh>(finalVertices, finalTriangles);
+}
+
+void FileParser::clearCache() {
+    cacheMapMutex.lock();
+    meshCacheMap.clear();
+    cacheMapMutex.unlock();
 }

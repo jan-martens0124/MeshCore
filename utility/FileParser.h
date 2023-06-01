@@ -15,17 +15,19 @@ public:
     static std::shared_ptr<ModelSpaceMesh> loadMeshFile(const std::string& filePath);
     static void saveFile(const std::string& filePath, const std::shared_ptr<ModelSpaceMesh>&);
 
+    static void clearCache();
+
     [[maybe_unused]] static std::vector<std::shared_ptr<ModelSpaceMesh>> parseFolder(const std::string& folderPath);
 private:
 
     static std::mutex cacheMapMutex;
     static std::unordered_map<std::string, std::weak_ptr<ModelSpaceMesh>> meshCacheMap;
 
-    static ModelSpaceMesh parseFileSTL(const std::string& filePath);
-    static ModelSpaceMesh parseFileOBJ(const std::string& filePath);
-    static ModelSpaceMesh parseFileBinvox(const std::string& filePath);
+    static std::shared_ptr<ModelSpaceMesh> parseFileSTL(const std::string& filePath);
+    static std::shared_ptr<ModelSpaceMesh> parseFileOBJ(const std::string& filePath);
+    static std::shared_ptr<ModelSpaceMesh> parseFileBinvox(const std::string& filePath);
     static void saveFileOBJ(const std::string& filePath, const std::shared_ptr<ModelSpaceMesh>& mesh);
-    static ModelSpaceMesh parseFileBinarySTL(const std::string &filePath);
+    static std::shared_ptr<ModelSpaceMesh> parseFileBinarySTL(const std::string &filePath);
     static std::vector<IndexTriangle> triangulate(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
 };
 

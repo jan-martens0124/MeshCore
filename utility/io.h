@@ -33,8 +33,12 @@ static std::ostream& operator<<(std::ostream& o, const Transformation& transform
     o << "\tYaw: " << transformation.getYaw() << "\n";
     o << "\tPitch: " << transformation.getPitch() << "\n";
     o << "\tRoll: " << transformation.getRoll() << "\n";
-    glm::mat4 transform = transformation.getMatrix();
-    o << "\n\t[" << transform.operator[](0) << "\n\t " << transform.operator[](1) << "\n\t " << transform.operator[](2) << "\n\t " << transform.operator[](3) << ']';
+    auto transform = transformation.getMatrix();
+    o << "\n\t[" << transform.operator[](0).x << "," << transform.operator[](1).x << "," << transform.operator[](2).x << "," << transform.operator[](3).x << "\n\t"
+                 << transform.operator[](0).y << "," << transform.operator[](1).y << "," << transform.operator[](2).y << "," << transform.operator[](3).y << "\n\t"
+                 << transform.operator[](0).z << "," << transform.operator[](1).z << "," << transform.operator[](2).z << "," << transform.operator[](3).z << "\n\t"
+                 << transform.operator[](0).w << "," << transform.operator[](1).w << "," << transform.operator[](2).w << "," << transform.operator[](3).w
+    << ']';
     return o;
 }
 
