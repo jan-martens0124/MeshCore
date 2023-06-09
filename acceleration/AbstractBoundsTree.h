@@ -41,22 +41,27 @@ protected:
 public:
     virtual void splitTopDown(unsigned int maxDepth, unsigned int maxTrianglesPerNode) = 0;
 
+    // Intersection queries
     [[nodiscard]] bool intersectsTriangle(const VertexTriangle& vertexTriangle) const;
+    [[nodiscard]] bool intersectsAABB(const AABB& aabb) const;
     [[nodiscard]] bool intersectsRay(const Ray& ray) const;
+    [[nodiscard]] bool intersectsBoundsTree(const glm::mat4 &otherToThisTransformationMatrix, const AbstractBoundsTree &other, const glm::mat4 &thisToOtherTransformationMatrix) const;
 
+    [[nodiscard]] unsigned int getNumberOfRayIntersections(const Ray& ray) const;
+    [[nodiscard]] std::vector<VertexTriangle> getIntersectingTriangles(const Ray& ray) const;
+    [[nodiscard]] std::vector<VertexTriangle> getIntersectingTriangles(const VertexTriangle& triangle) const;
+
+    // Vertex distance queries
     [[nodiscard]] Vertex getClosestPoint(const Vertex &vertex) const;
     [[nodiscard]] const VertexTriangle* getClosestTriangle(const Vertex& vertex) const;
     [[nodiscard]] float getShortestDistanceSquared(const Vertex& vertex) const;
     [[nodiscard]] bool hasMinimumDistance(const Vertex& vertex, float minimumDistanceSquared) const;
 
+    // Triangle distance queries
     [[nodiscard]] Vertex getClosestPoint(const VertexTriangle &triangle) const;
     [[nodiscard]] const VertexTriangle* getClosestTriangle(const VertexTriangle &triangle) const;
     [[nodiscard]] float getShortestDistanceSquared(const VertexTriangle &triangle) const;
     [[nodiscard]] bool hasMinimumDistance(const VertexTriangle &triangle, float minimumDistanceSquared) const;
-
-    [[nodiscard]] unsigned int getNumberOfRayIntersections(const Ray& ray) const;
-    [[nodiscard]] std::vector<VertexTriangle> getIntersectingTriangles(const Ray& ray) const;
-    [[nodiscard]] std::vector<VertexTriangle> getIntersectingTriangles(const VertexTriangle& triangle) const;
 
 private:
     // More efficient versions of the function are possible if each triangle is uniquely assigned to a single node
@@ -82,6 +87,85 @@ public:
     [[nodiscard]] const std::vector<VertexTriangle> &getTriangles() const;
     [[nodiscard]] const std::array<std::shared_ptr<AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>>, Degree> &getChildren() const;
 };
+
+template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::intersectsBoundsTree(const glm::mat4 &otherToThisTransformationMatrix, const AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment> &other, const glm::mat4 &thisToOtherTransformationMatrix) const {
+
+    // Test if one of the trees is empty
+    if(this->empty || other.isEmpty()){
+        assert((!this->split && this->triangles.empty()) || (!other.isSplit() && other.getTriangles().empty()));
+
+        return false;
+    }
+
+    // Test if the bounds overlap
+    if(!Intersection::intersect(this->bounds, other.bounds, thisToOtherTransformationMatrix, otherToThisTransformationMatrix)){
+        // The bounding volumes do not intersect each other
+        return false;
+    }
+
+    // Deal with the case where both trees have children that aren't leaf nodes
+    if(this->split && other.isSplit()){
+
+///      Go deeper in each tree
+//        for(const auto& _thisChild: this->children){
+//            for(const auto& _otherChild: other.getChildren()){
+//                auto thisChild = std::static_pointer_cast<AABBVolumeHierarchy>(_thisChild);
+//                auto otherChild = std::static_pointer_cast<AABBVolumeHierarchy>(_otherChild);
+//                if(thisChild->intersectsAABBVolumeHierarchy(otherToThisTransformationMatrix, *otherChild, thisToOtherTransformationMatrix)){
+//                    return true;
+//                }
+//            }
+//        }
+
+//         Alternatively only go deeper in 1 tree (sometimes faster, sometimes not)
+        for(const auto& thisChild: this->children){
+            if(other.intersectsBoundsTree(thisToOtherTransformationMatrix, *thisChild, otherToThisTransformationMatrix)){
+                return true;
+            }
+        }
+
+        // Depth first in this tree
+//        for(const auto& otherChild: other.children){
+//            if(this->intersectsAABBVolumeHierarchy(otherToThisTransformationMatrix, *std::static_pointer_cast<AABBVolumeHierarchy>(otherChild), thisToOtherTransformationMatrix)){
+//                return true;
+//            }
+//        }
+
+        return false;
+    }
+    else if(this->split){
+        assert(!other.isSplit()); // We reached the leaf node of the other tree
+        for (const auto &otherTriangle: other.triangles){
+            auto transformedTriangle = otherTriangle.getTransformed(otherToThisTransformationMatrix);
+            if(this->intersectsTriangle(transformedTriangle)){
+                return true;
+            }
+        }
+        return false;
+    }
+    else if(other.isSplit()){
+        assert(!this->split); // We reached the leaf node of this tree
+        for (const auto &thisTriangle: this->triangles){
+            auto transformedTriangle = thisTriangle.getTransformed(thisToOtherTransformationMatrix);
+            if(other.intersectsTriangle(transformedTriangle)){
+                return true;
+            }
+        }
+        return false;
+    }
+    else {
+        assert(!this->split && !other.isSplit()); // We reached the leaf nodes of both trees
+        for(const auto& thisTriangle: this->triangles){
+            for(const auto& otherTriangle: other.getTriangles()){
+                if(Intersection::intersect(otherTriangle, thisTriangle.getTransformed(thisToOtherTransformationMatrix))){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
 
 template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
 const Bounds &AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getBounds() const {
@@ -118,6 +202,23 @@ bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::intersectsTri
         }
         for(const auto& triangle: triangles){
             if(Intersection::intersect(triangle, vertexTriangle)){
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+template <class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>
+bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::intersectsAABB(const AABB& aabb) const{
+    if(Intersection::intersect(this->bounds, aabb)){
+        for (const auto &child: children){
+            if(child && child->intersectsAABB(aabb)){
+                return true;
+            }
+        }
+        for(const auto& triangle: triangles){
+            if(Intersection::intersect(aabb, triangle)){
                 return true;
             }
         }

@@ -15,6 +15,17 @@ namespace Intersection {
         const auto& modelSpaceTransformationA = worldSpaceMeshA.getModelTransformation();
         const auto& modelSpaceTransformationB = worldSpaceMeshB.getModelTransformation();
 
+        if(modelSpaceMeshA->getTriangles().size() >= 1000 && modelSpaceMeshB->getTriangles().size() >= 1000){
+            const auto &treeA = CachingBoundsTreeFactory<AABBVolumeHierarchy>::getBoundsTree(modelSpaceMeshA);
+            const auto &treeB = CachingBoundsTreeFactory<AABBVolumeHierarchy>::getBoundsTree(modelSpaceMeshB);
+
+            const auto modelBToModelASpaceTransformation = modelSpaceTransformationA.getInverseMatrix() * modelSpaceTransformationB.getMatrix();
+            const auto modelAToModelBSpaceTransformation = modelSpaceTransformationB.getInverseMatrix() * modelSpaceTransformationA.getMatrix();
+
+//            return treeA->intersectsAABBVolumeHierarchy(modelBToModelASpaceTransformation, *treeB, modelAToModelBSpaceTransformation);
+            return treeA->intersectsBoundsTree(modelBToModelASpaceTransformation, *treeB, modelAToModelBSpaceTransformation);
+        }
+
         if(modelSpaceMeshA->getTriangles().size() >= modelSpaceMeshB->getTriangles().size()){
             const auto modelBToModelASpaceTransformation = modelSpaceTransformationA.getInverseMatrix() * modelSpaceTransformationB.getMatrix();
 
