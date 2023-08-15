@@ -83,7 +83,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::loadMeshFile(const std::string &file
     cacheMapMutex.unlock();
 
     std::filesystem::path p(filePath);
-    returnModelSpaceMesh->setName(p.stem().string());
+    returnModelSpaceMesh->setName(p.filename().string());
     return returnModelSpaceMesh;
 
 }
