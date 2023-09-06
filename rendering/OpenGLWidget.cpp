@@ -433,18 +433,8 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({worldSpaceMesh->getId(), renderMesh}).first;
 
-        // Add listener to redraw when mesh is changed
-        const auto listener = std::make_shared<SimpleRenderModelListener>();
-        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
-            if(oldColor.a!=newColor.a){
-                this->updateSortedRenderModels();
-            }
-        });
-
-        listener->setOnChanged([this](){
-            this->update();
-        });
-        renderMesh->addListener(listener);
+        // Add required listeners
+        this->addRenderModelListeners(group, renderMesh);
 
         // Add control widget to the renderWidget
         renderWidget->addControlWidget(group, renderMesh);
@@ -473,6 +463,12 @@ void OpenGLWidget::clearGroup(const std::string &group) {
     this->update();
 }
 
+void OpenGLWidget::setGroupVisible(const std::string &group, bool visible) {
+    for (const auto &modelEntry: this->groupedRenderModelsMap[group]){
+        modelEntry.second->setVisible(visible);
+    }
+    this->update();
+}
 
 void OpenGLWidget::updateSortedRenderModels(){
 
@@ -512,18 +508,8 @@ void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &na
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({renderId, renderAABB}).first;
 
-        // Add listener to redraw when mesh is changed
-        const auto listener = std::make_shared<SimpleRenderModelListener>();
-        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
-            if(oldColor.a!=newColor.a){
-                this->updateSortedRenderModels();
-            }
-        });
-
-        listener->setOnChanged([this](){
-            this->update();
-        });
-        renderAABB->addListener(listener);
+        // Add required listeners
+        this->addRenderModelListeners(group, renderAABB);
 
         // Add control widget to the renderWidget
         renderWidget->addControlWidget(group, renderAABB);
@@ -560,26 +546,16 @@ void OpenGLWidget::renderSphereSlot(const std::string &group, const std::string&
         this->makeCurrent();
 
         // No entry present yet, create new render Model
-        auto renderAABB = std::make_shared<RenderSphere>(sphere, Transformation(), this->ambientShader, this->diffuseShader);
+        auto renderSphere = std::make_shared<RenderSphere>(sphere, Transformation(), this->ambientShader, this->diffuseShader);
 
         // Insert it in the renderModelsMap
-        modelIterator = renderModelsMap.insert({renderId, renderAABB}).first;
+        modelIterator = renderModelsMap.insert({renderId, renderSphere}).first;
 
-        // Add listener to redraw when mesh is changed
-        const auto listener = std::make_shared<SimpleRenderModelListener>();
-        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
-            if(oldColor.a!=newColor.a){
-                this->updateSortedRenderModels();
-            }
-        });
-
-        listener->setOnChanged([this](){
-            this->update();
-        });
-        renderAABB->addListener(listener);
+        // Add required listeners
+        this->addRenderModelListeners(group, renderSphere);
 
         // Add control widget to the renderWidget
-        renderWidget->addControlWidget(group, renderAABB);
+        renderWidget->addControlWidget(group, renderSphere);
 
         // Set the color
         modelIterator->second->setColor(color);
@@ -642,18 +618,8 @@ void OpenGLWidget::renderLineSlot(const std::string &group, const std::string &n
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({renderId, renderLine}).first;
 
-        // Add listener to redraw when mesh is changed
-        const auto listener = std::make_shared<SimpleRenderModelListener>();
-        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
-            if(oldColor.a!=newColor.a){
-                this->updateSortedRenderModels();
-            }
-        });
-
-        listener->setOnChanged([this](){
-            this->update();
-        });
-        renderLine->addListener(listener);
+        // Add required listeners
+        this->addRenderModelListeners(group, renderLine);
 
         // Add control widget to the renderWidget
         renderWidget->addControlWidget(group, renderLine);
@@ -693,18 +659,8 @@ void OpenGLWidget::addOrUpdateRenderModelSlot(const std::string& group, const st
         // No entry present yet, insert new renderModel it in the renderModelsMap
         modelIterator = renderModelsMap.insert({id, renderModel}).first;
 
-        // Add listener to redraw when mesh is changed
-        const auto listener = std::make_shared<SimpleRenderModelListener>();
-        listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
-            if(oldColor.a!=newColor.a){
-                this->updateSortedRenderModels();
-            }
-        });
-
-        listener->setOnChanged([this](){
-            this->update();
-        });
-        renderModel->addListener(listener);
+        // Add required listeners
+        this->addRenderModelListeners(group, renderModel);
 
         // Add control widget to the renderWidget
         renderWidget->addControlWidget(group, renderModel);
@@ -715,4 +671,46 @@ void OpenGLWidget::addOrUpdateRenderModelSlot(const std::string& group, const st
     modelIterator->second->setTransformation(renderModel->getTransformation());
 
     this->update();
+}
+
+void OpenGLWidget::addGroupListener(const std::string &group, const std::shared_ptr<AbstractRenderGroupListener> &listener) {
+    this->groupListeners[group].emplace_back(listener);
+}
+
+void OpenGLWidget::removeGroupListener(const std::string &group,const std::shared_ptr<AbstractRenderGroupListener> &listener) {
+    this->groupListeners[group].erase(std::remove(this->groupListeners[group].begin(), this->groupListeners[group].end(), listener), this->groupListeners[group].end());
+}
+
+void OpenGLWidget::addRenderModelListeners(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel) {
+
+    // Add listener to redraw when model is changed
+    const auto listener = std::make_shared<SimpleRenderModelListener>();
+    listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
+        if(oldColor.a!=newColor.a){
+            this->updateSortedRenderModels();
+        }
+    });
+
+    // Check visibility of all models in this group when changed
+    auto onVisibleChanged = [this, group](bool oldVisible, bool newVisible){
+        // Test if all models in this group have equal visibility
+        bool uniform = true;
+        for (const auto &renderModelInGroup: this->groupedRenderModelsMap[group]){
+            if(renderModelInGroup.second->isVisible() != newVisible){
+                uniform = false;
+            }
+        }
+
+        // Notify group listeners accordingly
+        for (const auto &groupListener: this->groupListeners[group]){
+            groupListener->notifyVisible(newVisible, uniform);
+        }
+    };
+    onVisibleChanged(renderModel->isVisible(), renderModel->isVisible()); // Trigger this listener once to keep group listeners in sync
+    listener->setOnVisibleChanged(onVisibleChanged);
+
+    listener->setOnChanged([this](){
+        this->update();
+    });
+    renderModel->addListener(listener);
 }

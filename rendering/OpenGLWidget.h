@@ -41,6 +41,7 @@ private:
     glm::mat4 projectionMatrix{};
 
     mutable std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>> groupedRenderModelsMap;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<AbstractRenderGroupListener>>> groupListeners;
     std::vector<std::shared_ptr<AbstractRenderModel>> sortedRenderModels;
     std::vector<std::shared_ptr<RenderLine>> axisRenderLines;
 
@@ -63,7 +64,8 @@ public:
     void setUsePerspective(bool newUsePerspective);
     void setLightMode(bool newLightMode);
     void setAxisEnabled(bool enabled);
-
+    void addGroupListener(const std::string& group, const std::shared_ptr<AbstractRenderGroupListener>& listener);
+    void removeGroupListener(const std::string& group, const std::shared_ptr<AbstractRenderGroupListener>& listener);
 
 protected:
     void initializeGL() override;
@@ -81,6 +83,7 @@ protected:
 private slots:
     void clear();
     void clearGroup(const std::string &group);
+    void setGroupVisible(const std::string &group, bool visible);
     void renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color &color, RenderWidget* renderWidget);
     void renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, const Color& color, RenderWidget *renderWidget);
     void renderSphereSlot(const std::string &group, const std::string &name, const Sphere &sphere, const Color& color, RenderWidget* renderWidget);
@@ -95,6 +98,7 @@ private slots:
 private:
     std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>& getOrInsertRenderModelsMap(const std::string &group) const;
     void updateSortedRenderModels();
+    void addRenderModelListeners(const std::string& group, const std::shared_ptr<AbstractRenderModel>& renderModel);
 };
 
 

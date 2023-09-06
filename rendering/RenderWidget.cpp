@@ -7,6 +7,7 @@
 #include <iomanip>
 #include "forms/ui_renderwidget.h"
 #include "RenderModelControlWidget.h"
+#include "RenderGroupControlWidget.h"
 
 RenderWidget::RenderWidget(QWidget *parent):
     QWidget(parent), ui(new Ui::RenderWidget)
@@ -122,12 +123,9 @@ QVBoxLayout *RenderWidget::getOrAddGroupLayout(const std::string &group) {
         const auto layout = new QVBoxLayout();
         layout->setObjectName(QString::fromStdString(group));
 
-        auto titleLabel = new QLabel(this);
-        titleLabel->setText(QString::fromStdString(group));
-        titleLabel->setObjectName(QString::fromStdString(group));
-        titleLabel->setMaximumSize(QSize(300, 300));
-        titleLabel->setAlignment(Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter);
-        this->ui->objectsVerticalLayout->addWidget(titleLabel);
+        const auto groupHeader = new RenderGroupControlWidget(group, this, this->getOpenGLWidget());
+        groupHeader->setObjectName(QString::fromStdString(group));
+        this->ui->objectsVerticalLayout->addWidget(groupHeader);
 
         iterator = groupLayouts.insert({group, layout}).first;
         this->ui->objectsVerticalLayout->addLayout(layout);

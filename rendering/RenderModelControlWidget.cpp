@@ -28,7 +28,7 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
     });
 
     QFontMetrics metrics(this->ui->nameLabel->font());
-    QString elidedText = metrics.elidedText(QString::fromStdString(this->renderModel->getName()), Qt::ElideRight, 81); // Sad that the 81 is hard coded, but this is executed before the name label gets it's final size, we won't override the resize operator in a separate class just for this
+    QString elidedText = metrics.elidedText(QString::fromStdString(this->renderModel->getName()), Qt::ElideRight, 244); // Sad that this value is hard coded, but this is executed before the name label gets it's final size, we won't override the resize operator in a separate class just for this
     ui->nameLabel->setText(elidedText);
     listener->setOnNameChanged([&](const std::string& oldName, const std::string& newName) {
         QFontMetrics metrics(this->ui->nameLabel->font());
