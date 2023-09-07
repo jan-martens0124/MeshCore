@@ -439,11 +439,11 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
         // Add control widget to the renderWidget
         renderWidget->addControlWidget(group, renderMesh);
 
-        // Set the color
-        modelIterator->second->setColor(color);
-
         this->updateSortedRenderModels();
     }
+
+    // Set the color
+    modelIterator->second->setColor(color);
 
     // Update the transformation
     modelIterator->second->setTransformation(worldSpaceMesh->getModelTransformation());

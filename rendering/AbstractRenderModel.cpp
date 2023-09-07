@@ -142,9 +142,9 @@ RenderModelDetailDialog *AbstractRenderModel::createRenderModelDetailDialog(QWid
     return new RenderModelDetailDialog(this, parent);
 }
 
-void AbstractRenderModel::setTransformation(const Transformation &transformation) {
+void AbstractRenderModel::setTransformation(const Transformation &newTransformation) {
     const auto oldValue = this->transformation;
-    AbstractRenderModel::transformation = transformation;
+    AbstractRenderModel::transformation = newTransformation;
     for (const auto &listener: this->listeners){
         listener->notifyTransformationChanged(oldValue, this->transformation);
     }

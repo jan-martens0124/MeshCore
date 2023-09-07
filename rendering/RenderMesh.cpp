@@ -73,6 +73,21 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh, const std::shared_p
 
     GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr));
     GL_CALL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*) (3 * sizeof(GLfloat))));
+
+    // Store the axis render line
+
+    auto& aabb = worldSpaceMesh.getModelSpaceMesh()->getBounds();
+
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(glm::max(0.0f, aabb.getMaximum().x),0,0), Transformation(), ambientShader));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,glm::max(0.0f, aabb.getMaximum().y),0), Transformation(), ambientShader));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,glm::max(0.0f, aabb.getMaximum().z)), Transformation(), ambientShader));
+    axisRenderLines[0]->setColor(Color(1,0,0,1));
+    axisRenderLines[1]->setColor(Color(0,1,0,1));
+    axisRenderLines[2]->setColor(Color(0,0,1,1));
+
+    for (const auto &renderLine: axisRenderLines){
+        renderLine->setTransformation(worldSpaceMesh.getModelTransformation());
+    }
 }
 
 bool RenderMesh::isCullingEnabled() const {
@@ -153,6 +168,12 @@ void RenderMesh::draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMa
 
         GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int),  GL_UNSIGNED_INT, nullptr));
 
+        if(this->axisEnabled){
+            for (const auto &axisRenderLine: this->axisRenderLines){
+                axisRenderLine->draw(viewMatrix, projectionMatrix, lightMode);
+            }
+        }
+
         if(this->boundingBoxEnabled) boundingBox.draw(viewMatrix, projectionMatrix, lightMode);
     }
 }
@@ -167,6 +188,7 @@ RenderMesh &RenderMesh::operator=(RenderMesh &&other) noexcept {
         this->ambientShader = other.ambientShader;
         this->diffuseShader = other.diffuseShader;
         this->boundingBoxEnabled = other.boundingBoxEnabled;
+        this->axisEnabled = other.axisEnabled;
         this->boundingBox = std::move(other.boundingBox);
         this->numberOfTriangles = other.numberOfTriangles;
         this->numberOfVertices = other.numberOfVertices;
@@ -178,6 +200,17 @@ RenderMesh &RenderMesh::operator=(RenderMesh &&other) noexcept {
         other.vertexBuffer = nullptr;
     }
     return *this;
+}
+
+bool RenderMesh::isAxisEnabled() const {
+    return axisEnabled;
+}
+
+void RenderMesh::setAxisEnabled(bool newAxisEnabled) {
+    RenderMesh::axisEnabled = newAxisEnabled;
+    for (const auto &listener: this->listeners){
+        listener->notify();
+    }
 }
 
 bool RenderMesh::isBoundingBoxEnabled() const {
@@ -220,6 +253,15 @@ QMenu* RenderMesh::getContextMenu() {
     boundingBoxAction->setCheckable(true);
     boundingBoxAction->setChecked(this->isBoundingBoxEnabled());
     contextMenu->addAction(boundingBoxAction);
+
+    QAction* axisAction = contextMenu->addAction(QString("Axis"));
+    QObject::connect(axisAction, &QAction::triggered, [=](bool enabled){
+        this->setAxisEnabled(enabled);
+    });
+    axisAction->setCheckable(true);
+    axisAction->setChecked(this->isAxisEnabled());
+    contextMenu->addAction(axisAction);
+
     return contextMenu;
 
     // TODO add option to save the transformed mesh (int its current position) to a file
@@ -275,6 +317,13 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
     });
     optionsLayout->addWidget(boundingBoxCheckBox, 3, 0);
 
+    auto axisCheckBox = new QCheckBox(QString("Show Axis"));
+    axisCheckBox->setChecked(this->isAxisEnabled());
+    QObject::connect(axisCheckBox, &QCheckBox::clicked, [&](bool enabled) {
+        this->setAxisEnabled(enabled);
+    });
+    optionsLayout->addWidget(axisCheckBox, 4, 0);
+
     auto listener = std::make_shared<SimpleRenderModelListener>();
     this->addListener(listener);
     listener->setOnVisibleChanged([=](bool oldVisible, bool newVisible) {
@@ -304,4 +353,7 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
 void RenderMesh::setTransformation(const Transformation &newTransformation) {
     AbstractRenderModel::setTransformation(newTransformation);
     this->boundingBox.setTransformation(newTransformation);
+    for (const auto &axisRenderLine: this->axisRenderLines){
+        axisRenderLine->setTransformation(newTransformation);
+    }
 }

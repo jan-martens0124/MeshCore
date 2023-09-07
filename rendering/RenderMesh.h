@@ -9,6 +9,7 @@
 #include <QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
 #include "RenderAABB.h"
+#include "RenderLine.h"
 
 class RenderMesh: public AbstractRenderModel {
 private:
@@ -17,11 +18,13 @@ private:
     bool wireframeEnabled = false;
     bool surfaceEnabled = true;
     bool boundingBoxEnabled = false;
+    bool axisEnabled = false;
 
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
     std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
 
     RenderAABB boundingBox;
+    std::vector<std::shared_ptr<RenderLine>> axisRenderLines;
 
     unsigned int numberOfVertices;
     unsigned int numberOfTriangles;
@@ -56,6 +59,14 @@ public:
     void setColor(const Color &newColor) override;
 
     void setTransformation(const Transformation &newTransformation) override;
+
+    const std::vector<std::shared_ptr<RenderLine>> &getAxisRenderLines() const;
+
+    void setAxisRenderLines(const std::vector<std::shared_ptr<RenderLine>> &axisRenderLines);
+
+    bool isAxisEnabled() const;
+
+    void setAxisEnabled(bool axisEnabled);
 };
 
 

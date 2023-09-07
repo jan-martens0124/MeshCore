@@ -59,13 +59,43 @@ RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderMode
     this->ui->yawLineEdit->setValidator(new QDoubleValidator(this));
     this->ui->pitchLineEdit->setValidator(new QDoubleValidator(this));
     this->ui->rollLineEdit->setValidator(new QDoubleValidator(this));
-    connect(this->ui->scaleLineEdit, &QLineEdit::textEdited, [=](const QString& text){ renderModel->getTransformation().setScale(text.toFloat());});
-    connect(this->ui->yawLineEdit, &QLineEdit::textEdited, [=](const QString& text){ renderModel->getTransformation().setYaw(text.toFloat());});
-    connect(this->ui->pitchLineEdit, &QLineEdit::textEdited, [=](const QString& text){ renderModel->getTransformation().setPitch(text.toFloat());});
-    connect(this->ui->rollLineEdit, &QLineEdit::textEdited, [=](const QString& text){ renderModel->getTransformation().setRoll(text.toFloat());});
-    connect(this->ui->xLineEdit, &QLineEdit::textEdited, [=](const QString& text){ renderModel->getTransformation().setPositionX(text.toFloat());});
-    connect(this->ui->yLineEdit, &QLineEdit::textEdited, [=](const QString& text){ renderModel->getTransformation().setPositionY(text.toFloat());});
-    connect(this->ui->zLineEdit, &QLineEdit::textEdited, [=](const QString& text){ renderModel->getTransformation().setPositionZ(text.toFloat());});
+    connect(this->ui->scaleLineEdit, &QLineEdit::textEdited, [=](const QString& text){
+        if(!text.endsWith(".")){
+            auto transformation = renderModel->getTransformation();
+            transformation.setScale(text.toFloat());
+            renderModel->setTransformation(transformation);
+        }
+    });
+    connect(this->ui->yawLineEdit, &QLineEdit::textEdited, [=](const QString& text){
+        auto transformation = renderModel->getTransformation();
+        transformation.setYaw(text.toFloat());
+        renderModel->setTransformation(transformation);
+    });
+    connect(this->ui->pitchLineEdit, &QLineEdit::textEdited, [=](const QString& text){
+        auto transformation = renderModel->getTransformation();
+        transformation.setPitch(text.toFloat());
+        renderModel->setTransformation(transformation);
+    });
+    connect(this->ui->rollLineEdit, &QLineEdit::textEdited, [=](const QString& text){
+        auto transformation = renderModel->getTransformation();
+        transformation.setRoll(text.toFloat());
+        renderModel->setTransformation(transformation);
+    });
+    connect(this->ui->xLineEdit, &QLineEdit::textEdited, [=](const QString& text){
+        auto transformation = renderModel->getTransformation();
+        transformation.setPositionX(text.toFloat());
+        renderModel->setTransformation(transformation);
+    });
+    connect(this->ui->yLineEdit, &QLineEdit::textEdited, [=](const QString& text){
+        auto transformation = renderModel->getTransformation();
+        transformation.setPositionY(text.toFloat());
+        renderModel->setTransformation(transformation);
+    });
+    connect(this->ui->zLineEdit, &QLineEdit::textEdited, [=](const QString& text){
+        auto transformation = renderModel->getTransformation();
+        transformation.setPositionZ(text.toFloat());
+        renderModel->setTransformation(transformation);
+    });
 
     // We have to set the initial transformation as well
     this->ui->scaleLineEdit->setText(QString::number(renderModel->getTransformation().getScale()));
