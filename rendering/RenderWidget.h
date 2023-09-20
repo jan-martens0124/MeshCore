@@ -16,6 +16,7 @@
 #include "../tasks/AbstractTask.h"
 #include "../acceleration/AbstractBoundsTree.h"
 #include <QWidget>
+#include <QTreeWidgetItem>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class RenderWidget; }
@@ -31,8 +32,8 @@ public:
 
 private:
     Ui::RenderWidget *ui;
-    std::unordered_map<std::string, QVBoxLayout *> groupLayouts;
-    QVBoxLayout * getOrAddGroupLayout(const std::string &group);
+    std::unordered_map<std::string, QTreeWidgetItem *> groupTreeWidgetItems;
+    QTreeWidgetItem * getOrAddGroupWidget(const std::string &group);
 
 public:
 

@@ -20,6 +20,12 @@ RenderWidget::RenderWidget(QWidget *parent):
         // Connect the start and stop buttons
         connect(this->ui->startButton, &QPushButton::clicked, this, &RenderWidget::startCurrentTask);
         connect(this->ui->stopButton, &QPushButton::clicked, this, &RenderWidget::stopCurrentTask);
+
+        // Hide the header of the tree widget
+        auto& tree = this->ui->treeWidget;
+        tree->headerItem()->setHidden(true);
+//        tree->setIndentation(0);
+        tree->setColumnCount(1);
     }
 
 RenderWidget::~RenderWidget() {
@@ -47,94 +53,66 @@ void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::sha
 }
 
 void RenderWidget::addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel) {
-    this->getOrAddGroupLayout(group)->addWidget(new RenderModelControlWidget(renderModel, this));
+    auto groupTreeWidgetItem = this->getOrAddGroupWidget(group);
+    auto childTreeWidgetItem = new QTreeWidgetItem();
+    groupTreeWidgetItem->addChild(childTreeWidgetItem);
+    this->ui->treeWidget->setItemWidget(childTreeWidgetItem, 0, new RenderModelControlWidget(renderModel, this));
+
 }
 
 void RenderWidget::clear() {
-    // clear all layouts, on the UI thread
+
+//    // clear all layouts, on the UI thread
     QMetaObject::invokeMethod(this, [&]{
-        for (const auto &[group, layout]: groupLayouts){
-            QLayoutItem* item;
-            while((item = layout->takeAt(0))!=nullptr) {
-                delete item->widget();
-                delete item;
-            }
-        }
-        groupLayouts.clear();
-        QLayoutItem* item;
-        while((item = this->ui->objectsVerticalLayout->takeAt(0))!=nullptr) {
-            if(item->widget()){
-                delete item->widget();
-                delete item;
-            }
-            else if(item->layout()){
-                delete item->layout();
-            }
-        }
-
-        this->ui->objectsVerticalLayout->update();
-
+        ui->treeWidget->clear();
+        groupTreeWidgetItems.clear();
         QMetaObject::invokeMethod(this->getOpenGLWidget(), "clear", Qt::AutoConnection);
     });
 }
 
 void RenderWidget::clearGroup(const std::string &group) {
     QMetaObject::invokeMethod(this, [&, group] {
-        QLayoutItem* item;
 
-        // Clear the items from the group layout
-        auto groupLayout = this->getOrAddGroupLayout(group);
-        while((item = groupLayout->takeAt(0))!=nullptr) {
-            delete item->widget();
-            delete item;
-        }
-        groupLayouts.erase(group);
+        auto& tree = this->ui->treeWidget;
 
-        int i = 0;
-        // Delete the groups title and horizontal line
-        while((item = this->ui->objectsVerticalLayout->itemAt(i))!=nullptr) {
-            if (item->widget()!=nullptr && item->widget()->objectName() == QString::fromStdString(group)) {
-                item = this->ui->objectsVerticalLayout->takeAt(i);
-                delete item->widget();
+        if(groupTreeWidgetItems.find(group) != groupTreeWidgetItems.end()){
+            auto groupTreeWidgetItem = groupTreeWidgetItems.at(group);
+            for (const auto &item: groupTreeWidgetItem->takeChildren()){
                 delete item;
             }
-            else if(item->layout()!=nullptr && item->layout()->objectName() == QString::fromStdString(group)) {
-                item = this->ui->objectsVerticalLayout->takeAt(i);
-                delete item->layout();
-            }
-            else{
-                i++;
+
+            groupTreeWidgetItems.erase(group);
+            for (int i = 0; i < tree->topLevelItemCount(); ++i){
+                auto item = tree->topLevelItem(i);
+                if (item == groupTreeWidgetItem){
+                    delete tree->takeTopLevelItem(i);
+                    break;
+                }
             }
         }
-
-        this->ui->objectsVerticalLayout->update();
-
         QMetaObject::invokeMethod(this->getOpenGLWidget(), "clearGroup", Qt::AutoConnection, Q_ARG(std::string, group));
     });
 }
 
-QVBoxLayout *RenderWidget::getOrAddGroupLayout(const std::string &group) {
-
+QTreeWidgetItem *RenderWidget::getOrAddGroupWidget(const std::string &group) {
     // Find the group
-    auto iterator = groupLayouts.find(group);
+    auto iterator = groupTreeWidgetItems.find(group);
 
     // Add new group if not found
-    if(iterator == groupLayouts.end()){
-        const auto layout = new QVBoxLayout();
-        layout->setObjectName(QString::fromStdString(group));
+    if(iterator == groupTreeWidgetItems.end()){
+        auto groupTreeWidgetItem = new QTreeWidgetItem();
+//        groupTreeWidgetItem->setCheckState(0, Qt::CheckState::Checked);
+
+//        groupTreeWidgetItem->setText(0, QString::fromStdString(group));
 
         const auto groupHeader = new RenderGroupControlWidget(group, this, this->getOpenGLWidget());
-        groupHeader->setObjectName(QString::fromStdString(group));
-        this->ui->objectsVerticalLayout->addWidget(groupHeader);
 
-        iterator = groupLayouts.insert({group, layout}).first;
-        this->ui->objectsVerticalLayout->addLayout(layout);
 
-        auto line = new QFrame(this);
-        line->setFrameShape(QFrame::HLine);
-        line->setObjectName(QString::fromStdString(group));
-        line->setFrameShadow(QFrame::Sunken);
-        this->ui->objectsVerticalLayout->addWidget(line);
+        this->ui->treeWidget->addTopLevelItem(groupTreeWidgetItem);
+        this->ui->treeWidget->setItemWidget(groupTreeWidgetItem, 0, groupHeader);
+        groupTreeWidgetItem->setExpanded(true);
+
+        iterator = groupTreeWidgetItems.insert({group, groupTreeWidgetItem}).first;
     }
     return iterator->second;
 }
