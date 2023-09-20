@@ -35,8 +35,32 @@ link_libraries(GLEW::GLEW)
 find_package(GSL REQUIRED)
 link_libraries(GSL::gsl)
 
-file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp)
-add_executable(A-SimpleRenderDemo renderDemo.cpp ${SOURCES})
-add_executable(B-SimpleCollisionDemo collisionDemo.cpp ${SOURCES})
-add_executable(C-TaskDemo taskDemo.cpp ${SOURCES})
-add_executable(D-DistanceDemo distanceDemo.cpp ${SOURCES})
+file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp)
+
+add_library(MeshCore STATIC ${SOURCES})
+
+### SimpleRenderDemo.exe ###
+add_executable(A-SimpleRenderDemo demos/renderDemo.cpp ${SOURCES})
+target_link_libraries(A-SimpleRenderDemo MeshCore)
+
+### SimpleCollisionDemo.exe ###
+add_executable(B-SimpleCollisionDemo demos/collisionDemo.cpp ${SOURCES})
+target_link_libraries(B-SimpleCollisionDemo MeshCore)
+
+### TaskDemo.exe ###
+add_executable(C-TaskDemo demos/taskDemo.cpp ${SOURCES})
+target_link_libraries(C-TaskDemo MeshCore)
+
+### ConvexHull.exe ###
+add_executable(D-ConvexHull demos/convexHullDemo.cpp ${SOURCES})
+target_link_libraries(D-ConvexHull MeshCore)
+
+### DistanceDemo.exe ###
+add_executable(E-DistanceDemo demos/distanceDemo.cpp ${SOURCES})
+target_link_libraries(E-DistanceDemo MeshCore)
+
+### Tests ###
+enable_testing()
+add_executable(TestConvexHull tests/TestConvexHull.cpp)
+target_link_libraries(TestConvexHull MeshCore)
+add_test(NAME TestConvexHull COMMAND TestConvexHull)
