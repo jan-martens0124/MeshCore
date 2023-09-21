@@ -7,8 +7,8 @@
 #include <utility>
 #include <unordered_set>
 #include <iostream>
-#include "factories/AABBFactory.h"
-#include "external/quickhull/QuickHull.hpp"
+#include "../factories/AABBFactory.h"
+#include "../external/quickhull/QuickHull.hpp"
 
 #define EPSILON 1e-4
 
