@@ -9,8 +9,20 @@
 #include "AbstractRenderModel.h"
 #include "../core/Sphere.h"
 
-class RenderSphere: public AbstractRenderModel {
+class RenderSphere: public AbstractRenderModel { // Due to this AbstractRenderModel inheritance,
 private:
+
+    class SingletonUnitySphere: QOpenGLFunctions{
+    private:
+        SingletonUnitySphere();
+    public:
+        static std::shared_ptr<SingletonUnitySphere>& getInstance();
+        QOpenGLBuffer* indexBuffer;
+        QOpenGLBuffer* vertexBuffer;
+        QOpenGLVertexArrayObject* vertexArray;
+    };
+
+    const Sphere sphere;
 
     bool cullingEnabled = true;
     bool wireframeEnabled = false;
@@ -18,9 +30,6 @@ private:
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
     std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
 
-    float unscaledRadius;
-    float unscaledSurfaceArea;
-    float unscaledVolume;
 public:
 
     RenderSphere(const Sphere &sphere,
@@ -41,6 +50,7 @@ public:
     bool isWireframeEnabled() const;
 
     void setWireframeEnabled(bool newWireframeEnabled);
+
 };
 
 

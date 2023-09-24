@@ -10,6 +10,7 @@
 #include <QCheckBox>
 #include <QGridLayout>
 #include <glm/gtx/normal.hpp>
+#include <QLabel>
 
 RenderSphere::RenderSphere(const Sphere &sphere,
                            const Transformation& transformation,
@@ -18,16 +19,195 @@ RenderSphere::RenderSphere(const Sphere &sphere,
 
                            AbstractRenderModel(transformation, "Sphere"),
                            ambientShader(ambientShader),
-                           diffuseShader(diffuseShader) {
+                           diffuseShader(diffuseShader),
+                           sphere(sphere){
+
+}
+
+
+void RenderSphere::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
+    if(this->isVisible()){
+
+        const auto& singletonUnitySphere = SingletonUnitySphere::getInstance();
+
+        this->initializeOpenGLFunctions();
+        singletonUnitySphere->vertexArray->bind();
+        singletonUnitySphere->indexBuffer->bind();
+
+        if(this->cullingEnabled){
+            GL_CALL(glEnable(GL_CULL_FACE));
+        }
+        else{
+            GL_CALL(glDisable(GL_CULL_FACE));
+        }
+
+        if(this->wireframeEnabled){
+
+            GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
+
+            this->ambientShader->bind();
+
+            Transformation unitySphereToDesiredSphereTransformation;
+            unitySphereToDesiredSphereTransformation.setScale(this->sphere.getRadius());
+            unitySphereToDesiredSphereTransformation.setPosition(this->sphere.getCenter());
+
+            const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix() * unitySphereToDesiredSphereTransformation.getMatrix();
+            this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+            QVector4D drawColor;
+            const auto color = this->getColor();
+            drawColor = QVector4D(color.r, color.g, color.b, color.a);
+            if(lightMode){
+                if(glm::vec3(color) == glm::vec3(1,1,1)){
+                    drawColor = QVector4D(0, 0, 0, color.a);
+                }
+                else if(glm::vec3(color) == glm::vec3(0,0,0)){
+                    drawColor = QVector4D(1, 1, 1, color.a);
+                }
+            }
+            this->ambientShader->setUniformValue("u_Color", drawColor);
+        }
+        else{
+
+            GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+
+            Transformation unitySphereToDesiredSphereTransformation;
+            unitySphereToDesiredSphereTransformation.setScale(this->sphere.getRadius());
+            unitySphereToDesiredSphereTransformation.setPosition(this->sphere.getCenter());
+
+            const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix() * unitySphereToDesiredSphereTransformation.getMatrix();
+            glm::vec3 viewSpaceLightDirection = glm::vec4(0, 0, 1, 1) * viewMatrix;
+            const glm::vec3 modelLightDirection = glm::vec3(glm::vec4(viewSpaceLightDirection, 1.0f) *
+                                                            this->getTransformationMatrix());
+            const float ambientLighting = 0.05f;
+            const auto color = this->getColor();
+            this->diffuseShader->bind();
+            this->diffuseShader->setUniformValue("u_Ambient", ambientLighting);
+            this->diffuseShader->setUniformValue("u_LightDirection", QVector3D(modelLightDirection.x, modelLightDirection.y, modelLightDirection.z));
+            this->diffuseShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+            this->diffuseShader->setUniformValue("u_Color", QVector4D(color.r, color.g, color.b, color.a));
+
+        }
+
+        GL_CALL(glDrawElements(GL_TRIANGLES, singletonUnitySphere->indexBuffer->size()/sizeof(unsigned int),  GL_UNSIGNED_INT, nullptr));
+    }
+}
+
+
+RenderModelDetailDialog *RenderSphere::createRenderModelDetailDialog(QWidget *parent) {
+
+    auto dialog = AbstractRenderModel::createRenderModelDetailDialog(parent);
+
+    auto* optionsLayout = new QGridLayout();
+
+    auto listener = std::make_shared<SimpleRenderModelListener>();
+    this->addListener(listener);
+
+    auto visibleCheckBox = new QCheckBox(QString("Visible"));
+    visibleCheckBox->setChecked(this->isVisible());
+    listener->setOnVisibleChanged([=](bool oldVisible, bool newVisible) {
+        visibleCheckBox->setChecked(newVisible);
+    });
+    QObject::connect(visibleCheckBox, &QCheckBox::clicked, [&](bool enabled) {
+        this->setVisible(enabled);
+    });
+    optionsLayout->addWidget(visibleCheckBox, 0, 0);
+
+    auto wireframeCheckBox = new QCheckBox(QString("Show Wireframe"));
+    wireframeCheckBox->setChecked(this->isWireframeEnabled());
+    QObject::connect(wireframeCheckBox, &QCheckBox::clicked, [&](bool enabled) {
+        this->setWireframeEnabled(enabled);
+    });
+    optionsLayout->addWidget(wireframeCheckBox, 1, 0);
+
+    auto cullingCheckBox = new QCheckBox(QString("Enable Culling"));
+    cullingCheckBox->setChecked(this->isCullingEnabled());
+    listener->setOnChanged([=]() {
+        wireframeCheckBox->setChecked(this->isWireframeEnabled());
+        cullingCheckBox->setChecked(this->isCullingEnabled());
+    });
+    QObject::connect(cullingCheckBox, &QCheckBox::clicked, [&](bool enabled) {
+        this->setCullingEnabled(enabled);
+    });
+    optionsLayout->addWidget(cullingCheckBox, 2, 0);
+
+    auto* optionsWidget = new QWidget();
+    optionsWidget->setLayout(optionsLayout);
+    dialog->addTab(optionsWidget, QString("Options"));
+
+    auto* detailsLayout = new QGridLayout();
+
+    auto center = sphere.getCenter();
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled radius: (" + std::to_string(sphere.getRadius()) + ")")), 0, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled center: (" + std::to_string(center.x) + "," + std::to_string(center.y) + "," + std::to_string(center.z) + ")")), 1, 0);
+
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled surface area: " + std::to_string(sphere.getSurfaceArea()))), 2, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled volume: " + std::to_string(sphere.getVolume()))), 3, 0);
+
+    const auto scale = this->getTransformation().getScale();
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Actual surface area: " + std::to_string(sphere.getSurfaceArea() * scale * scale))), 4, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Actual volume: " + std::to_string(sphere.getVolume() * scale * scale * scale))), 5, 0);
+
+    auto* detailsWidget = new QWidget();
+    detailsWidget->setLayout(detailsLayout);
+    dialog->addTab(detailsWidget, QString("Details"));
+
+    return dialog;
+}
+
+QMenu *RenderSphere::getContextMenu() {
+    auto* contextMenu = AbstractRenderModel::getContextMenu();
+
+    contextMenu->addSeparator();
+
+    QAction* wireframeAction = contextMenu->addAction(QString("Wireframe"));
+    QObject::connect(wireframeAction, &QAction::triggered, [=](bool enabled){
+        this->setWireframeEnabled(enabled);
+    });
+    wireframeAction->setCheckable(true);
+    wireframeAction->setChecked(this->isWireframeEnabled());
+    contextMenu->addAction(wireframeAction);
+
+    QAction* cullingAction = contextMenu->addAction(QString("Culling"));
+    QObject::connect(cullingAction, &QAction::triggered, [=](bool enabled){
+        this->setCullingEnabled(enabled);
+    });
+    cullingAction->setCheckable(true);
+    cullingAction->setChecked(this->isCullingEnabled());
+    contextMenu->addAction(cullingAction);
+
+    return contextMenu;
+}
+
+bool RenderSphere::isCullingEnabled() const {
+    return cullingEnabled;
+}
+
+void RenderSphere::setCullingEnabled(bool newCullingEnabled) {
+    RenderSphere::cullingEnabled = newCullingEnabled;
+    for (const auto &listener: this->listeners){
+        listener->notify();
+    }
+}
+
+bool RenderSphere::isWireframeEnabled() const {
+    return wireframeEnabled;
+}
+
+void RenderSphere::setWireframeEnabled(bool newWireframeEnabled) {
+    RenderSphere::wireframeEnabled = newWireframeEnabled;
+    for (const auto &listener: this->listeners){
+        listener->notify();
+    }
+}
+
+RenderSphere::SingletonUnitySphere::SingletonUnitySphere():
+        vertexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::VertexBuffer)),
+        indexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::IndexBuffer)),
+        vertexArray(new QOpenGLVertexArrayObject()){
 
     std::vector<Vertex> vertices;
     std::vector<IndexTriangle> indexTriangles;
 
-    this->unscaledRadius = sphere.getRadius();
-    this->unscaledVolume = sphere.getVolume();
-    this->unscaledSurfaceArea = sphere.getSurfaceArea();
-
-    // TODO the icosahedron approach might require fewer triangles for good looking spheres
     const auto sectorCount = 64;
     const auto stackCount = 32;
 //    const auto sectorCount = 128;
@@ -38,9 +218,9 @@ RenderSphere::RenderSphere(const Sphere &sphere,
         const auto stackAngle = -glm::pi<float>() * ((float)currentStack / (float)stackCount-0.5f);
         for(auto currentSector=0u; currentSector <= sectorCount; ++currentSector){
             const auto sectorAngle= glm::two_pi<float>() * (float)currentSector / (float)sectorCount;
-            const auto x= sphere.getCenter().x + sphere.getRadius()*glm::cos(stackAngle)*glm::cos(sectorAngle);
-            const auto y= sphere.getCenter().y + sphere.getRadius()*glm::cos(stackAngle)*glm::sin(sectorAngle);
-            const auto z= sphere.getCenter().z + sphere.getRadius()*glm::sin(stackAngle);
+            const auto x= glm::cos(stackAngle)*glm::cos(sectorAngle);
+            const auto y= glm::cos(stackAngle)*glm::sin(sectorAngle);
+            const auto z= glm::sin(stackAngle);
             vertices.emplace_back(x, y, z);
         }
     }
@@ -114,156 +294,9 @@ RenderSphere::RenderSphere(const Sphere &sphere,
 
     GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr));
     GL_CALL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*) (3 * sizeof(GLfloat))));
-
-    this->setColor(Color(1));
 }
 
-
-void RenderSphere::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
-
-
-    if(this->isVisible()){
-
-        this->initializeOpenGLFunctions();
-        this->vertexArray->bind();
-        this->indexBuffer->bind();
-
-        if(this->cullingEnabled){
-            GL_CALL(glEnable(GL_CULL_FACE));
-        }
-        else{
-            GL_CALL(glDisable(GL_CULL_FACE));
-        }
-
-        if(this->wireframeEnabled){
-
-            GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
-
-            this->ambientShader->bind();
-            const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
-            this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
-            QVector4D drawColor;
-            const auto color = this->getColor();
-            drawColor = QVector4D(color.r, color.g, color.b, color.a);
-            if(lightMode){
-                if(glm::vec3(color) == glm::vec3(1,1,1)){
-                    drawColor = QVector4D(0, 0, 0, color.a);
-                }
-                else if(glm::vec3(color) == glm::vec3(0,0,0)){
-                    drawColor = QVector4D(1, 1, 1, color.a);
-                }
-            }
-            this->ambientShader->setUniformValue("u_Color", drawColor);
-        }
-        else{
-
-            GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
-
-            const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
-            glm::vec3 viewSpaceLightDirection = glm::vec4(0, 0, 1, 1) * viewMatrix;
-            const glm::vec3 modelLightDirection = glm::vec3(glm::vec4(viewSpaceLightDirection, 1.0f) *
-                                                            this->getTransformationMatrix());
-            const float ambientLighting = 0.05f;
-            const auto color = this->getColor();
-            this->diffuseShader->bind();
-            this->diffuseShader->setUniformValue("u_Ambient", ambientLighting);
-            this->diffuseShader->setUniformValue("u_LightDirection", QVector3D(modelLightDirection.x, modelLightDirection.y, modelLightDirection.z));
-            this->diffuseShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
-            this->diffuseShader->setUniformValue("u_Color", QVector4D(color.r, color.g, color.b, color.a));
-
-        }
-
-        GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int),  GL_UNSIGNED_INT, nullptr));
-    }
-}
-
-
-RenderModelDetailDialog *RenderSphere::createRenderModelDetailDialog(QWidget *parent) {
-
-    auto dialog = AbstractRenderModel::createRenderModelDetailDialog(parent);
-
-    auto* optionsLayout = new QGridLayout();
-
-    auto listener = std::make_shared<SimpleRenderModelListener>();
-    this->addListener(listener);
-
-    auto visibleCheckBox = new QCheckBox(QString("Visible"));
-    visibleCheckBox->setChecked(this->isVisible());
-    listener->setOnVisibleChanged([=](bool oldVisible, bool newVisible) {
-        visibleCheckBox->setChecked(newVisible);
-    });
-    QObject::connect(visibleCheckBox, &QCheckBox::clicked, [&](bool enabled) {
-        this->setVisible(enabled);
-    });
-    optionsLayout->addWidget(visibleCheckBox, 0, 0);
-
-    auto wireframeCheckBox = new QCheckBox(QString("Show Wireframe"));
-    wireframeCheckBox->setChecked(this->isWireframeEnabled());
-    QObject::connect(wireframeCheckBox, &QCheckBox::clicked, [&](bool enabled) {
-        this->setWireframeEnabled(enabled);
-    });
-    optionsLayout->addWidget(wireframeCheckBox, 1, 0);
-
-    auto cullingCheckBox = new QCheckBox(QString("Enable Culling"));
-    cullingCheckBox->setChecked(this->isCullingEnabled());
-    listener->setOnChanged([=]() {
-        wireframeCheckBox->setChecked(this->isWireframeEnabled());
-        cullingCheckBox->setChecked(this->isCullingEnabled());
-    });
-    QObject::connect(cullingCheckBox, &QCheckBox::clicked, [&](bool enabled) {
-        this->setCullingEnabled(enabled);
-    });
-    optionsLayout->addWidget(cullingCheckBox, 2, 0);
-
-    auto* optionsWidget = new QWidget();
-    optionsWidget->setLayout(optionsLayout);
-    dialog->addTab(optionsWidget, QString("Options"));
-
-    return dialog;
-}
-
-QMenu *RenderSphere::getContextMenu() {
-    auto* contextMenu = AbstractRenderModel::getContextMenu();
-
-    contextMenu->addSeparator();
-
-    QAction* wireframeAction = contextMenu->addAction(QString("Wireframe"));
-    QObject::connect(wireframeAction, &QAction::triggered, [=](bool enabled){
-        this->setWireframeEnabled(enabled);
-    });
-    wireframeAction->setCheckable(true);
-    wireframeAction->setChecked(this->isWireframeEnabled());
-    contextMenu->addAction(wireframeAction);
-
-    QAction* cullingAction = contextMenu->addAction(QString("Culling"));
-    QObject::connect(cullingAction, &QAction::triggered, [=](bool enabled){
-        this->setCullingEnabled(enabled);
-    });
-    cullingAction->setCheckable(true);
-    cullingAction->setChecked(this->isCullingEnabled());
-    contextMenu->addAction(cullingAction);
-
-    return contextMenu;
-}
-
-bool RenderSphere::isCullingEnabled() const {
-    return cullingEnabled;
-}
-
-void RenderSphere::setCullingEnabled(bool newCullingEnabled) {
-    RenderSphere::cullingEnabled = newCullingEnabled;
-    for (const auto &listener: this->listeners){
-        listener->notify();
-    }
-}
-
-bool RenderSphere::isWireframeEnabled() const {
-    return wireframeEnabled;
-}
-
-void RenderSphere::setWireframeEnabled(bool newWireframeEnabled) {
-    RenderSphere::wireframeEnabled = newWireframeEnabled;
-    for (const auto &listener: this->listeners){
-        listener->notify();
-    }
+std::shared_ptr<RenderSphere::SingletonUnitySphere> &RenderSphere::SingletonUnitySphere::getInstance() {
+    static std::shared_ptr<RenderSphere::SingletonUnitySphere> instance(new RenderSphere::SingletonUnitySphere());
+    return instance;
 }
