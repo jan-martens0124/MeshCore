@@ -115,6 +115,20 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileOBJ(const std::string &file
 
     std::string line;
     while(getline(stream, line)){
+
+        // Remove comments, if present
+        auto commentStartIndex = line.find_first_of('#');
+        if(commentStartIndex!=std::string::npos){
+            line = line.substr(0, commentStartIndex);
+        }
+
+        // Remove trailing whitespace
+        auto lastWhiteSpace = line.find_last_of(' ');
+        while(lastWhiteSpace!=std::string::npos && lastWhiteSpace == line.size() - 1){
+            line = line.substr(0, line.size() - 1);
+            lastWhiteSpace = line.find_last_of(' ');
+        }
+
         auto typeLength = line.find_first_of(' ');
         if(typeLength != std::string::npos){
             std::string type = line.substr(0, typeLength);
@@ -132,7 +146,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileOBJ(const std::string &file
 
                 std::vector<unsigned int> indices;
                 auto whitespace = content.find_first_of(' ');
-                while(content.find_first_of(' ')!=std::string::npos){
+                while(whitespace!=std::string::npos){
                     auto string = content.substr(0, whitespace);
                     indices.emplace_back(stoul(string) - 1);
                     content = content.substr(whitespace + 1);

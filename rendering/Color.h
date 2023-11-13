@@ -11,18 +11,18 @@ class Color: public glm::vec4 {
     using glm::vec4::vec4;
 public:
     // Define some colors as static public
-    [[maybe_unused]] static Color Red(){return {1.0f, 0.0f, 0.0f, 1.0f};}
-    [[maybe_unused]] static Color Green(){return {0.0f, 1.0f, 0.0f, 1.0f};}
-    [[maybe_unused]] static Color Blue(){return {0.0f, 0.0f, 1.0f, 1.0f};}
-    [[maybe_unused]] static Color White(){return {1.0f, 1.0f, 1.0f, 1.0f};}
-    [[maybe_unused]] static Color Black(){return {0.0f, 0.0f, 0.0f, 1.0f};}
-    [[maybe_unused]] static Color Yellow(){return {1.0f, 1.0f, 0.0f, 1.0f};}
-    [[maybe_unused]] static Color Cyan(){return {0.0f, 1.0f, 1.0f, 1.0f};}
-    [[maybe_unused]] static Color Magenta(){return {1.0f, 0.0f, 1.0f, 1.0f};}
-    [[maybe_unused]] static Color Orange(){return {1.0f, 0.5f, 0.0f, 1.0f};}
-    [[maybe_unused]] static Color LightBlue(){return {0.333, 1.0f, 1.0f, 1.0f};}
-    [[maybe_unused]] static Color Brown(){return {0.666, 0.333f, 0.0f, 1.0f};}
-
+    [[maybe_unused]] static Color Red(float alpha=1.0f){return {1.0f, 0.0f, 0.0f, alpha};}
+    [[maybe_unused]] static Color Green(float alpha=1.0f){return {0.0f, 1.0f, 0.0f, alpha};}
+    [[maybe_unused]] static Color Blue(float alpha=1.0f){return {0.0f, 0.0f, 1.0f, alpha};}
+    [[maybe_unused]] static Color White(float alpha=1.0f){return {1.0f, 1.0f, 1.0f, alpha};}
+    [[maybe_unused]] static Color Black(float alpha=1.0f){return {0.0f, 0.0f, 0.0f, alpha};}
+    [[maybe_unused]] static Color Yellow(float alpha=1.0f){return {1.0f, 1.0f, 0.0f, alpha};}
+    [[maybe_unused]] static Color Cyan(float alpha=1.0f){return {0.0f, 1.0f, 1.0f, alpha};}
+    [[maybe_unused]] static Color Magenta(float alpha=1.0f){return {1.0f, 0.0f, 1.0f, alpha};}
+    [[maybe_unused]] static Color Orange(float alpha=1.0f){return {1.0f, 0.5f, 0.0f, alpha};}
+    [[maybe_unused]] static Color LightBlue(float alpha=1.0f){return {0.333, 1.0f, 1.0f, alpha};}
+    [[maybe_unused]] static Color Brown(float alpha=1.0f){return {0.666f, 0.333f, 0.0f, alpha};}
+    [[maybe_unused]] static Color Locust(float alpha=1.0f){return {0.666f, 0.666f, 0.5f, alpha};}
 };
 
 #endif //OPTIXMESHCORE_COLOR_H
