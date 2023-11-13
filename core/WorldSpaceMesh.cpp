@@ -4,8 +4,6 @@
 
 #include "WorldSpaceMesh.h"
 #include "Ray.h"
-
-#include <utility>
 #include <string>
 
 int WorldSpaceMesh::nextId = 0;
@@ -53,4 +51,14 @@ const Transformation& WorldSpaceMesh::getModelTransformation() const {
 
 Transformation& WorldSpaceMesh::getModelTransformation() {
     return modelTransformation;
+}
+
+std::shared_ptr<ModelSpaceMesh> WorldSpaceMesh::getTransformedModelSpaceMesh() const {
+    const auto& modelSpaceVertices = this->modelSpaceMesh->getVertices();
+    std::vector<Vertex> transformedVertices;
+    transformedVertices.reserve(modelSpaceVertices.size());
+    for (int i = 0; i < modelSpaceVertices.size(); ++i){
+        transformedVertices.emplace_back(this->getModelTransformation().transformVertex(modelSpaceVertices[i]));
+    }
+    return std::make_shared<ModelSpaceMesh>(transformedVertices, this->modelSpaceMesh->getTriangles());
 }

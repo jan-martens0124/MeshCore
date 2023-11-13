@@ -28,11 +28,13 @@ public:
     WorldSpaceMesh& operator=(WorldSpaceMesh &&other) = default;
     ~WorldSpaceMesh() = default;
 
+    [[nodiscard]] const std::string& getId() const;
+
     [[nodiscard]] std::shared_ptr<WorldSpaceMesh> duplicate () const;
     [[nodiscard]] std::shared_ptr<WorldSpaceMesh> clone () const;
 
-    [[nodiscard]] const std::string& getId() const;
     [[nodiscard]] std::shared_ptr<ModelSpaceMesh> getModelSpaceMesh() const;
+    [[nodiscard]] std::shared_ptr<ModelSpaceMesh> getTransformedModelSpaceMesh() const;
 
     [[nodiscard]] Transformation& getModelTransformation();
     [[nodiscard]] const Transformation& getModelTransformation() const;
