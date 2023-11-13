@@ -9,6 +9,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include "Vertex.h"
 #include "IndexTriangle.h"
 #include "IndexEdge.h"
@@ -29,6 +30,7 @@ private:
     mutable std::optional<Vertex> surfaceCentroid;
     mutable std::optional<AABB> bounds;
     mutable std::optional<std::shared_ptr<ModelSpaceMesh>> convexHull;
+    mutable std::optional<std::vector<std::vector<size_t>>> connectedVertexIndices;
 
 private:
     void computeVolumeAndCentroid() const;
@@ -48,6 +50,7 @@ public:
 
     const AABB &getBounds() const;
 
+    [[nodiscard]] const std::vector<std::vector<size_t>>& getConnectedVertexIndices() const;
     std::optional<std::shared_ptr<ModelSpaceMesh>> getConvexHull() const;
     bool isConvex() const;
     float getVolume() const;

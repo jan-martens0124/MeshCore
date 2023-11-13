@@ -143,28 +143,6 @@ std::vector<IndexEdge> ModelSpaceMesh::getSufficientIntersectionEdges() const {
     return returnVector;
 }
 
-std::vector<IndexTriangle> computeQuickHullExternal(const std::vector<Vertex>& vertices){
-
-    quickhull::QuickHull<float> qh;
-    std::vector<quickhull::Vector3<float>> qhVertices;
-
-    qhVertices.reserve(vertices.size());
-    for(Vertex vertex: vertices){
-        qhVertices.emplace_back(vertex.x, vertex.y, vertex.z);
-    }
-
-    auto hull = qh.getConvexHull(qhVertices, false, true);
-
-    const auto& indexBuffer = hull.getIndexBuffer();
-
-    std::vector<IndexTriangle> triangles;
-    for(unsigned int i=0; i<indexBuffer.size(); i+=3){
-        triangles.emplace_back(IndexTriangle{(unsigned int)(indexBuffer[i]), (unsigned int)(indexBuffer[i+1]), (unsigned int)(indexBuffer[i+2])});
-    }
-
-    return triangles;
-}
-
 std::optional<std::shared_ptr<ModelSpaceMesh>> ModelSpaceMesh::getConvexHull() const {
 
     // Return the value if already calculated before
@@ -175,40 +153,33 @@ std::optional<std::shared_ptr<ModelSpaceMesh>> ModelSpaceMesh::getConvexHull() c
         return convexHull.value();
     }
 
+    // Otherwise, use the quickhull library to calculate the convex hull
+    quickhull::QuickHull<float> qh;
+    std::vector<quickhull::Vector3<float>> qhVertices;
+
+    qhVertices.reserve(vertices.size());
+    for(Vertex vertex: vertices){
+        qhVertices.emplace_back(vertex.x, vertex.y, vertex.z);
+    }
+
+    auto qhHull = qh.getConvexHull(qhVertices, false, true);
+
     // Get the triangles that should be part of the convex hull
-    const auto indexTriangles = computeQuickHullExternal(this->vertices);
+    const auto& vertexBuffer = qhHull.getVertexBuffer();
+    const auto& indexBuffer = qhHull.getIndexBuffer();
 
-    if(indexTriangles.empty()){
-        convexHull = nullptr;
-        return std::nullopt;
-    }
-
-    // Create a new modelSpaceMesh that only contains vertices that are part of the outer hull
     std::vector<Vertex> hullVertices;
-    std::vector<IndexTriangle> hullTriangles;
-
-    // Helper function to keep track of the vertices that should be present in the final result
-    std::vector<unsigned int> vertexMapping(this->vertices.size(), -1); // Element at position i contains the index of vertex i in the hullVertices vector, -1 if not present in hullVertices
-    auto addVertexIfNotPresent = [&](unsigned int index){
-        if(vertexMapping.at(index)==-1){
-            vertexMapping.at(index) = hullVertices.size();
-            hullVertices.emplace_back(this->vertices.at(index));
-        }
-    };
-
-    for (const auto &indexTriangle : indexTriangles){
-        // Put the vertices in the hullVertices vector if not present yet
-        addVertexIfNotPresent(indexTriangle.vertexIndex0);
-        addVertexIfNotPresent(indexTriangle.vertexIndex1);
-        addVertexIfNotPresent(indexTriangle.vertexIndex2);
-
-        unsigned int newIndex0 = vertexMapping.at(indexTriangle.vertexIndex0);
-        unsigned int newIndex1 = vertexMapping.at(indexTriangle.vertexIndex1);
-        unsigned int newIndex2 = vertexMapping.at(indexTriangle.vertexIndex2);
-        hullTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
+    hullVertices.reserve(vertexBuffer.size());
+    for(const auto& vertex: vertexBuffer){
+        hullVertices.emplace_back(vertex.x, vertex.y, vertex.z);
     }
 
-    assert(!convexHull.has_value() && "This shouldn't be calculated again if a value was present already");
+    std::vector<IndexTriangle> hullTriangles;
+    hullTriangles.reserve(indexBuffer.size() / 3);
+    for(int i = 0; i < indexBuffer.size(); i += 3){
+        hullTriangles.emplace_back(IndexTriangle{indexBuffer[i], indexBuffer[i + 1], indexBuffer[i + 2]});
+    }
+
     auto hull = std::make_shared<ModelSpaceMesh>(hullVertices, hullTriangles);
     convexHull = hull;
     convexHull.value()->setName("Convex hull of " + this->getName());
@@ -335,5 +306,29 @@ void ModelSpaceMesh::computeVolumeAndCentroid() const {
     assert(volume.value()/this->getBounds().getVolume() <= (1.0 + 1e-6)  && "Volume of mesh should be smaller than volume of its bounding box");
     volumeCentroid = centroid / (meshVolume*4.0f);
     assert(getBounds().containsPoint(volumeCentroid.value()) && "Volume centroid should be inside the bounding box of the mesh");
+}
+
+const std::vector<std::vector<size_t>>& ModelSpaceMesh::getConnectedVertexIndices() const {
+    if(!connectedVertexIndices.has_value()){
+        std::vector<std::unordered_set<size_t>> connectedVertexIndicesSet;
+        connectedVertexIndicesSet.resize(vertices.size());
+        for(size_t i = 0; i < vertices.size(); i++){
+            connectedVertexIndicesSet.emplace_back();
+        }
+        for(const auto& triangle: triangles){
+            connectedVertexIndicesSet.at(triangle.vertexIndex0).insert(triangle.vertexIndex1);
+            connectedVertexIndicesSet.at(triangle.vertexIndex0).insert(triangle.vertexIndex2);
+            connectedVertexIndicesSet.at(triangle.vertexIndex1).insert(triangle.vertexIndex0);
+            connectedVertexIndicesSet.at(triangle.vertexIndex1).insert(triangle.vertexIndex2);
+            connectedVertexIndicesSet.at(triangle.vertexIndex2).insert(triangle.vertexIndex0);
+            connectedVertexIndicesSet.at(triangle.vertexIndex2).insert(triangle.vertexIndex1);
+        }
+        connectedVertexIndices = std::vector<std::vector<size_t>>();
+        connectedVertexIndices->reserve(vertices.size());
+        for(size_t i = 0; i < vertices.size(); i++){
+            connectedVertexIndices->emplace_back(connectedVertexIndicesSet.at(i).begin(), connectedVertexIndicesSet.at(i).end());
+        }
+    }
+    return connectedVertexIndices.value();
 }
 

@@ -14,17 +14,17 @@ GJK::computeDistanceSqr(const GJKConvexShape &convex_shape_A, const GJKConvexSha
 
     glm::vec3 origin = { 0.,0.,0.};
 
-    std::vector<glm::vec3> simplex;
+    std::vector<SupportPoint> simplex;
     simplex.reserve(4);
 
-    glm::vec3 vk = support(convex_shape_A, convex_shape_B, initialDir);
+    glm::vec3 vk = support(convex_shape_A, convex_shape_B, initialDir).point;
     long iteration = 0;
     do
     {
         glm::vec3 D = -vk;
-        glm::vec3 wk = support(convex_shape_A, convex_shape_B, D);
+        SupportPoint wk = support(convex_shape_A, convex_shape_B, D);
 
-        if(glm::dot((wk-vk),D)/glm::dot(D,D) < GJK_EPSILON)
+        if(glm::dot((wk.point-vk),D)/glm::dot(D,D) < GJK_EPSILON)
         {
             return glm::dot(D,D);
         }
@@ -46,8 +46,172 @@ GJK::computeDistanceSqr(const GJKConvexShape &convex_shape_A, const GJKConvexSha
     return glm::dot(diff, diff);
 }
 
+bool GJK::hasSeparation(const GJKConvexShape &convex_shape_A, const GJKConvexShape &convex_shape_B, const glm::vec3 &initialDir, float minimumSeparationDistanceSqr) {
 
-std::optional<glm::vec3> GJK::doSimplex(std::vector<glm::vec3> &simplex, const glm::vec3 &dir) {
+    assert(minimumSeparationDistanceSqr >= 0.0);
+
+    std::vector<SupportPoint> simplex;
+    simplex.reserve(4);
+    auto vk = support(convex_shape_A, convex_shape_B, -initialDir).point;
+
+    long iteration = 0;
+    do {
+        // Compute the support for this direction
+        glm::vec3 D = -vk;
+        SupportPoint wk = support(convex_shape_A, convex_shape_B, D);
+
+        // Test if the separation along this distance satisfies the minimum distance already (Optional, but should improve performance)
+        auto DD = glm::dot(D, D);
+        auto separationAlongD = -glm::dot(wk.point,D);
+        auto separationAlongDSqr = separationAlongD * separationAlongD;
+        if(separationAlongDSqr>=minimumSeparationDistanceSqr*DD && separationAlongD >= 0.0){ // Correct for D not being normalized by multiplying with DD and avoiding division this way
+            return true;
+        }
+
+        // Stop if the difference between the values along the direction is too small
+        if(glm::dot((wk.point-vk),D) < GJK_EPSILON*DD) {
+            return DD >= minimumSeparationDistanceSqr;
+        }
+
+        // Add the new point to the simplex and compute the next direction based on this
+        simplex.push_back(wk);
+        std::optional<glm::dvec3> updatedD = doSimplex(simplex, D); // Find the closest point
+
+        // Test if separation along the new direction is too small
+        if(!updatedD.has_value() || glm::dot(updatedD.value(),updatedD.value()) < minimumSeparationDistanceSqr){
+            return false;
+        }
+
+        vk = (-updatedD.value());
+
+        iteration++;
+    } while (iteration < 1000);
+
+    return glm::dot(vk, vk) >= minimumSeparationDistanceSqr;
+}
+
+std::optional<std::pair<Vertex, Vertex>> GJK::computeClosestPoints(const GJKConvexShape &convex_shape_A, const GJKConvexShape &convex_shape_B, const glm::vec3 &initialDir) {
+
+    std::vector<SupportPoint> simplex;
+    simplex.reserve(4);
+    auto vk = support(convex_shape_A, convex_shape_B, -initialDir).point;
+    long iteration = 0;
+    do {
+        // Compute the support for this direction
+        glm::vec3 D = -vk;
+        auto wk = support(convex_shape_A, convex_shape_B, D);
+
+        if(glm::dot((wk.point-vk),D)/glm::dot(D,D) < GJK_EPSILON){
+            break;
+        }
+
+        // Add the new point to the simplex and compute the next direction based on this
+        simplex.push_back(wk);
+        std::optional<glm::vec3> updatedD = doSimplex(simplex, D); // Find the closest point
+
+        if(!updatedD.has_value()){
+            return std::nullopt;
+        }
+
+        vk = (-updatedD.value());
+
+        iteration++;
+    } while(iteration < 1000);
+
+    return computeClosestPoints(simplex);
+}
+
+std::pair<glm::dvec3, glm::dvec3> GJK::computeClosestPoints(const std::vector<GJK::SupportPoint>& simplex){
+    glm::dvec3 closestPointA;
+    glm::dvec3 closestPointB;
+
+    switch (simplex.size()) {
+        case 1:
+            // Trivial case
+            closestPointA = simplex[0].supportPointA;
+            closestPointB = simplex[0].supportPointB;
+            break;
+        case 2: {
+
+            // Find the point on the line segment simplex that is closest to the origin
+            auto ab = simplex[1].point - simplex[0].point;
+
+            // Convex composition: P(t) = a + t*(b-a)
+//            float t = glm::dot(-ab, simplex[0].point)/glm::dot(ab, ab);
+//            t = glm::clamp(t, 0.0, 1.0); // Catch degenerate cases but shouldn't happen
+//            closestPointA.scaleAdd(1-t, simplex.get(0).supportPointA, closestPointA);
+//            closestPointA.scaleAdd(t, simplex.get(1).supportPointA, closestPointA);
+//
+//            closestPointB.scaleAdd(1-t, simplex.get(0).supportPointB, closestPointB);
+//            closestPointB.scaleAdd(t, simplex.get(1).supportPointB, closestPointB);
+
+            auto l = simplex[1].point - simplex[0].point;
+
+            float ldotl = glm::dot(l,l);
+            float ldota = glm::dot(l, simplex[0].point);
+
+            float lambda2 = -ldota/ldotl;
+            float lambda1 = (ldotl+ldota)/ldotl;
+
+            closestPointA = lambda1*simplex[0].supportPointA + lambda2*simplex[1].supportPointA;
+            closestPointB = lambda1*simplex[0].supportPointB + lambda2*simplex[1].supportPointB;
+
+            if (ldotl == 0) {
+                closestPointA = simplex[0].supportPointA;
+                closestPointB = simplex[0].supportPointB;
+            }
+            else if (lambda1 < 0) {
+                closestPointA = simplex[1].supportPointA;
+                closestPointB = simplex[1].supportPointB;
+            } else if (lambda2 < 0) {
+                closestPointA = simplex[0].supportPointA;
+                closestPointB = simplex[0].supportPointB;
+            }
+        }
+            break;
+        case 3: {
+            // We look for the barycentric coordinates of the closest point in the simplex to the origin
+            // This is a convex combination of simplex points
+            // Derived from ClosestPtPointTriangle as described in "Real-Time Collision Detection" by Christer Ericson
+            auto ab = simplex[1].point - simplex[0].point;
+            auto ac = simplex[2].point - simplex[0].point;
+
+            // Check if origin lies in the vertex region outside A
+            float d1 = -glm::dot(ab,simplex[0].point);
+            float d2 = -glm::dot(ac,simplex[0].point);
+
+            // Check if point lies in the vertex region outside B
+            float d3 = -glm::dot(ab,simplex[1].point);
+            float d4 = -glm::dot(ac,simplex[1].point);
+
+            // Check if point lies in the vertex region outside C
+            float d5 = -glm::dot(ab,simplex[2].point);
+            float d6 = -glm::dot(ac,simplex[2].point);
+
+            // The point lies in the face region. Compute the closest point through barycentric coordinates
+            float va = d3*d6 - d5*d4;
+            float vb = d5*d2 - d1*d6;
+            float vc = d1*d4 - d3*d2;
+            float denominator = 1.0f / (va + vb + vc);
+            float u = va * denominator;
+            float v = vb * denominator;
+            float w = vc * denominator;
+
+            assert(u >= 0.0 && u <= 1.0);
+            assert(v >= 0.0 && v <= 1.0);
+            assert(w >= 0.0 && w <= 1.0);
+
+            closestPointA = u*simplex[0].supportPointA + v*simplex[1].supportPointA + w*simplex[2].supportPointA;
+            closestPointB = u*simplex[0].supportPointB + v*simplex[1].supportPointB + w*simplex[2].supportPointB;
+            break;
+        }
+        default:
+            throw "Simplex size not supported";
+    }
+    return {closestPointA, closestPointB};
+}
+
+std::optional<glm::vec3> GJK::doSimplex(std::vector<SupportPoint> &simplex, const glm::vec3 &dir) {
 
     glm::vec3 origin(0);
     glm::vec3 g;
@@ -79,58 +243,55 @@ std::optional<glm::vec3> GJK::doSimplex(std::vector<glm::vec3> &simplex, const g
 
 }
 
-glm::vec3 GJK::doSimplex1(std::vector<glm::vec3> &simplex, const glm::vec3 &origin, const glm::vec3 &a) {
-    return a;
+glm::vec3 GJK::doSimplex1(std::vector<SupportPoint> &simplex, const glm::vec3 &origin, const SupportPoint &a) {
+    return a.point;
 }
 
-glm::vec3 GJK::doSimplex2(std::vector<glm::vec3> &simplex, const glm::vec3 &origin, const glm::vec3 &a,
-                               const glm::vec3 &b) {
+glm::vec3 GJK::doSimplex2(std::vector<SupportPoint> &simplex, const glm::vec3 &origin, const SupportPoint &a, const SupportPoint &b) {
 
-    glm::vec3 ab = b - a;
-    glm::vec3 ao = origin - a;
+    glm::vec3 ab = b.point - a.point;
+    glm::vec3 ao = origin - a.point;
 
     glm::vec3 q;
     float t = glm::dot(ao, ab);
 
     if(t <= 0.0)
     {
-        q = a;
+        q = a.point;
         simplex.erase(simplex.begin()+1);
     } else
     {
         float denom = glm::dot(ab, ab);
         if( t >= denom)
         {
-            q = b;
+            q = b.point;
             simplex.erase(simplex.begin());
         } else
         {
             t = t / denom;
-            q = t * ab + a;
+            q = t * ab + a.point;
         }
     }
 
     return q;
 }
 
-float scalarProd(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c)
-{
+float scalarProd(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
     return glm::dot(a, glm::cross(b, c));
 }
 
-glm::vec3 GJK::doSimplex3(std::vector<glm::vec3> &simplex, const glm::vec3 &o, const glm::vec3 &a,
-                               const glm::vec3 &b, const glm::vec3 &c) {
+glm::vec3 GJK::doSimplex3(std::vector<SupportPoint> &simplex, const glm::vec3 &o, const SupportPoint &a, const SupportPoint &b, const SupportPoint &c) {
 
     glm::vec3 ac, ca, ab, ba, bc, cb, ao, bo, co;
-    ac = c-a;
+    ac = c.point-a.point;
     ca = -ac;
-    ab = b-a;
+    ab = b.point-a.point;
     ba = -ab;
-    bc = c - b;
+    bc = c.point - b.point;
     cb = -bc;
-    ao = o - a;
-    bo = o - b;
-    co = o - c;
+    ao = o - a.point;
+    bo = o - b.point;
+    co = o - c.point;
 
     float snom = glm::dot(ao, ab), sdenom = glm::dot(bo, ba);
     float tnom = glm::dot(ao, ac), tdenom = glm::dot(co, ca);
@@ -138,7 +299,7 @@ glm::vec3 GJK::doSimplex3(std::vector<glm::vec3> &simplex, const glm::vec3 &o, c
     glm::vec3 q;
     if(snom <= 0.0 && tnom <= 0.0)
     {
-        q = a;
+        q = a.point;
         simplex.erase(simplex.begin()+2);
         simplex.erase(simplex.begin()+1);
 
@@ -148,7 +309,7 @@ glm::vec3 GJK::doSimplex3(std::vector<glm::vec3> &simplex, const glm::vec3 &o, c
     float unom = glm::dot(bo,bc), udenom = glm::dot(co,cb);
 
     if (sdenom <= 0.0 && unom <= 0.0) {
-        q = b;
+        q = b.point;
         simplex.erase(simplex.begin()+2);
         simplex.erase(simplex.begin());
 
@@ -156,7 +317,7 @@ glm::vec3 GJK::doSimplex3(std::vector<glm::vec3> &simplex, const glm::vec3 &o, c
 
     }
     if (tdenom <= 0.0 && udenom <= 0.0) {
-        q = c;
+        q = c.point;
         simplex.erase(simplex.begin()+1);
         simplex.erase(simplex.begin());
 
@@ -168,7 +329,7 @@ glm::vec3 GJK::doSimplex3(std::vector<glm::vec3> &simplex, const glm::vec3 &o, c
 
     if (vc <= 0.0 && snom >= 0.0 && sdenom >= 0.0) {
         simplex.erase(simplex.begin()+2);
-        q = (ab * snom / (snom + sdenom)) + a;
+        q = (ab * snom / (snom + sdenom)) + a.point;
 
         return q;
 
@@ -177,7 +338,7 @@ glm::vec3 GJK::doSimplex3(std::vector<glm::vec3> &simplex, const glm::vec3 &o, c
     float va = scalarProd(n, -bo, -co);
     if (va <= 0.0 && unom >= 0.0 && udenom >= 0.0) {
         simplex.erase(simplex.begin());
-        q = (bc*unom / (unom + udenom)) + b;
+        q = (bc*unom / (unom + udenom)) + b.point;
 
         return q;
 
@@ -186,24 +347,22 @@ glm::vec3 GJK::doSimplex3(std::vector<glm::vec3> &simplex, const glm::vec3 &o, c
     float vb = scalarProd(n, -co, -ao);
     if (vb <= 0.0 && tnom >= 0.0 && tdenom >= 0.0) {
         simplex.erase(simplex.begin()+1);
-        q = (ac*tnom / (tnom + tdenom))+ a;
+        q = (ac*tnom / (tnom + tdenom)) + a.point;
 
         return q;
 
     }
 
-
     float u = va / (va + vb + vc);
     float v = vb / (va + vb + vc);
     float w = 1 - u - v;
 
-    q = u*a + v*b + w*c;
+    q = u*a.point + v*b.point + w*c.point;
 
     return q;
 }
 
-bool pointOutsideOfPlane(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& d)
-{
+bool pointOutsideOfPlane(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& d) {
     glm::vec3 ap = p - a;
     glm::vec3 ad = d - a;
     glm::vec3 ac = c - a;
@@ -214,18 +373,17 @@ bool pointOutsideOfPlane(const glm::vec3& p, const glm::vec3& a, const glm::vec3
     float signp = glm::dot(ap, abac);
     float signd = glm::dot(ad, abac);
 
-    return signp * signd < GJK_EPSILON; // TODO this is changed to GJK_EPSILON instead of 0.0, but seems to solve differences between rotating cubes as mesh vs OBB
+    return signp * signd < GJK_EPSILON;
 }
 
-glm::vec3 GJK::doSimplex4(std::vector<glm::vec3> &simplex, const glm::vec3 &origin, const glm::vec3 &a,
-                               const glm::vec3 &b, const glm::vec3 &c, const glm::vec3 &d) {
+glm::vec3 GJK::doSimplex4(std::vector<SupportPoint> &simplex, const glm::vec3 &origin, const SupportPoint &a, const SupportPoint &b, const SupportPoint &c, const SupportPoint &d) {
     glm::vec3 closestP = origin;
     float distanceSqr = std::numeric_limits<float>::infinity();
     int closestTriangle = -1;
 
-    std::array<std::vector<glm::vec3>, 4> simplexCopies = { simplex, simplex, simplex, simplex };
+    std::array<std::vector<SupportPoint>, 4> simplexCopies = { simplex, simplex, simplex, simplex };
 
-    if (pointOutsideOfPlane(origin, a, b, c, d)) {
+    if (pointOutsideOfPlane(origin, a.point, b.point, c.point, d.point)) {
         simplexCopies[0].erase(simplexCopies[0].begin()+3);
         glm::vec3 q = doSimplex3(simplexCopies[0], origin, a, b, c);
 
@@ -237,7 +395,7 @@ glm::vec3 GJK::doSimplex4(std::vector<glm::vec3> &simplex, const glm::vec3 &orig
         }
     }
 
-    if (pointOutsideOfPlane(origin, a, b, d, c)) {
+    if (pointOutsideOfPlane(origin, a.point, b.point, d.point, c.point)) {
         simplexCopies[1].erase(simplexCopies[1].begin()+2);
         glm::vec3 q = doSimplex3(simplexCopies[1], origin, a, b, d);
 
@@ -249,7 +407,7 @@ glm::vec3 GJK::doSimplex4(std::vector<glm::vec3> &simplex, const glm::vec3 &orig
         }
     }
 
-    if (pointOutsideOfPlane(origin, a, c, d, b)) {
+    if (pointOutsideOfPlane(origin, a.point, c.point, d.point, b.point)) {
         simplexCopies[2].erase(simplexCopies[2].begin()+1);
         glm::vec3 q = doSimplex3(simplexCopies[2], origin, a, c, d);
 
@@ -261,7 +419,7 @@ glm::vec3 GJK::doSimplex4(std::vector<glm::vec3> &simplex, const glm::vec3 &orig
         }
     }
 
-    if (pointOutsideOfPlane(origin, b, c, d, a)) {
+    if (pointOutsideOfPlane(origin, b.point, c.point, d.point, a.point)) {
         simplexCopies[3].erase(simplexCopies[3].begin());
         glm::vec3 q = doSimplex3(simplexCopies[3], origin, b, c, d);
 
@@ -273,8 +431,7 @@ glm::vec3 GJK::doSimplex4(std::vector<glm::vec3> &simplex, const glm::vec3 &orig
         }
     }
 
-    if (closestTriangle != -1)
-    {
+    if (closestTriangle != -1) {
         simplex.clear();
         simplex = simplexCopies[closestTriangle];
     }
@@ -282,10 +439,10 @@ glm::vec3 GJK::doSimplex4(std::vector<glm::vec3> &simplex, const glm::vec3 &orig
     return closestP;
 }
 
-glm::vec3 GJK::support(const GJKConvexShape& convex_shape_A, const GJKConvexShape& convex_shape_B, const glm::vec3& D) {
-    glm::vec3 pa = convex_shape_A.computeSupport(D);
-    glm::vec3 pb = convex_shape_B.computeSupport(-D);
-    return pa-pb;
+GJK::SupportPoint GJK::support(const GJKConvexShape& convex_shape_A, const GJKConvexShape& convex_shape_B, const glm::vec3& D) {
+    auto pa = convex_shape_A.computeSupport(D);
+    auto pb = convex_shape_B.computeSupport(-D);
+    return {pa, pb};
 }
 
 glm::vec3 GJKAABB::computeSupport(const glm::vec3 &direction) const {
@@ -308,24 +465,14 @@ glm::vec3 GJKOBB::computeSupport(const glm::vec3 &direction) const {
     return rotation.rotateVertex(aabbSpaceSupport);
 }
 
-GJKMesh::GJKMesh(const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh): worldSpaceMesh(worldSpaceMesh), startVertexIndex(0) {
-
-    assert(worldSpaceMesh->getModelSpaceMesh()->isConvex());
-
-    connectedVertexIndices.resize(worldSpaceMesh->getModelSpaceMesh()->getVertices().size());
-    for (const auto &indexTriangle: worldSpaceMesh->getModelSpaceMesh()->getTriangles()){
-        connectedVertexIndices.at(indexTriangle.vertexIndex0).insert(indexTriangle.vertexIndex1);
-        connectedVertexIndices.at(indexTriangle.vertexIndex0).insert(indexTriangle.vertexIndex2);
-        connectedVertexIndices.at(indexTriangle.vertexIndex1).insert(indexTriangle.vertexIndex2);
-        connectedVertexIndices.at(indexTriangle.vertexIndex1).insert(indexTriangle.vertexIndex0);
-        connectedVertexIndices.at(indexTriangle.vertexIndex2).insert(indexTriangle.vertexIndex0);
-        connectedVertexIndices.at(indexTriangle.vertexIndex2).insert(indexTriangle.vertexIndex1);
-    }
+GJKMesh::GJKMesh(const WorldSpaceMesh* worldSpaceMesh): worldSpaceMesh(worldSpaceMesh), startVertexIndex(0) {
+    assert(worldSpaceMesh->getModelSpaceMesh()->isConvex() && "Should only construct a GJKMesh if we know this mesh is actually convex!");
 }
 
 glm::vec3 GJKMesh::computeSupport(const glm::vec3 &direction) const {
 
     auto& transformation = worldSpaceMesh->getModelTransformation();
+    auto& connectedVertexIndices = worldSpaceMesh->getModelSpaceMesh()->getConnectedVertexIndices();
     auto& vertices = worldSpaceMesh->getModelSpaceMesh()->getVertices();
 
     auto modelSpaceDirection = transformation.inverseTransformVector(direction);
@@ -377,8 +524,15 @@ glm::vec3 GJKMesh::computeSupport(const glm::vec3 &direction) const {
         currentVertexIndex = nextVertexIndex;
         currentSupport = nextSupport;
         visitedVertexIndices.insert(currentVertexIndex);
-
     }
+
+#ifndef NDEBUG
+    // Assert there is no vertex that has better support (However, this might happen for "broken" meshes, computing the convex hull can be a remedy here)
+    for (const auto &vertex: vertices){
+        assert(glm::dot(vertex, modelSpaceDirection) <= currentSupport);
+    }
+#endif
+
     this->startVertexIndex = currentVertexIndex;
     return worldSpaceMesh->getModelTransformation().transformVertex(vertices.at(currentVertexIndex));
 }

@@ -6,9 +6,9 @@
 #define MESHCORE2_TRIANGLE_H
 
 struct IndexTriangle{
-    const unsigned int vertexIndex0;
-    const unsigned int vertexIndex1;
-    const unsigned int vertexIndex2;
+    const size_t vertexIndex0;
+    const size_t vertexIndex1;
+    const size_t vertexIndex2;
 };
 
 #endif //MESHCORE2_TRIANGLE_H

@@ -6,7 +6,7 @@
 #define MESHCORE_INDEXEDGE_H
 
 struct IndexEdge{
-    const unsigned int vertexIndex0;
-    const unsigned int vertexIndex1;
+    const size_t vertexIndex0;
+    const size_t vertexIndex1;
 };
 #endif //MESHCORE_INDEXEDGE_H
