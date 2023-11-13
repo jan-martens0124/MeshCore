@@ -6,6 +6,7 @@
 #include "../geometric/GJK.h"
 #include "../acceleration/CachingBoundsTreeFactory.h"
 #include "../acceleration/AABBVolumeHierarchy.h"
+#include <tbb/parallel_for.h>
 
 namespace Intersection {
 
@@ -55,13 +56,9 @@ namespace Intersection {
 #endif
 
         auto numOuterLoop =  worldSpaceMeshA.getModelSpaceMesh()->getTriangles().size();
-        bool meshIntersects = false;
-//    omp_set_num_threads(std::min(128u, numOuterLoop));
-#pragma omp parallel
-        {
-#pragma omp for
-            for(auto i=0; i<numOuterLoop; i++){
-//    for (IndexTriangle thisTriangle: worldSpaceMeshA.modelSpaceMesh->getTriangles()) {
+
+        tbb::parallel_for(tbb::blocked_range<int>(0,numOuterLoop), [&](tbb::blocked_range<int> r) {
+            for (int i = r.begin(); i < r.end(); ++i) {
                 IndexTriangle thisTriangle = worldSpaceMeshA.getModelSpaceMesh()->getTriangles()[i];
 
                 Transformation thisModelTransformation = worldSpaceMeshA.getModelTransformation();
@@ -79,13 +76,12 @@ namespace Intersection {
                     Vertex otherWorldSpaceVertex2 = otherModelTransformation.transformVertex(worldSpaceMeshB.getModelSpaceMesh()->getVertices()[otherTriangle.vertexIndex2]);
                     bool intersects = Intersection::intersect(VertexTriangle(otherWorldSpaceVertex0, otherWorldSpaceVertex1, otherWorldSpaceVertex2), VertexTriangle(worldSpaceVertex0, worldSpaceVertex1, worldSpaceVertex2));
                     if(intersects){
-                        meshIntersects |= 1;
-                        break;
+                        return true;
                     }
                 }
             }
-        }
-        return meshIntersects;
+        });
+        return false;
     }
 
     bool inside(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB){

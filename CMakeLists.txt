@@ -35,6 +35,10 @@ link_libraries(GLEW::GLEW)
 find_package(GSL REQUIRED)
 link_libraries(GSL::gsl)
 
+### TBB ###
+find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
+link_libraries(TBB::tbb TBB::tbbmalloc)
+
 file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp)
 
 add_library(MeshCore STATIC ${SOURCES})
