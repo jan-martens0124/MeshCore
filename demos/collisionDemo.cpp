@@ -7,6 +7,7 @@
 #include "rendering/ApplicationWindow.h"
 #include <thread>
 #include "acceleration/AABBOctree.h"
+#include "utility/random.h"
 
 void run(RenderWidget* renderWidget);
 
