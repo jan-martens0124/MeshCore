@@ -8,9 +8,9 @@
 
 #include <thread>
 #include <atomic>
+#include <vector>
 #include "AbstractTaskObserver.h"
 #include "../localsearch/AbstractSolution.h"
-#include <boost/random.hpp>
 
 class AbstractTask {
 private:

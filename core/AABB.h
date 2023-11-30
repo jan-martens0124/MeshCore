@@ -17,7 +17,11 @@ private:
 public:
     MC_FUNC_QUALIFIER AABB(): minimum(), maximum(){};
 
-    MC_FUNC_QUALIFIER AABB(Vertex minimum, Vertex maximum): minimum(minimum), maximum(maximum) {}
+    MC_FUNC_QUALIFIER AABB(Vertex minimum, Vertex maximum): minimum(minimum), maximum(maximum) {
+        assert(minimum.x <= maximum.x);
+        assert(minimum.y <= maximum.y);
+        assert(minimum.z <= maximum.z);
+    }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getMinimum() const {
         return this->minimum;

@@ -2,8 +2,8 @@
 // Created by Jonas on 20/05/2022.
 //
 
-#ifndef OPTIXMESHCORE_QUATERNION_H
-#define OPTIXMESHCORE_QUATERNION_H
+#ifndef MESHCORE_QUATERNION_H
+#define MESHCORE_QUATERNION_H
 
 #include "Core.h"
 #include <glm/gtc/quaternion.hpp>
@@ -57,4 +57,4 @@ public:
     }
 
 };
-#endif //OPTIXMESHCORE_QUATERNION_H
+#endif //MESHCORE_QUATERNION_H

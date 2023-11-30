@@ -5,6 +5,7 @@
 #include "RenderWidget.h"
 #include <QtWidgets>
 #include <iomanip>
+#include <sstream>
 #include "forms/ui_renderwidget.h"
 #include "RenderModelControlWidget.h"
 #include "RenderGroupControlWidget.h"

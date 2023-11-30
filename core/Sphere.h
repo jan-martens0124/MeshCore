@@ -2,8 +2,8 @@
 // Created by Jonas on 1/07/2022.
 //
 
-#ifndef OPTIXMESHCORE_SPHERE_H
-#define OPTIXMESHCORE_SPHERE_H
+#ifndef MESHCORE_SPHERE_H
+#define MESHCORE_SPHERE_H
 
 #include "Vertex.h"
 #include "Core.h"
@@ -87,4 +87,4 @@ public:
     }
 };
 
-#endif //OPTIXMESHCORE_SPHERE_H
+#endif //MESHCORE_SPHERE_H

@@ -2,8 +2,8 @@
 // Created by Jonas on 15/03/2022.
 //
 
-#ifndef OPTIXMESHCORE_OBB_H
-#define OPTIXMESHCORE_OBB_H
+#ifndef MESHCORE_OBB_H
+#define MESHCORE_OBB_H
 
 #include "AABB.h"
 #include "Quaternion.h"
@@ -37,7 +37,6 @@ public:
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getCenter() const {
-
         return this->rotation.rotateVertex(aabb.getCenter());
     }
 
@@ -62,4 +61,4 @@ public:
     }
 };
 
-#endif //OPTIXMESHCORE_OBB_H
+#endif //MESHCORE_OBB_H

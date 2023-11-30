@@ -6,7 +6,7 @@
 #define MESHCORE_ABSTRACTTASKOBSERVER_H
 
 
-#include "../localsearch/AbstractLocalSearch.h"
+#include "../localsearch/AbstractSolution.h"
 #include <iostream>
 
 class AbstractTaskObserver {

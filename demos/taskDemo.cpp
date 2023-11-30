@@ -7,6 +7,7 @@
 #include "rendering/ApplicationWindow.h"
 #include "utility/FileParser.h"
 #include "rendering/RenderSphere.h"
+#include "utility/random.h"
 
 class DummySolution: public AbstractSolution{
 
