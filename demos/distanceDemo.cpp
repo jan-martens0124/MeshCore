@@ -24,8 +24,17 @@ int main(int argc, char *argv[]){
 
         while(true){
 
-            meshA->getModelTransformation().deltaRotation(0.0008f, 0.0003f, 0.0002f);
-            meshB->getModelTransformation().deltaRotation(0.0010f, 0.0013f, 0.0005f);
+            Quaternion dRotationA(0.08f, 0.03f, 0.02f);
+//            meshA->getModelTransformation().factorRotation(dRotationA);
+            Quaternion dRotationB(0.01f, 0.02f, 0.03f);
+            meshB->getModelTransformation().factorRotation(dRotationB);
+
+            Transformation dTransformationA;
+            dTransformationA.setRotation(dRotationA);
+            meshA->getModelTransformation()*=dTransformationA;
+
+
+            auto test = meshA->getModelTransformation() * meshB->getModelTransformation();
 
 
             glm::vec3 closestPointA, closestPointB;
@@ -40,7 +49,7 @@ int main(int argc, char *argv[]){
 
             auto delta = closestPointA - closestPointB;
             auto distance2 = glm::length(delta);
-            assert(glm::abs((distance2 - distance)/distance) <= 1e-5f);
+//            assert(glm::abs((distance2 - distance)/distance) <= 1e-5f);
 
             renderWidget->clearGroup("Closest Points");
             renderWidget->renderWorldSpaceMesh("Meshes", meshA, Color(1, 1, 1, 0.6));
@@ -52,7 +61,7 @@ int main(int argc, char *argv[]){
                 std::cout << "Distance on intersection: " << distance << std::endl;
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     });
 

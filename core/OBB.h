@@ -22,7 +22,7 @@ public:
     MC_FUNC_QUALIFIER OBB(const AABB& aabb, const Quaternion& rotation): aabb(aabb), rotation(rotation){}
 
     MC_FUNC_QUALIFIER OBB(const AABB& aabb, const Transformation& transformation) {
-        this->rotation = Quaternion(transformation.getYaw(), transformation.getPitch(), transformation.getRoll());
+        this->rotation = transformation.getRotation();
         auto rotatedTranslation = this->rotation.inverseRotateVertex(transformation.getPosition());
         auto scale = transformation.getScale();
         this->aabb = AABB(aabb.getMinimum()*scale+rotatedTranslation, aabb.getMaximum()*scale+rotatedTranslation);

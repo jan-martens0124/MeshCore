@@ -33,7 +33,8 @@ std::shared_ptr<ModelSpaceMesh> FileParser::loadMeshFile(const std::string &file
     std::locale::global(std::locale("en_US.UTF-8"));
 
     if(!std::filesystem::exists(filePath)){
-        std::cout << "Warning: File " << filePath << " does not exist!" << std::endl;
+        auto absolutePath = std::filesystem::absolute(filePath);
+        std::cout << "Warning: File " << absolutePath << " does not exist!" << std::endl;
         return std::make_shared<ModelSpaceMesh>(ModelSpaceMesh(std::vector<Vertex>(), std::vector<IndexTriangle>()));
     }
 

@@ -45,9 +45,9 @@ RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderMode
             this->ui->xLineEdit->setText(QString::number(newTransformation.getPosition().x));
             this->ui->yLineEdit->setText(QString::number(newTransformation.getPosition().y));
             this->ui->zLineEdit->setText(QString::number(newTransformation.getPosition().z));
-            this->ui->yawLineEdit->setText(QString::number(newTransformation.getYaw()));
-            this->ui->pitchLineEdit->setText(QString::number(newTransformation.getPitch()));
-            this->ui->rollLineEdit->setText(QString::number(newTransformation.getRoll()));
+            this->ui->yawLineEdit->setText(QString::number(newTransformation.getRotation().getYaw()));
+            this->ui->pitchLineEdit->setText(QString::number(newTransformation.getRotation().getPitch()));
+            this->ui->rollLineEdit->setText(QString::number(newTransformation.getRotation().getRoll()));
         });
     });
 
@@ -66,20 +66,25 @@ RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderMode
             renderModel->setTransformation(transformation);
         }
     });
+
+    this->ui->yawLineEdit->setEnabled(false);
+    this->ui->pitchLineEdit->setEnabled(false);
+    this->ui->rollLineEdit->setEnabled(false);
+
     connect(this->ui->yawLineEdit, &QLineEdit::textEdited, [=](const QString& text){
-        auto transformation = renderModel->getTransformation();
-        transformation.setYaw(text.toFloat());
-        renderModel->setTransformation(transformation);
+//        auto transformation = renderModel->getTransformation();
+//        transformation.setYaw(text.toFloat());
+//        renderModel->setTransformation(transformation);
     });
     connect(this->ui->pitchLineEdit, &QLineEdit::textEdited, [=](const QString& text){
-        auto transformation = renderModel->getTransformation();
-        transformation.setPitch(text.toFloat());
-        renderModel->setTransformation(transformation);
+//        auto transformation = renderModel->getTransformation();
+//        transformation.setPitch(text.toFloat());
+//        renderModel->setTransformation(transformation);
     });
     connect(this->ui->rollLineEdit, &QLineEdit::textEdited, [=](const QString& text){
-        auto transformation = renderModel->getTransformation();
-        transformation.setRoll(text.toFloat());
-        renderModel->setTransformation(transformation);
+//        auto transformation = renderModel->getTransformation();
+//        transformation.setRoll(text.toFloat());
+//        renderModel->setTransformation(transformation);
     });
     connect(this->ui->xLineEdit, &QLineEdit::textEdited, [=](const QString& text){
         auto transformation = renderModel->getTransformation();
@@ -102,9 +107,9 @@ RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderMode
     this->ui->xLineEdit->setText(QString::number(renderModel->getTransformation().getPosition().x));
     this->ui->yLineEdit->setText(QString::number(renderModel->getTransformation().getPosition().y));
     this->ui->zLineEdit->setText(QString::number(renderModel->getTransformation().getPosition().z));
-    this->ui->yawLineEdit->setText(QString::number(renderModel->getTransformation().getYaw()));
-    this->ui->pitchLineEdit->setText(QString::number(renderModel->getTransformation().getPitch()));
-    this->ui->rollLineEdit->setText(QString::number(renderModel->getTransformation().getRoll()));
+    this->ui->yawLineEdit->setText(QString::number(renderModel->getTransformation().getRotation().getYaw()));
+    this->ui->pitchLineEdit->setText(QString::number(renderModel->getTransformation().getRotation().getPitch()));
+    this->ui->rollLineEdit->setText(QString::number(renderModel->getTransformation().getRotation().getRoll()));
 
 
     this->renderModel->addListener(listener);

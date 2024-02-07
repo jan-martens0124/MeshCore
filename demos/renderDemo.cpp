@@ -38,7 +38,6 @@ void run(RenderWidget* renderWidget){
     glm::vec3 position(10.0f,0,0);
 
     bananaWorldSpaceMesh->getModelTransformation().setPosition(position);
-    bananaWorldSpaceMesh->getModelTransformation().setYaw(1.0f);
     rockWorldSpaceMesh->getModelTransformation().setScale(0.5f);
     rockWorldSpaceMesh->getModelTransformation().setPosition(glm::vec3(0,0,-15));
 

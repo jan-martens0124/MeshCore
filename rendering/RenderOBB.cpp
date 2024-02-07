@@ -124,7 +124,8 @@ void RenderOBB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMat
         this->ambientShader->bind();
 
         // Set MVP matrix uniform
-        const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix() * this->obbRotation.getMatrix();
+        const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix() *
+                this->obbRotation.computeMatrix();
         this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix",
                                              QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
 
