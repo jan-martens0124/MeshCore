@@ -67,6 +67,11 @@ public:
     void addGroupListener(const std::string& group, const std::shared_ptr<AbstractRenderGroupListener>& listener);
     void removeGroupListener(const std::string& group, const std::shared_ptr<AbstractRenderGroupListener>& listener);
 
+    int getWidth() const;
+    int getHeight() const;
+
+    std::vector<uint8_t> capturePixelBufferSlot();
+
 protected:
     void initializeGL() override;
     void resizeGL(int w, int h) override;
@@ -94,6 +99,11 @@ private slots:
     void captureSceneSlot();
     void captureSceneToFileSlot(const QString& fileName);
     void captureAnimationSlot();
+
+    void captureLinearAnimationSlot(const std::string &group, std::shared_ptr<WorldSpaceMesh>& object,
+                                    const Transformation &initialTransformation, const Transformation &finalTransformation,
+                                    const Color &initialColor, const Color &finalColor, const QString &fileName,
+                                    int steps, int delay, RenderWidget *renderWidget);
 
 private:
     std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>& getOrInsertRenderModelsMap(const std::string &group) const;

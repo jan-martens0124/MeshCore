@@ -41,7 +41,11 @@ link_libraries(GSL::gsl)
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
 link_libraries(TBB::tbb TBB::tbbmalloc)
 
-file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp)
+### giflib ###
+find_package(GIF REQUIRED)
+link_libraries(GIF::GIF)
+
+file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp external/gifencoder/*.cpp)
 
 add_library(MeshCore STATIC ${SOURCES})
 
