@@ -37,6 +37,7 @@ private:
 
 public:
 
+    void captureScene() const;
     void captureAnimation() const;
 
     void captureLinearAnimation(const std::string &group, std::shared_ptr<WorldSpaceMesh> &object,
