@@ -80,7 +80,7 @@ public:
         return !(other == *this);
     }
 
-    MC_FUNC_QUALIFIER const AABB getTranslated(const glm::vec3 &translation) const {
+    MC_FUNC_QUALIFIER [[nodiscard]] const AABB getTranslated(const glm::vec3 &translation) const {
         return {minimum + translation, maximum + translation};
     }
 };
