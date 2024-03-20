@@ -6,7 +6,6 @@
 #define MESHCORE_TRANSFORMATION_H
 
 #include <glm/glm.hpp>
-#include <glm/gtx/euler_angles.hpp>
 #include "Vertex.h"
 #include "Core.h"
 #include "Quaternion.h"
@@ -15,32 +14,71 @@ class Transformation {
 
 private:
     float scale;
-    float yaw;
-    float pitch;
-    float roll;
+    Quaternion rotation;
     glm::vec3 position;
 
 private:
     mutable glm::mat4 matrix;
     mutable glm::mat4 inverseMatrix;
-    mutable glm::mat4 rotationMatrix;
     mutable bool validMatrix = false;
     mutable bool validInverseMatrix = false;
-    mutable bool validRotationMatrix = false;
 
 public:
-    MC_FUNC_QUALIFIER Transformation(): position(), scale(1.0f), yaw(0.0f), roll(0.0f), pitch(0.0f),
-                      matrix(), inverseMatrix(), rotationMatrix() {}
+    MC_FUNC_QUALIFIER Transformation(): position(), scale(1.0f), rotation(), matrix(), inverseMatrix() {}
+
+    MC_FUNC_QUALIFIER explicit Transformation(const Quaternion quaternion): position(), scale(1.0f), rotation(quaternion), matrix(), inverseMatrix() {}
 
     MC_FUNC_QUALIFIER bool operator==(const Transformation &other) const {
         return scale == other.scale &&
-               yaw == other.yaw &&
-               pitch == other.pitch &&
-               roll == other.roll &&
+               rotation == other.rotation &&
                position == other.position;
     }
     MC_FUNC_QUALIFIER bool operator!=(const Transformation &other) const {
         return !(other == *this);
+    }
+
+    MC_FUNC_QUALIFIER Transformation operator*(const Transformation &other) const {
+        Transformation result = *this;
+        result *= other;
+
+#if !NDEBUG
+        auto expectedResultMatrix = this->getMatrix() * other.getMatrix();
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[0], result.getMatrix()[0], glm::vec4(1e-5f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[1], result.getMatrix()[1], glm::vec4(1e-5f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[2], result.getMatrix()[2], glm::vec4(1e-5f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[3], result.getMatrix()[3], glm::vec4(1e-5f))));
+#endif //NDEBUG
+
+        return result;
+    }
+
+    MC_FUNC_QUALIFIER void operator*=(const Transformation &other) {
+
+#if !NDEBUG
+        auto expectedResultMatrix = this->getMatrix() * other.getMatrix();
+        auto expectedRotationMatrix = this->rotation.computeMatrix() * other.getRotation().computeMatrix();
+#endif
+
+        this->position = this->transformVertex(other.position);
+        this->scale *= other.scale;
+        this->rotation *= other.rotation;
+        this->invalidateMatrices();
+
+#if !NDEBUG
+        auto resultRotationMatrix = this->rotation.computeMatrix();
+        assert(glm::all(glm::epsilonEqual(expectedRotationMatrix[0], resultRotationMatrix[0], glm::vec4(1e-4f))));
+        assert(glm::all(glm::epsilonEqual(expectedRotationMatrix[1], resultRotationMatrix[1], glm::vec4(1e-4f))));
+        assert(glm::all(glm::epsilonEqual(expectedRotationMatrix[2], resultRotationMatrix[2], glm::vec4(1e-4f))));
+#endif //NDEBUG
+
+#if !NDEBUG
+        assert(glm::epsilonEqual(glm::length(glm::fquat(this->rotation)),1.0f,1e-5f)); // Prefer to keep quaternions normalized
+        auto resultMatrix = this->getMatrix();
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[0], resultMatrix[0], glm::vec4(1e-5f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[1], resultMatrix[1], glm::vec4(1e-5f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[2], resultMatrix[2], glm::vec4(1e-5f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[3], resultMatrix[3], glm::vec4(1e-5f))));
+#endif //NDEBUG
     }
 
 private:
@@ -48,34 +86,25 @@ private:
         validMatrix = false;
         validInverseMatrix = false;
     }
-    MC_FUNC_QUALIFIER void invalidateRotationMatrix() const {
-        this->validRotationMatrix = false;
-        this->invalidateMatrices();
-    }
-
-public:
-    MC_FUNC_QUALIFIER glm::mat4 getRotationMatrix() const {
-        if(!validRotationMatrix){
-            rotationMatrix = glm::eulerAngleXYZ(roll, pitch, yaw);
-        }
-        return rotationMatrix;
-    }
 
 public:
 
     MC_FUNC_QUALIFIER glm::mat4 getMatrix() const {
-        if(!validMatrix){
+        if(!this->validMatrix){
             glm::mat4 newModelTransformationMatrix(1.0f);
             newModelTransformationMatrix = glm::translate(newModelTransformationMatrix, position);
             newModelTransformationMatrix = glm::scale(newModelTransformationMatrix, glm::vec3(scale));
-            newModelTransformationMatrix *= this->getRotationMatrix();
+            newModelTransformationMatrix *= rotation.computeMatrix();
             this->matrix = newModelTransformationMatrix;
+            this->validMatrix = true;
         }
         return matrix;
     }
+
     MC_FUNC_QUALIFIER glm::mat4 getInverseMatrix() const {
-        if(!validInverseMatrix){
-            inverseMatrix = glm::inverse(this->getMatrix());
+        if(!this->validInverseMatrix){
+            this->inverseMatrix = glm::inverse(this->getMatrix());
+            this->validInverseMatrix = true;
         }
         return inverseMatrix;
     }
@@ -83,66 +112,34 @@ public:
     MC_FUNC_QUALIFIER float getScale() const {
         return scale;
     }
+
     MC_FUNC_QUALIFIER void setScale(float newScale) {
         this->invalidateMatrices();
         this->scale = newScale;
     }
+
     MC_FUNC_QUALIFIER void deltaScale(float deltaScale) {
         this->invalidateMatrices();
         this->scale += deltaScale;
     }
+
     MC_FUNC_QUALIFIER void factorScale(float scaleFactor){
         this->invalidateMatrices();
         this->scale *= scaleFactor;
     }
 
-    MC_FUNC_QUALIFIER void setRotation(float newYaw, float newPitch, float newRoll) {
-        this->invalidateRotationMatrix();
-        this->yaw = newYaw;
-        this->pitch = newPitch;
-        this->roll = newRoll;
-    }
-    MC_FUNC_QUALIFIER void deltaRotation(float deltaYaw, float deltaPitch, float deltaRoll) {
-        this->invalidateRotationMatrix();
-        this->yaw += deltaYaw;
-        this->pitch += deltaPitch;
-        this->roll += deltaRoll;
+    MC_FUNC_QUALIFIER void factorRotation(const Quaternion& quaternion) {
+        this->invalidateMatrices();
+        this->rotation *= quaternion;
     }
 
-    MC_FUNC_QUALIFIER float getYaw() const {
-        return yaw;
-    }
-    MC_FUNC_QUALIFIER void setYaw(float newYaw) {
-        this->invalidateRotationMatrix();
-        this->yaw = newYaw;
-    }
-    MC_FUNC_QUALIFIER void deltaYaw(float deltaYaw) {
-        this->invalidateRotationMatrix();
-        this->yaw += deltaYaw;
+    MC_FUNC_QUALIFIER void setRotation(Quaternion newRotation) {
+        this->invalidateMatrices();
+        this->rotation = newRotation;
     }
 
-    MC_FUNC_QUALIFIER float getPitch() const {
-        return pitch;
-    }
-    MC_FUNC_QUALIFIER void setPitch(float newPitch) {
-        this->invalidateRotationMatrix();
-        this->pitch = newPitch;
-    }
-    MC_FUNC_QUALIFIER void deltaPitch(float deltaPitch) {
-        this->invalidateRotationMatrix();
-        this->pitch += deltaPitch;
-    }
-
-    MC_FUNC_QUALIFIER float getRoll() const {
-        return roll;
-    }
-    MC_FUNC_QUALIFIER void setRoll(float newRoll) {
-        this->invalidateRotationMatrix();
-        this->roll = newRoll;
-    }
-    MC_FUNC_QUALIFIER void deltaRoll(float deltaRoll) {
-        this->invalidateRotationMatrix();
-        this->roll += deltaRoll;
+    MC_FUNC_QUALIFIER const Quaternion &getRotation() const {
+        return rotation;
     }
 
     MC_FUNC_QUALIFIER const glm::vec3& getPosition() const {
@@ -204,29 +201,14 @@ public:
 
     MC_FUNC_QUALIFIER static Transformation fromRotationMatrix(const glm::mat3& rotationMatrix){
 
+        Quaternion rotation(rotationMatrix);
         Transformation returnObject;
-        {
-            float pitch = glm::asin(glm::clamp(rotationMatrix[2][0], -1.0f, 1.0f)); // pitch?
-
-            float roll;
-            float yaw;
-
-            if(glm::abs(rotationMatrix[2][0]) < (1-1e-8)){
-                roll = std::atan2(-rotationMatrix[2][1], rotationMatrix[2][2]);
-                yaw = std::atan2(-rotationMatrix[1][0], rotationMatrix[0][0]);
-            }
-            else{
-                yaw = 0.0f;
-                roll = std::atan2(rotationMatrix[1][2], rotationMatrix[1][1]);
-            }
-
-            returnObject.setRotation(yaw, pitch, roll);
-        }
-
+        returnObject.setRotation(rotation);
+        
 #if !NDEBUG
 
         // Assert the matrices are equal, with at least a limited level of accuracy
-        auto testRotationMatrix = glm::mat3(returnObject.getRotationMatrix());
+        auto testRotationMatrix = glm::mat3(returnObject.rotation.computeMatrix());
 
         assert(glm::all(glm::epsilonEqual(testRotationMatrix[0],rotationMatrix[0], 0.0001f)));
         assert(glm::all(glm::epsilonEqual(testRotationMatrix[1],rotationMatrix[1], 0.0001f)));
@@ -236,15 +218,16 @@ public:
         return returnObject;
     }
 
-    MC_FUNC_QUALIFIER static Transformation fromEulerAngles(float pitch, float yaw, float roll) {
+    MC_FUNC_QUALIFIER static Transformation interpolate(const Transformation& a, const Transformation& b, float t){
         Transformation returnObject;
-        returnObject.setRotation(yaw, pitch, roll);
+
+        // When interpolating a transformation, we interpolate it's meaningful components separately
+        returnObject.position = glm::mix(a.position, b.position, t);
+        returnObject.scale = glm::mix(a.scale, b.scale, t);
+        returnObject.rotation = Quaternion(glm::slerp(a.rotation, b.rotation, t)); // Spherical linear interpolation
         return returnObject;
     }
 
-    MC_FUNC_QUALIFIER static Transformation fromQuaternion(const Quaternion& quaternion){
-        return Transformation::fromRotationMatrix(quaternion.getMatrix());
-    }
 };
 
 #endif //MESHCORE_TRANSFORMATION_H

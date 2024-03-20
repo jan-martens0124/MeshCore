@@ -143,7 +143,7 @@ public:
         if(pcaOBB.getVolume() <= modelSpaceMesh->getBounds().getVolume()){
             return pcaOBB;
         }
-        else return {modelSpaceMesh->getBounds(), Quaternion(Transformation().getRotationMatrix())};
+        else return {modelSpaceMesh->getBounds(), Quaternion()};
     }
 
 private:

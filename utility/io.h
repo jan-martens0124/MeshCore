@@ -30,9 +30,7 @@ static std::ostream & operator<<(std::ostream & os, const Sphere& sphere){
 static std::ostream& operator<<(std::ostream& o, const Transformation& transformation) {
     o << "\tScale: " << transformation.getScale() << "\n";
     o << "\tPosition: " << transformation.getPosition() << "\n";
-    o << "\tYaw: " << transformation.getYaw() << "\n";
-    o << "\tPitch: " << transformation.getPitch() << "\n";
-    o << "\tRoll: " << transformation.getRoll() << "\n";
+    o << "\tRotation: quat(" << transformation.getRotation().x << "," << transformation.getRotation().y << "," << transformation.getRotation().z << ","  << transformation.getRotation().w << "," << ")\n";
     auto transform = transformation.getMatrix();
     o << "\n\t[" << transform.operator[](0).x << "," << transform.operator[](1).x << "," << transform.operator[](2).x << "," << transform.operator[](3).x << "\n\t"
                  << transform.operator[](0).y << "," << transform.operator[](1).y << "," << transform.operator[](2).y << "," << transform.operator[](3).y << "\n\t"

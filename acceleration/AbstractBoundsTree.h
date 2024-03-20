@@ -509,7 +509,7 @@ bool AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::hasMinimumDis
     ClosestTriangleQueryResult queryResult;
     queryResult.lowerDistanceBoundSquared = minimumDistanceSquared;
     queryClosestTriangle(triangle, &queryResult);
-    return queryResult.closestTriangle; // True if the result is set, meaning a triangle was found < minimumDistanceSquared
+    return queryResult.closestTriangle != nullptr; // False if the result is set, meaning a triangle was found < minimumDistanceSquared
 }
 
 template<class Bounds, unsigned int Degree, bool UniqueTriangleAssignment>

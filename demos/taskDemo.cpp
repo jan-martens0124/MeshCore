@@ -68,10 +68,10 @@ public:
 
             // 0. Sample a random change to position and orientation
             const Transformation originalTransformation = item->getModelTransformation();
-            item->getModelTransformation().deltaPosition(glm::vec3(random.nextFloat(-0.5f, 0.5f), random.nextFloat(-0.5f, 0.5f), random.nextFloat(-0.5f, 0.5f)));
-            item->getModelTransformation().deltaYaw(random.nextFloat(-0.5f, 0.5f));
-            item->getModelTransformation().deltaPitch(random.nextFloat(-0.5f, 0.5f));
-            item->getModelTransformation().deltaRoll(random.nextFloat(-0.5f, 0.5f));
+            auto translation = container->getModelSpaceMesh()->getBounds().getHalf() * glm::vec3(random.nextFloat(-0.1f, 0.1f), random.nextFloat(-0.1f, 0.1f), random.nextFloat(-0.1f, 0.1f));
+            item->getModelTransformation().deltaPosition(translation);
+            Quaternion randomRotation(random.nextFloat(-0.1f, 0.1f), random.nextFloat(-0.1f, 0.1f), random.nextFloat(-0.1f, 0.1f));
+            item->getModelTransformation().factorRotation(randomRotation);
 
             // 1. Check if the new transformation is feasible
             if (solution->isFeasible()){

@@ -37,9 +37,12 @@ private:
 
 public:
 
-    void captureScene();
-    void captureAnimation();
-    void captureSceneToFile(const std::string& fileName);
+    void captureScene() const;
+    void captureAnimation() const;
+
+    void captureLinearAnimation(const std::string &group, std::shared_ptr<WorldSpaceMesh> &object,
+                                const Transformation &initialTransformation, const Transformation &finalTransformation,
+                                const Color &initialColor, const Color &finalColor, const QString &fileName, int steps, int delay);
 
     void clear();
     void clearGroup(const std::string &group);
@@ -78,11 +81,13 @@ public:
     void notifyProgress(float progress) override;
     void notifyStatus(const std::string &status) override;
     void notifySolution(const std::shared_ptr<const AbstractSolution>& solution) override;
+
 private:
     AbstractTask* currentTask = nullptr;
     std::function<void(RenderWidget* renderWidget, const std::shared_ptr<const AbstractSolution>& solution)> onSolutionNotified  = {};
     std::thread timerThread{};
     std::atomic<bool> taskRunning = false;
+
 private slots:
     [[maybe_unused]] void updateProgressBarSlot(int progress);
     [[maybe_unused]] void setStartButtonEnabledSlot(bool enabled);

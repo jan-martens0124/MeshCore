@@ -3,12 +3,14 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 ### CPP ###
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif()
 
 ### GLM ###
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 find_package(glm REQUIRED)
 link_libraries(glm::glm)
 
@@ -39,13 +41,17 @@ link_libraries(GSL::gsl)
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
 link_libraries(TBB::tbb TBB::tbbmalloc)
 
-file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp)
+### giflib ###
+find_package(GIF REQUIRED)
+link_libraries(GIF::GIF)
+
+file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp external/gifencoder/*.cpp)
 
 add_library(MeshCore STATIC ${SOURCES})
 
 ### SimpleRenderDemo.exe ###
 add_executable(A-SimpleRenderDemo demos/renderDemo.cpp ${SOURCES})
-target_link_libraries(A-SimpleRenderDemo MeshCore)
+target_link_libraries(A-SimpleRenderDemo PRIVATE MeshCore)
 
 ### SimpleCollisionDemo.exe ###
 add_executable(B-SimpleCollisionDemo demos/collisionDemo.cpp ${SOURCES})
@@ -62,6 +68,10 @@ target_link_libraries(D-ConvexHull MeshCore)
 ### DistanceDemo.exe ###
 add_executable(E-DistanceDemo demos/distanceDemo.cpp ${SOURCES})
 target_link_libraries(E-DistanceDemo MeshCore)
+
+### AnimationDemo.exe ###
+add_executable(F-AnimationDemo demos/animationDemo.cpp ${SOURCES})
+target_link_libraries(F-AnimationDemo MeshCore)
 
 ### Tests ###
 enable_testing()

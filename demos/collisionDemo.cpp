@@ -52,11 +52,10 @@ void run(RenderWidget* renderWidget){
 
         // 0. Sample a random change to position and orientation
         const Transformation originalTransformation = itemWorldSpaceMesh->getModelTransformation();
-
-        itemWorldSpaceMesh->getModelTransformation().deltaPosition(glm::vec3(random.nextFloat()-0.5f, random.nextFloat()-0.5f, random.nextFloat()-0.5f));
-        itemWorldSpaceMesh->getModelTransformation().deltaYaw(random.nextFloat()-0.5f);
-        itemWorldSpaceMesh->getModelTransformation().deltaPitch(random.nextFloat()-0.5f);
-        itemWorldSpaceMesh->getModelTransformation().deltaRoll(random.nextFloat()-0.5f);
+        auto translation = containerWorldSpaceMesh->getModelSpaceMesh()->getBounds().getHalf() * glm::vec3(random.nextFloat(-0.1f, 0.1f), random.nextFloat(-0.1f, 0.1f), random.nextFloat(-0.1f, 0.1f));
+        itemWorldSpaceMesh->getModelTransformation().deltaPosition(translation);
+        Quaternion randomRotation(random.nextFloat(-0.1f, 0.1f), random.nextFloat(-0.1f, 0.1f), random.nextFloat(-0.1f, 0.1f));
+        itemWorldSpaceMesh->getModelTransformation().factorRotation(randomRotation);
 
         // 1. Check if at least one of the vertices is inside the container
         {

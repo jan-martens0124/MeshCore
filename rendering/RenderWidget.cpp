@@ -53,6 +53,21 @@ void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::sha
                               Q_ARG(RenderWidget*, this));
 }
 
+void RenderWidget::captureLinearAnimation(const std::string& group, std::shared_ptr<WorldSpaceMesh>& object, const Transformation& initialTransformation, const Transformation& finalTransformation, const Color& initialColor, const Color& finalColor, const QString& fileName, int steps, int delay){
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureLinearAnimationSlot",
+                              Qt::BlockingQueuedConnection,
+                              Q_ARG(std::string, group),
+                              Q_ARG(std::shared_ptr<WorldSpaceMesh>&, object),
+                              Q_ARG(Transformation, initialTransformation),
+                              Q_ARG(Transformation, finalTransformation),
+                              Q_ARG(Color, initialColor),
+                              Q_ARG(Color, finalColor),
+                              Q_ARG(QString, fileName),
+                              Q_ARG(int, steps),
+                              Q_ARG(int, delay),
+                              Q_ARG(RenderWidget*, this));
+}
+
 void RenderWidget::addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel) {
     auto groupTreeWidgetItem = this->getOrAddGroupWidget(group);
     auto childTreeWidgetItem = new QTreeWidgetItem();
@@ -266,19 +281,13 @@ void RenderWidget::addOrUpdateRenderModel(const std::string& group, const std::s
                               Q_ARG(RenderWidget*, this));
 }
 
-void RenderWidget::captureScene() {
+void RenderWidget::captureScene() const {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureSceneSlot",
                               Qt::AutoConnection);
 
 }
 
-void RenderWidget::captureSceneToFile(const std::string &fileName) {
-    QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureSceneToFileSlot",
-                              Qt::AutoConnection,
-                              Q_ARG(QString, QString::fromStdString(fileName)));
-}
-
-void RenderWidget::captureAnimation() {
+void RenderWidget::captureAnimation() const {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureAnimationSlot",
                               Qt::AutoConnection);
 }
