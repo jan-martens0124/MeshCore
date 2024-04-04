@@ -168,19 +168,30 @@ std::optional<std::shared_ptr<ModelSpaceMesh>> ModelSpaceMesh::getConvexHull() c
     const auto& vertexBuffer = qhHull.getVertexBuffer();
     const auto& indexBuffer = qhHull.getIndexBuffer();
 
+    // Helper function to keep track of the vertices that should be present in the final result
     std::vector<Vertex> hullVertices;
-    hullVertices.reserve(vertexBuffer.size());
-    for(const auto& vertex: vertexBuffer){
-        hullVertices.emplace_back(vertex.x, vertex.y, vertex.z);
-    }
+    std::vector<unsigned int> vertexMapping(this->vertices.size(), -1); // Element at position i contains the index of vertex i in the hullVertices vector, -1 if not present in hullVertices
+    auto addVertexIfNotPresent = [&](unsigned int index){
+        if(vertexMapping.at(index)==-1){
+            vertexMapping.at(index) = hullVertices.size();
+            hullVertices.emplace_back(this->vertices.at(index));
+        }
+        return vertexMapping.at(index);
+    };
 
     std::vector<IndexTriangle> hullTriangles;
     hullTriangles.reserve(indexBuffer.size() / 3);
     for(int i = 0; i < indexBuffer.size(); i += 3){
-        hullTriangles.emplace_back(IndexTriangle{indexBuffer[i], indexBuffer[i + 1], indexBuffer[i + 2]});
+
+        // Put the vertices in the hullVertices vector if not present yet
+        unsigned int newIndex0 = addVertexIfNotPresent(indexBuffer[i]);
+        unsigned int newIndex1 = addVertexIfNotPresent(indexBuffer[i + 1]);
+        unsigned int newIndex2 = addVertexIfNotPresent(indexBuffer[i + 2]);
+        hullTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
     }
 
     auto hull = std::make_shared<ModelSpaceMesh>(hullVertices, hullTriangles);
+    assert(hull->getBounds() == this->getBounds() && "The convex hull should have the same bounding box as the original mesh");
     convexHull = hull;
     convexHull.value()->setName("Convex hull of " + this->getName());
     return hull;
