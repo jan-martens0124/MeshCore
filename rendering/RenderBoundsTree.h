@@ -5,7 +5,6 @@
 #ifndef MESHCORE_ABSTRACTRENDERBOUNDSTREE_H
 #define MESHCORE_ABSTRACTRENDERBOUNDSTREE_H
 
-#include <QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
 #include "../acceleration/AbstractBoundsTree.h"
 #include "RenderAABB.h"
@@ -27,19 +26,19 @@ private:
 public:
 
     template <unsigned int Degree, bool UniqueAssignment>
-    RenderBoundsTree(const AbstractBoundsTree<AABB, Degree, UniqueAssignment>& aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader);
+    RenderBoundsTree(const AbstractBoundsTree<AABB, Degree, UniqueAssignment>& aabbTree, const Transformation& transformation);
 
     template <unsigned int Degree, bool UniqueAssignment>
-    RenderBoundsTree(const AbstractBoundsTree<OBB, Degree, UniqueAssignment>& obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader);
+    RenderBoundsTree(const AbstractBoundsTree<OBB, Degree, UniqueAssignment>& obbTree, const Transformation& transformation);
 
     template <unsigned int Degree, bool UniqueAssignment>
-    RenderBoundsTree(const AbstractBoundsTree<Sphere, Degree, UniqueAssignment>& sphereTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader);
+    RenderBoundsTree(const AbstractBoundsTree<Sphere, Degree, UniqueAssignment>& sphereTree, const Transformation& transformation);
 
-    void draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
+    void draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
     void setTransformation(const Transformation &transformation) override;
     void setRenderDepth(unsigned int newRenderDepth);
     unsigned int getMaximumDepth();
-    void setColor(const Color &newColor) override;
+    void setMaterial(const PhongMaterial &newMaterial) override;
 
     RenderModelDetailDialog *createRenderModelDetailDialog(QWidget* parent) override;
 
@@ -48,35 +47,35 @@ public:
     unsigned int getRenderDepth() const;
 
 private:
-    void drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth);
+    void drawRecursive(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth);
 };
 
 // Only define templated functions in this header file:
 
 template <unsigned int Degree, bool UniqueAssignment>
-RenderBoundsTree::RenderBoundsTree(const AbstractBoundsTree<AABB, Degree, UniqueAssignment> &aabbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader): AbstractRenderModel(transformation, "aabbTree"), renderNodeModel(std::make_shared<RenderAABB>(aabbTree.getBounds(), transformation, ambientShader)) {
+RenderBoundsTree::RenderBoundsTree(const AbstractBoundsTree<AABB, Degree, UniqueAssignment> &aabbTree, const Transformation& transformation): AbstractRenderModel(transformation, "aabbTree"), renderNodeModel(std::make_shared<RenderAABB>(aabbTree.getBounds(), transformation)) {
     if(aabbTree.isSplit()){
         for (const auto &child : aabbTree.getChildren()){
-            if(child && !child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoundsTree>(*child, transformation, ambientShader, diffuseShader));
+            if(child && !child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoundsTree>(*child, transformation));
         }
     }
 }
 
 template <unsigned int Degree, bool UniqueAssignment>
-RenderBoundsTree::RenderBoundsTree(const AbstractBoundsTree<OBB, Degree, UniqueAssignment> &obbTree, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader): AbstractRenderModel(transformation, "obbTree"), renderNodeModel(std::make_shared<RenderOBB>(obbTree.getBounds(), transformation, ambientShader)){
+RenderBoundsTree::RenderBoundsTree(const AbstractBoundsTree<OBB, Degree, UniqueAssignment> &obbTree, const Transformation& transformation): AbstractRenderModel(transformation, "obbTree"), renderNodeModel(std::make_shared<RenderOBB>(obbTree.getBounds(), transformation)){
     if(obbTree.isSplit()){
         for (const auto &child : obbTree.getChildren()){
-            if(child && !child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoundsTree>(*child, transformation, ambientShader, diffuseShader));
+            if(child && !child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoundsTree>(*child, transformation));
         }
     }
 }
 
 template <unsigned int Degree, bool UniqueAssignment>
-RenderBoundsTree::RenderBoundsTree(const AbstractBoundsTree<Sphere, Degree, UniqueAssignment> &sphereTree, const Transformation &transformation, const std::shared_ptr<QOpenGLShaderProgram> &ambientShader, const std::shared_ptr<QOpenGLShaderProgram> &diffuseShader): AbstractRenderModel(transformation, "sphereTree"), renderNodeModel(std::make_shared<RenderSphere>(sphereTree.getBounds(), transformation, ambientShader, diffuseShader)){
-    this->setColor(Color(1.0, 1.0, 1.0, 0.1));
+RenderBoundsTree::RenderBoundsTree(const AbstractBoundsTree<Sphere, Degree, UniqueAssignment> &sphereTree, const Transformation &transformation): AbstractRenderModel(transformation, "sphereTree"), renderNodeModel(std::make_shared<RenderSphere>(sphereTree.getBounds(), transformation)){
+    this->setMaterial(PhongMaterial(Color(1.0, 1.0, 1.0, 0.1)));
     if(sphereTree.isSplit()){
         for (const auto &child : sphereTree.getChildren()){
-            if(child && !child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoundsTree>(*child, transformation, ambientShader, diffuseShader));
+            if(child && !child->isEmpty()) this->children.emplace_back(std::make_shared<RenderBoundsTree>(*child, transformation));
         }
     }
 }

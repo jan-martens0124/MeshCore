@@ -4,18 +4,18 @@
 
 #include "RenderBoundsTree.h"
 
-void RenderBoundsTree::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
-    if(this->isVisible()) this->drawRecursive(viewMatrix, projectionMatrix, lightMode, renderDepth);
+void RenderBoundsTree::draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
+    if(this->isVisible()) this->drawRecursive(openGLWidget, viewMatrix, projectionMatrix, lightMode, renderDepth);
 }
 
-void RenderBoundsTree::drawRecursive(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth) {
+void RenderBoundsTree::drawRecursive(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode, unsigned int depth) {
     if(depth > 0){
         for (const auto &child : this->children){
-            child->drawRecursive(viewMatrix, projectionMatrix, lightMode, depth-1);
+            child->drawRecursive(openGLWidget, viewMatrix, projectionMatrix, lightMode, depth-1);
         }
     }
     else if(depth == 0){
-        renderNodeModel->draw(viewMatrix, projectionMatrix, lightMode);
+        renderNodeModel->draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
     }
 }
 
@@ -46,11 +46,11 @@ unsigned int RenderBoundsTree::getMaximumDepth() {
     return depth;
 }
 
-void RenderBoundsTree::setColor(const Color &newColor) {
-    AbstractRenderModel::setColor(newColor);
-    renderNodeModel->setColor(newColor);
+void RenderBoundsTree::setMaterial(const PhongMaterial &newMaterial) {
+    AbstractRenderModel::setMaterial(newMaterial);
+    renderNodeModel->setMaterial(newMaterial);
     for (const auto &child : this->children){
-        child->setColor(newColor);
+        child->setMaterial(newMaterial);
     }
 }
 

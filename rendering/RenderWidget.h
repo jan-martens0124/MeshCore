@@ -13,6 +13,7 @@
 #include "../tasks/AbstractTaskObserver.h"
 #include "RenderBoundsTree.h"
 #include "OpenGLWidget.h"
+#include "KeyFrame.h"
 #include "../tasks/AbstractTask.h"
 #include "../acceleration/AbstractBoundsTree.h"
 #include <QWidget>
@@ -38,14 +39,20 @@ private:
 public:
 
     void captureScene() const;
+    void captureSceneToFile(const std::string& fileName) const;
     void captureAnimation() const;
 
-    void captureLinearAnimation(const std::string &group, std::shared_ptr<WorldSpaceMesh> &object,
-                                const Transformation &initialTransformation, const Transformation &finalTransformation,
-                                const Color &initialColor, const Color &finalColor, const QString &fileName, int steps, int delay);
+    void captureLinearAnimation(const Transformation &initialViewTransformation, const Transformation &finalViewTransformation,
+                                const KeyFrame &initialKeyFrame, const KeyFrame &finalKeyFrame,
+                                const QString &fileName, int steps, int delay);
+
+    void captureLinearAnimation(const Transformation &initialViewTransformation, const Transformation &finalViewTransformation, const QString &fileName, int steps, int delay);
+
 
     void clear();
     void clearGroup(const std::string &group);
+
+    void setViewTransformation(const Transformation& transformation) const;
 
 private:
     // Render generic objects that extend AbstractRenderModel
@@ -54,20 +61,22 @@ private:
 
 public:
     // Render objects with ids like meshes
-    void renderWorldSpaceMesh(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color& color = Color(1.0f));
+    void renderWorldSpaceMesh(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color& color = Color::White());
+    void renderWorldSpaceMesh(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh,  const PhongMaterial& material);
 
     template<class BoundsTree>
     void renderBoundsTree(const std::string &group, const std::string& name, const std::shared_ptr<BoundsTree>& boundsTree, const Transformation& transformation, const Color &color=Color::White()){
         QMetaObject::invokeMethod(qApp, [group, color, name, transformation, boundsTree, this](){
-            auto renderModel = std::make_shared<RenderBoundsTree>(*boundsTree, transformation, this->getOpenGLWidget()->getAmbientShader(), this->getOpenGLWidget()->getDiffuseShader());
+            auto renderModel = std::make_shared<RenderBoundsTree>(*boundsTree, transformation);
             renderModel->setName(name);
-            renderModel->setColor(color);
+            renderModel->setMaterial(PhongMaterial(color));
             this->addOrUpdateRenderModel(group, name, renderModel); // TODO replace name with actual id
         });
     }
 
     void renderBox(const std::string &group, const std::string& name, const AABB &aabb, const Transformation& transformation=Transformation(), const Color& = Color::White());
     void renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const Color &color = Color::White());
+    void renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const PhongMaterial& material = PhongMaterial(Color::White()));
     void renderTriangle(const std::string &group, const std::string& name, const VertexTriangle &triangle, const Color &color = Color::White());
     void renderLine(const std::string &group,  const std::string& name, const Vertex &vertexA, const Vertex &vertexB, const Color &color = Color::White());
     void addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel);

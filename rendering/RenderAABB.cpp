@@ -8,8 +8,9 @@
 #include <QGridLayout>
 #include <QLabel>
 #include "../utility/io.h"
+#include "OpenGLWidget.h"
 
-void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
+void RenderAABB::draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
 
     if (this->isVisible()) {
 
@@ -17,16 +18,19 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
         this->initializeOpenGLFunctions();
         this->vertexArray->bind();
         this->indexBuffer->bind();
-        this->ambientShader->bind();
+
+        auto& ambientShader = openGLWidget->getAmbientShader();
+
+        ambientShader->bind();
 
         // Set MVP matrix uniform
         const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
-        this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix",
+        ambientShader->setUniformValue("u_ModelViewProjectionMatrix",
                                              QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
 
         // Set color uniform
         QVector4D drawColor;
-        const auto color = this->getColor();
+        const auto color = this->getMaterial().getDiffuseColor();
         drawColor = QVector4D(color.r, color.g, color.b, color.a);
         if (lightMode) {
             if (glm::vec3(color) == glm::vec3(1, 1, 1)) {
@@ -35,17 +39,16 @@ void RenderAABB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
                 drawColor = QVector4D(1, 1, 1, color.a);
             }
         }
-        this->ambientShader->setUniformValue("u_Color", drawColor);
+        ambientShader->setUniformValue("u_Color", drawColor);
 
 
         GL_CALL(glDrawElements(GL_LINES, this->indexBuffer->size() / sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
     }
 }
 
-RenderAABB::RenderAABB(const AABB &aabb, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader):
+RenderAABB::RenderAABB(const AABB &aabb, const Transformation& transformation):
         AbstractRenderModel(transformation, "AABB"),
-        aabb(aabb),
-        ambientShader(shader){
+        aabb(aabb){
 
     std::vector<unsigned int> indices;
     std::vector<Vertex> vertices;
@@ -122,11 +125,11 @@ RenderAABB::RenderAABB(const AABB &aabb, const Transformation& transformation, c
 
     GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr));
 
-    this->setColor(Color(1));
+    this->setMaterial(PhongMaterial(Color::White()));
 }
 
-RenderAABB::RenderAABB(const WorldSpaceMesh &worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& shader):
-RenderAABB(worldSpaceMesh.getModelSpaceMesh()->getBounds(), worldSpaceMesh.getModelTransformation(), shader) {}
+RenderAABB::RenderAABB(const WorldSpaceMesh &worldSpaceMesh):
+RenderAABB(worldSpaceMesh.getModelSpaceMesh()->getBounds(), worldSpaceMesh.getModelTransformation()) {}
 
 RenderModelDetailDialog *RenderAABB::createRenderModelDetailDialog(QWidget* parent) {
     auto dialog = AbstractRenderModel::createRenderModelDetailDialog(parent);

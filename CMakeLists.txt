@@ -12,34 +12,27 @@ endif()
 ### GLM ###
 add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 find_package(glm REQUIRED)
-link_libraries(glm::glm)
 
 ### Boost ###
 find_package(Boost REQUIRED)
-link_libraries(Boost::boost)
 
 ### QT ###
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
-link_libraries(Qt5::Widgets)
 
 ### OpenGL ###
 find_package(OpenGL REQUIRED)
-link_libraries(OpenGL::GL)
 
 ### GLEW ###
 find_package(GLEW REQUIRED)
-link_libraries(GLEW::GLEW)
 
 ### GSL ###
 find_package(GSL REQUIRED)
-link_libraries(GSL::gsl)
 
 ### TBB ###
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
-link_libraries(TBB::tbb TBB::tbbmalloc)
 
 ### giflib ###
 find_package(GIF REQUIRED)
@@ -48,6 +41,7 @@ link_libraries(GIF::GIF)
 file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp external/gifencoder/*.cpp)
 
 add_library(MeshCore STATIC ${SOURCES})
+target_link_libraries(MeshCore PUBLIC Qt5::Widgets Qt5::Core TBB::tbb TBB::tbbmalloc Boost::boost OpenGL::GL GLEW::GLEW GSL::gsl glm::glm)
 
 ### SimpleRenderDemo.exe ###
 add_executable(A-SimpleRenderDemo demos/renderDemo.cpp ${SOURCES})

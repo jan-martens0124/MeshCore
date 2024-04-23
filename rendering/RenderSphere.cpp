@@ -11,21 +11,11 @@
 #include <QGridLayout>
 #include <glm/gtx/normal.hpp>
 #include <QLabel>
+#include "OpenGLWidget.h"
 
-RenderSphere::RenderSphere(const Sphere &sphere,
-                           const Transformation& transformation,
-                           const std::shared_ptr<QOpenGLShaderProgram> &ambientShader,
-                           const std::shared_ptr<QOpenGLShaderProgram> &diffuseShader):
+RenderSphere::RenderSphere(const Sphere &sphere, const Transformation& transformation): AbstractRenderModel(transformation, "Sphere"), sphere(sphere){}
 
-                           AbstractRenderModel(transformation, "Sphere"),
-                           ambientShader(ambientShader),
-                           diffuseShader(diffuseShader),
-                           sphere(sphere){
-
-}
-
-
-void RenderSphere::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
+void RenderSphere::draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
     if(this->isVisible()){
 
         const auto& singletonUnitySphere = SingletonUnitySphere::getInstance();
@@ -45,16 +35,17 @@ void RenderSphere::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projection
 
             GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
 
-            this->ambientShader->bind();
+            auto& ambientShader = openGLWidget->getAmbientShader();
+            ambientShader->bind();
 
             Transformation unitySphereToDesiredSphereTransformation;
             unitySphereToDesiredSphereTransformation.setScale(this->sphere.getRadius());
             unitySphereToDesiredSphereTransformation.setPosition(this->sphere.getCenter());
 
             const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix() * unitySphereToDesiredSphereTransformation.getMatrix();
-            this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+            ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
             QVector4D drawColor;
-            const auto color = this->getColor();
+            const auto color = this->getMaterial().getDiffuseColor();
             drawColor = QVector4D(color.r, color.g, color.b, color.a);
             if(lightMode){
                 if(glm::vec3(color) == glm::vec3(1,1,1)){
@@ -64,7 +55,7 @@ void RenderSphere::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projection
                     drawColor = QVector4D(1, 1, 1, color.a);
                 }
             }
-            this->ambientShader->setUniformValue("u_Color", drawColor);
+            ambientShader->setUniformValue("u_Color", drawColor);
         }
         else{
 
@@ -78,14 +69,25 @@ void RenderSphere::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projection
             glm::vec3 viewSpaceLightDirection = glm::vec4(0, 0, 1, 1) * viewMatrix;
             const glm::vec3 modelLightDirection = glm::vec3(glm::vec4(viewSpaceLightDirection, 1.0f) *
                                                             this->getTransformationMatrix());
-            const float ambientLighting = 0.05f;
-            const auto color = this->getColor();
-            this->diffuseShader->bind();
-            this->diffuseShader->setUniformValue("u_Ambient", ambientLighting);
-            this->diffuseShader->setUniformValue("u_LightDirection", QVector3D(modelLightDirection.x, modelLightDirection.y, modelLightDirection.z));
-            this->diffuseShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
-            this->diffuseShader->setUniformValue("u_Color", QVector4D(color.r, color.g, color.b, color.a));
+            glm::vec3 cameraPosition = glm::inverse(viewMatrix) * glm::vec4(0,0,0,1000);
+            glm::vec3 modelSpaceCameraPosition = glm::vec3(glm::inverse(this->getTransformationMatrix()) * glm::vec4(cameraPosition, 1.0f));
 
+            const float ambientLighting = 0.05f;
+            const auto& material = this->getMaterial();
+            const auto& diffuseColor = material.getDiffuseColor();
+            const auto& specularColor = material.getSpecularColor();
+
+            auto& phongShader = openGLWidget->getPhongShader();
+            phongShader->bind();
+            phongShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+            phongShader->setUniformValue("u_LightDirection", QVector3D(modelLightDirection.x, modelLightDirection.y, modelLightDirection.z));
+            phongShader->setUniformValue("u_ViewPosition", QVector3D(modelSpaceCameraPosition.x, modelSpaceCameraPosition.y, modelSpaceCameraPosition.z));
+            phongShader->setUniformValue("u_AmbientIntensity", ambientLighting);
+            phongShader->setUniformValue("u_DiffuseIntensity", 1.0f-ambientLighting);
+            phongShader->setUniformValue("u_SpecularIntensity", 0.5f);
+            phongShader->setUniformValue("u_DiffuseColor", QVector4D(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a));
+            phongShader->setUniformValue("u_SpecularColor", QVector4D(specularColor.r, specularColor.g, specularColor.b, specularColor.a));
+            phongShader->setUniformValue("u_SpecularPower", 8.0f);
         }
 
         GL_CALL(glDrawElements(GL_TRIANGLES, singletonUnitySphere->indexBuffer->size()/sizeof(unsigned int),  GL_UNSIGNED_INT, nullptr));

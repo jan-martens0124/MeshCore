@@ -45,27 +45,36 @@ OpenGLWidget *RenderWidget::getOpenGLWidget() const {
 }
 
 void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh,  const Color& color) {
+    renderWorldSpaceMesh(group, worldSpaceMesh, PhongMaterial(color));
+}
+
+void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh,  const PhongMaterial& material) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderWorldSpaceMeshSlot",
                               Qt::AutoConnection,
                               Q_ARG(std::string, group),
                               Q_ARG(std::shared_ptr<WorldSpaceMesh>, std::make_shared<WorldSpaceMesh>(*worldSpaceMesh)), // We should copy the actual worldSpaceMesh object here, otherwise the transformation could change before the render thread reads it
-                              Q_ARG(Color, color),
+                              Q_ARG(PhongMaterial, material),
                               Q_ARG(RenderWidget*, this));
 }
 
-void RenderWidget::captureLinearAnimation(const std::string& group, std::shared_ptr<WorldSpaceMesh>& object, const Transformation& initialTransformation, const Transformation& finalTransformation, const Color& initialColor, const Color& finalColor, const QString& fileName, int steps, int delay){
+void RenderWidget::captureLinearAnimation(const Transformation& initialViewTransformation, const Transformation& finalViewTransformation,
+                                          const KeyFrame& initialKeyFrame, const KeyFrame& finalKeyFrame,
+                                          const QString& fileName, int steps, int delay){
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureLinearAnimationSlot",
                               Qt::BlockingQueuedConnection,
-                              Q_ARG(std::string, group),
-                              Q_ARG(std::shared_ptr<WorldSpaceMesh>&, object),
-                              Q_ARG(Transformation, initialTransformation),
-                              Q_ARG(Transformation, finalTransformation),
-                              Q_ARG(Color, initialColor),
-                              Q_ARG(Color, finalColor),
+                              Q_ARG(Transformation , initialViewTransformation),
+                              Q_ARG(Transformation , finalViewTransformation),
+                              Q_ARG(KeyFrame , initialKeyFrame),
+                              Q_ARG(KeyFrame , finalKeyFrame),
                               Q_ARG(QString, fileName),
                               Q_ARG(int, steps),
                               Q_ARG(int, delay),
                               Q_ARG(RenderWidget*, this));
+}
+
+void RenderWidget::captureLinearAnimation(const Transformation& initialViewTransformation, const Transformation& finalViewTransformation,
+                                          const QString& fileName, int steps, int delay){
+    this->captureLinearAnimation(initialViewTransformation, finalViewTransformation, {}, {}, fileName, steps, delay);
 }
 
 void RenderWidget::addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel) {
@@ -110,6 +119,12 @@ void RenderWidget::clearGroup(const std::string &group) {
     });
 }
 
+void RenderWidget::setViewTransformation(const Transformation &transformation) const {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "setViewTransformation",
+                              Qt::AutoConnection,
+                              Q_ARG(Transformation, transformation));
+}
+
 QTreeWidgetItem *RenderWidget::getOrAddGroupWidget(const std::string &group) {
     // Find the group
     auto iterator = groupTreeWidgetItems.find(group);
@@ -139,36 +154,39 @@ void RenderWidget::renderBox(const std::string &group, const std::string& name, 
                               Q_ARG(std::string, name),
                               Q_ARG(AABB, aabb),
                               Q_ARG(Transformation, transformation),
-                              Q_ARG(Color, color),
+                              Q_ARG(PhongMaterial, PhongMaterial(color)),
                               Q_ARG(RenderWidget*, this));
 }
 
-void RenderWidget::renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const Color &color) {
+void RenderWidget::renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const Color& color) {
+    this->renderSphere(group, name, sphere, PhongMaterial(color));
+}
+
+void RenderWidget::renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const PhongMaterial& material) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderSphereSlot", Qt::AutoConnection,
                               Q_ARG(std::string, group),
                               Q_ARG(std::string, name),
                               Q_ARG(Sphere, sphere),
-                              Q_ARG(Color, color),
+                              Q_ARG(PhongMaterial, material),
                               Q_ARG(RenderWidget*, this));
 }
 
-void RenderWidget::renderTriangle(const std::string& group, const std::string& name, const VertexTriangle& vertexTriangle, const Color &color) {
+void RenderWidget::renderTriangle(const std::string& group, const std::string& name, const VertexTriangle& vertexTriangle, const Color& color) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderTriangleSlot", Qt::AutoConnection,
                               Q_ARG(std::string, group),
                               Q_ARG(std::string, name),
                               Q_ARG(VertexTriangle, vertexTriangle),
-                              Q_ARG(Color, color),
+                              Q_ARG(PhongMaterial, PhongMaterial(color)),
                               Q_ARG(RenderWidget*, this));
 }
 
-void RenderWidget::renderLine(const std::string &group, const std::string& name, const Vertex &vertexA, const Vertex &vertexB,
-                              const Color &color) {
+void RenderWidget::renderLine(const std::string &group, const std::string& name, const Vertex &vertexA, const Vertex &vertexB, const Color& color) {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderLineSlot", Qt::AutoConnection,
                                 Q_ARG(std::string, group),
                                 Q_ARG(std::string, name),
                                 Q_ARG(glm::vec3, vertexA),
                                 Q_ARG(glm::vec3, vertexB),
-                                Q_ARG(Color, color),
+                                Q_ARG(PhongMaterial, PhongMaterial(color)),
                                 Q_ARG(RenderWidget*, this));
 }
 
@@ -286,6 +304,15 @@ void RenderWidget::captureScene() const {
                               Qt::AutoConnection);
 
 }
+
+
+void RenderWidget::captureSceneToFile(const std::string &fileName) const {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureSceneToFileSlot",
+                              Qt::AutoConnection,
+                              Q_ARG(QString, QString::fromStdString(fileName)));
+}
+
+
 
 void RenderWidget::captureAnimation() const {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureAnimationSlot",

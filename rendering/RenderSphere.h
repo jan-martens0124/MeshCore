@@ -27,17 +27,11 @@ private:
     bool cullingEnabled = true;
     bool wireframeEnabled = false;
 
-    std::shared_ptr<QOpenGLShaderProgram> ambientShader;
-    std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
-
 public:
 
-    RenderSphere(const Sphere &sphere,
-                 const Transformation& transformation,
-                 const std::shared_ptr<QOpenGLShaderProgram>& ambientShader,
-                 const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader);
+    RenderSphere(const Sphere &sphere, const Transformation& transformation);
 
-    void draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
+    void draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
 
     RenderModelDetailDialog *createRenderModelDetailDialog(QWidget *parent) override;
 

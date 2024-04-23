@@ -11,7 +11,7 @@ class AbstractRenderModelListener{
 public:
     virtual void notify() const = 0;
     virtual void notifyNameChanged(const std::string& oldName, const std::string& newName) const = 0;
-    virtual void notifyColorChanged(const Color& oldColor, const Color& newColor) const = 0;
+    virtual void notifyMaterialChanged(const PhongMaterial& oldMaterial, const PhongMaterial& newMaterial) const = 0;
     virtual void notifyVisibleChanged(bool oldVisible, bool newVisible) const = 0;
     virtual void notifyTransformationChanged(const Transformation& oldTransformation, const Transformation& newTransformation) const = 0;
 };
@@ -20,7 +20,7 @@ class SimpleRenderModelListener: public AbstractRenderModelListener {
 private:
     std::function<void()> onChanged = {};
     std::function<void(const std::string& oldName, const std::string& newName)> onNameChanged = {};
-    std::function<void(const Color& oldColor, const Color& newColor)> onColorChanged = {};
+    std::function<void(const PhongMaterial& oldMaterial, const PhongMaterial& newMaterial)> onMaterialChanged = {};
     std::function<void(bool oldVisible, bool newVisible)> onVisibleChanged = {};
     std::function<void(const Transformation& oldTransformation, const Transformation& newTransformation)> onTransformationChanged = {};
 
@@ -28,8 +28,8 @@ private:
         if(this->onChanged) this->onChanged();
     }
 
-    void notifyColorChanged(const Color& oldColor, const Color& newColor) const override {
-        if(this->onColorChanged) this->onColorChanged(oldColor, newColor);
+    void notifyMaterialChanged(const PhongMaterial& oldMaterial, const PhongMaterial& newMaterial) const override {
+        if(this->onMaterialChanged) this->onMaterialChanged(oldMaterial, newMaterial);
         if(this->onChanged) this->onChanged();
     }
 
@@ -54,8 +54,8 @@ public:
         this->onChanged = newOnChanged;
     }
 
-    [[maybe_unused]] void setOnColorChanged(const std::function<void(const Color& oldColor, const Color& newColor)> &newOnColorChanged) {
-        this->onColorChanged = newOnColorChanged;
+    [[maybe_unused]] void setOnMaterialChanged(const std::function<void(const PhongMaterial& oldMaterial, const PhongMaterial& newMaterial)> &newOnMaterialChanged) {
+        this->onMaterialChanged = newOnMaterialChanged;
     }
 
     [[maybe_unused]] void setOnVisibleChanged(const std::function<void(bool oldVisible, bool newVisible)> &newOnVisibleChanged) {

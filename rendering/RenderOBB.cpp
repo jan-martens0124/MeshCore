@@ -110,10 +110,10 @@ RenderOBB::RenderOBB(const OBB &obb, const Transformation &transformation,
 
     GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr));
 
-    this->setColor(Color(1));
+    this->setMaterial(PhongMaterial(Color::White()));
 }
 
-void RenderOBB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
+void RenderOBB::draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
 
     if (this->isVisible()) {
 
@@ -131,7 +131,7 @@ void RenderOBB::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMat
 
         // Set color uniform
         QVector4D drawColor;
-        const auto color = this->getColor();
+        const auto color = this->getMaterial().getDiffuseColor();
         drawColor = QVector4D(color.r, color.g, color.b, color.a);
         if (lightMode) {
             if (glm::vec3(color) == glm::vec3(1, 1, 1)) {

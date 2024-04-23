@@ -16,6 +16,7 @@
 [[maybe_unused]] OpenGLWidget::OpenGLWidget(QWidget *parent): QOpenGLWidget(parent) {}
 
 Q_DECLARE_METATYPE(Color);
+Q_DECLARE_METATYPE(PhongMaterial);
 Q_DECLARE_METATYPE(std::string)
 Q_DECLARE_METATYPE(std::shared_ptr<WorldSpaceMesh>)
 Q_DECLARE_METATYPE(RenderWidget*)
@@ -31,6 +32,7 @@ void OpenGLWidget::initializeGL() {
     initializeOpenGLFunctions();
 
     qRegisterMetaType<Color>();
+    qRegisterMetaType<PhongMaterial>();
     qRegisterMetaType<std::string>();
     qRegisterMetaType<std::shared_ptr<WorldSpaceMesh>>();
     qRegisterMetaType<RenderWidget*>();
@@ -53,17 +55,7 @@ void OpenGLWidget::initializeGL() {
     GL_CALL(glEnable(GL_CULL_FACE));
     GL_CALL(glCullFace(GL_BACK));
 
-    ShaderProgramSource diffuseShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/rendering/shaders/Diffuse.shader");
-//    ShaderProgramSource diffuseShaderProgramSource = ShaderProgramSource::parseShader("shaders/Diffuse.shader");
-    diffuseShader = std::make_shared<QOpenGLShaderProgram>();
-    diffuseShader->addShaderFromSourceCode(QOpenGLShader::Vertex, diffuseShaderProgramSource.VertexSource);
-    diffuseShader->addShaderFromSourceCode(QOpenGLShader::Fragment, diffuseShaderProgramSource.FragmentSource);
-    diffuseShader->bindAttributeLocation("vertex", 0);
-    diffuseShader->bindAttributeLocation("normal", 1);
-    diffuseShader->link();
-
     ShaderProgramSource basicShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/rendering/shaders/Ambient.shader");
-//    ShaderProgramSource basicShaderProgramSource = ShaderProgramSource::parseShader("shaders/Ambient.shader");
     ambientShader = std::make_shared<QOpenGLShaderProgram>();
     ambientShader->addShaderFromSourceCode(QOpenGLShader::Vertex, basicShaderProgramSource.VertexSource);
     ambientShader->addShaderFromSourceCode(QOpenGLShader::Fragment, basicShaderProgramSource.FragmentSource);
@@ -71,24 +63,37 @@ void OpenGLWidget::initializeGL() {
     ambientShader->bindAttributeLocation("normal", 1);
     ambientShader->link();
 
+    ShaderProgramSource diffuseShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/rendering/shaders/Diffuse.shader");
+    diffuseShader = std::make_shared<QOpenGLShaderProgram>();
+    diffuseShader->addShaderFromSourceCode(QOpenGLShader::Vertex, diffuseShaderProgramSource.VertexSource);
+    diffuseShader->addShaderFromSourceCode(QOpenGLShader::Fragment, diffuseShaderProgramSource.FragmentSource);
+    diffuseShader->bindAttributeLocation("vertex", 0);
+    diffuseShader->bindAttributeLocation("normal", 1);
+    diffuseShader->link();
+
+    ShaderProgramSource pongShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/rendering/shaders/Phong.shader");
+    phongShader = std::make_shared<QOpenGLShaderProgram>();
+    phongShader->addShaderFromSourceCode(QOpenGLShader::Vertex, pongShaderProgramSource.VertexSource);
+    phongShader->addShaderFromSourceCode(QOpenGLShader::Fragment, pongShaderProgramSource.FragmentSource);
+    phongShader->bindAttributeLocation("vertex", 0);
+    phongShader->bindAttributeLocation("normal", 1);
+    phongShader->link();
+
+
     // Store the axis render line
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(1e8,0,0), Transformation(), ambientShader));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,1e8,0), Transformation(), ambientShader));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,1e8), Transformation(), ambientShader));
-    axisRenderLines[0]->setColor(Color(1,0,0,1));
-    axisRenderLines[1]->setColor(Color(0,1,0,1));
-    axisRenderLines[2]->setColor(Color(0,0,1,1));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(1e8,0,0), Transformation()));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,1e8,0), Transformation()));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,1e8), Transformation()));
+    axisRenderLines[0]->setMaterial(PhongMaterial(Color::Red()));
+    axisRenderLines[1]->setMaterial(PhongMaterial(Color::Green()));
+    axisRenderLines[2]->setMaterial(PhongMaterial(Color::Blue()));
 }
 
 void OpenGLWidget::resetView() {
-    viewMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-INITIAL_VIEW_DISTANCE, 0.0f, 0.0f));
 
-    // Default rotation: y-axis to the right and z-axis upwards
-    viewMatrix = glm::mat4({0, 0, 1, 0,
-                            1, 0, 0, 0,
-                            0, 1, 0, 0,
-                            0, 0, 0, 1
-                            }) * viewMatrix;
+    this->viewTransformation = Transformation();
+    viewTransformation.setPosition(glm::vec3(0.0f, 0.0f, -INITIAL_VIEW_DISTANCE));
+    viewTransformation *= Transformation::fromRotationMatrix(glm::mat3({0, 0, 1, 1, 0, 0, 0, 1, 0})); // Default viewspace rotation: y-axis to the right and z-axis upwards
 
     this->update();
 }
@@ -115,12 +120,14 @@ void OpenGLWidget::paintGL() {
 
     if(this->axisEnabled){
         for (const auto &axisRenderLine: this->axisRenderLines){
-            axisRenderLine->draw(viewMatrix, projectionMatrix, lightMode);
+            axisRenderLine->draw(this, viewTransformation.getMatrix(), projectionMatrix, lightMode);
         }
     }
 
+//    std::cout << viewTransformation << std::endl;
+
     for(auto& renderModel: this->sortedRenderModels){
-        renderModel->draw(viewMatrix, projectionMatrix, lightMode);
+        renderModel->draw(this, viewTransformation.getMatrix(), projectionMatrix, lightMode);
     }
 }
 
@@ -133,17 +140,21 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
 
-    this->viewMatrix = glm::rotate(viewMatrix, rotationSpeed * float(dx), glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraUp,0.0f)));
-    this->viewMatrix = glm::rotate(viewMatrix, rotationSpeed * float(dy), glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraRight, 0.0f)));
+//    std::cout << "Rotation length: " << glm::length(glm::fquat(Quaternion(glm::normalize(viewTransformation.inverseTransformVector(cameraUp)), rotationSpeed * float(dx)))) << std::endl;
+//    std::cout << "Rotation length: " << glm::length(glm::fquat(Quaternion(glm::normalize(viewTransformation.inverseTransformVector(cameraRight)), rotationSpeed * float(dy)))) << std::endl;
+
+    this->viewTransformation.factorRotation(Quaternion(viewTransformation.inverseTransformVector(cameraUp), rotationSpeed * float(dx)));
+    this->viewTransformation.factorRotation(Quaternion(viewTransformation.inverseTransformVector(cameraRight), rotationSpeed * float(dy)));
+
+//    std::cout << this->viewTransformation << std::endl;
+
     this->update();
 }
 
 void OpenGLWidget::wheelEvent(QWheelEvent *event) {
     auto factor = float(event->angleDelta().y()) / 1200.0f;
-    auto distance = glm::length(glm::vec3(viewMatrix[3]));
-//    viewMatrix = glm::translate(viewMatrix, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(glm::vec3(0.0f, 0.0f, factor * distance), 0.0f)));
 
-    viewMatrix = glm::scale(viewMatrix, glm::vec3(1 + factor));
+    viewTransformation.factorScale(1 + factor);
 
     this->update();
 }
@@ -155,8 +166,7 @@ void OpenGLWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent *event) {
-    if (event->button() == Qt::LeftButton)
-    {
+    if (event->button() == Qt::LeftButton) {
         QWidget* window = this->parentWidget();
         while(!window->isWindow()){
             window = window->parentWidget();
@@ -173,76 +183,91 @@ void OpenGLWidget::mouseDoubleClickEvent(QMouseEvent *event) {
 
 void OpenGLWidget::keyPressEvent(QKeyEvent* event){
     const auto key = event->key();
-    const auto distance = glm::length(glm::vec3(viewMatrix[3]));
+    const auto distance = glm::length(viewTransformation.getPosition());
     if(key == Qt::Key_Plus){
         float zoomFactor = 0.1f;
-        viewMatrix = glm::scale(viewMatrix, glm::vec3(1 + zoomFactor));
+        viewTransformation.factorScale(1 + zoomFactor);
         this->update();
     }
     if (key == Qt::Key_Minus) {
         float zoomFactor = 0.1f;
-        viewMatrix = glm::scale(viewMatrix, glm::vec3(1 - zoomFactor));
+        viewTransformation.factorScale(1 - zoomFactor);
         this->update();
     }
     if (key == Qt::Key_Left) {
         const float rotationSpeed = 0.05f;
         const glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
-        this->viewMatrix = glm::rotate(viewMatrix, - rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraUp,0.0f)));
+        Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraUp), -rotationSpeed);
+        this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_Right) {
         const float rotationSpeed = 0.05f;
         const glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
-        this->viewMatrix = glm::rotate(viewMatrix, rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraUp,0.0f)));
+        Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraUp), rotationSpeed);
+        this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_Up) {
         const float rotationSpeed = 0.05f;
         const glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
-        this->viewMatrix = glm::rotate(viewMatrix, - rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraRight,0.0f)));
+        Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraRight), -rotationSpeed);
+        this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_Down) {
         const float rotationSpeed = 0.05f;
         const glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
-        this->viewMatrix = glm::rotate(viewMatrix, rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraRight,0.0f)));
+        Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraRight), rotationSpeed);
+        this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_A) {
         const float rotationSpeed = 0.05f;
         const glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
-        this->viewMatrix = glm::rotate(viewMatrix, rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraFront,0.0f)));
+        Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraFront), rotationSpeed);
+        this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_E) {
         const float rotationSpeed = 0.05f;
         const glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
-        this->viewMatrix = glm::rotate(viewMatrix, - rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraFront,0.0f)));
+        Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraFront), -rotationSpeed);
+        this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_Z) {
 
         const float translationSpeed = 0.025f * distance;
         const glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
-        this->viewMatrix = glm::translate(viewMatrix, - translationSpeed * glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraUp,0.0f)));
+        Transformation translation;
+        translation.setPosition(-translationSpeed * viewTransformation.inverseTransformVector(cameraUp));
+        this->viewTransformation *= translation;
         this->update();
     }
     if (key == Qt::Key_S) {
         const float translationSpeed = 0.025f * distance;
         const glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
-        this->viewMatrix = glm::translate(viewMatrix, translationSpeed * glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraUp,0.0f)));
+        Transformation translation;
+        translation.setPosition(translationSpeed * viewTransformation.inverseTransformVector(cameraUp));
+        this->viewTransformation *= translation;
+
         this->update();
     }
     if (key == Qt::Key_Q) {
         const float translationSpeed = 0.025f * distance;
         const glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
-        this->viewMatrix = glm::translate(viewMatrix, translationSpeed * glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraRight,0.0f)));
+        Transformation translation;
+        translation.setPosition(translationSpeed * viewTransformation.inverseTransformVector(cameraRight));
+        this->viewTransformation *= translation;
         this->update();
     }
     if (key == Qt::Key_D) {
         const float translationSpeed = 0.025f * distance;
         const glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
-        this->viewMatrix = glm::translate(viewMatrix, - translationSpeed * glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraRight,0.0f)));
+        Transformation translation;
+        translation.setPosition(-translationSpeed * viewTransformation.inverseTransformVector(cameraRight));
+        this->viewTransformation *= translation;
         this->update();
     }
 }
@@ -260,7 +285,7 @@ void OpenGLWidget::setLightMode(bool newLightMode){
     for (const auto &groupEntry : this->groupedRenderModelsMap){
         for (const auto &modelEntry: groupEntry.second){
             if(auto renderMesh = std::dynamic_pointer_cast<RenderMesh>(modelEntry.second)){
-                if(renderMesh->getColor().a<1.0){
+                if(renderMesh->getMaterial().getDiffuseColor().a<1.0){
                     renderMesh->setCullingEnabled(this->lightMode);
                 }
             }
@@ -273,7 +298,7 @@ void OpenGLWidget::setLightMode(bool newLightMode){
 void OpenGLWidget::captureAnimationSlot() {
 
     this->makeCurrent();
-    auto initialViewMatrix = this->viewMatrix;
+    auto initialViewTransformation = this->viewTransformation;
     QString fileName = QFileDialog::getSaveFileName(this, QString("Save animation"), "example", QString("GIF (*.gif)"));
 
     // Check if the user has selected a file
@@ -313,7 +338,7 @@ void OpenGLWidget::captureAnimationSlot() {
             if (!gifEncoder.close()) {
                 fprintf(stderr, "Error closing the gif file\n");
             }
-            viewMatrix = initialViewMatrix;
+            viewTransformation = initialViewTransformation;
             GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
             this->update();
             QFile::remove(fileName);
@@ -323,7 +348,7 @@ void OpenGLWidget::captureAnimationSlot() {
 
         progressDialog.setValue(i);
 
-        this->viewMatrix = glm::rotate(viewMatrix, - rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraUp,0.0f)));
+        this->viewTransformation.factorRotation(Quaternion(viewTransformation.inverseTransformVector(cameraUp), -rotationSpeed));
         QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         this->update();
         auto capture = this->grabFramebuffer();
@@ -344,7 +369,7 @@ void OpenGLWidget::captureAnimationSlot() {
     if (!gifEncoder.close()) {
         fprintf(stderr, "Error closing gif file\n");
     }
-    viewMatrix = initialViewMatrix;
+    viewTransformation = initialViewTransformation;
     QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     this->update();
     progressDialog.close();
@@ -429,7 +454,7 @@ std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>& OpenGLWid
     return iterator->second;
 }
 
-void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color &color, RenderWidget* renderWidget){
+void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const PhongMaterial &material, RenderWidget* renderWidget){
 
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
@@ -441,7 +466,7 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
         this->makeCurrent();
 
         // No entry present yet, create new render Model
-        auto renderMesh = std::make_shared<RenderMesh>(*worldSpaceMesh, this->ambientShader, this->diffuseShader);
+        auto renderMesh = std::make_shared<RenderMesh>(*worldSpaceMesh);
 
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({worldSpaceMesh->getId(), renderMesh}).first;
@@ -456,7 +481,7 @@ void OpenGLWidget::renderWorldSpaceMeshSlot(const std::string &group, const std:
     }
 
     // Set the color
-    modelIterator->second->setColor(color);
+    modelIterator->second->setMaterial(material);
 
     // Update the transformation
     modelIterator->second->setTransformation(worldSpaceMesh->getModelTransformation());
@@ -495,11 +520,11 @@ void OpenGLWidget::updateSortedRenderModels(){
 
     // Sort them by transparency
     std::sort(this->sortedRenderModels.begin(), this->sortedRenderModels.end(), [](const std::shared_ptr<AbstractRenderModel>& a, const std::shared_ptr<AbstractRenderModel>& b){
-        return a->getColor().a > b->getColor().a;
+        return a->getMaterial().getDiffuseColor().a > b->getMaterial().getDiffuseColor().a;
     });
 }
 
-void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, const Color& color, RenderWidget *renderWidget) {
+void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, const PhongMaterial& material, RenderWidget *renderWidget) {
 
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
@@ -516,7 +541,7 @@ void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &na
         this->makeCurrent();
 
         // No entry present yet, create new render Model
-        auto renderAABB = std::make_shared<RenderAABB>(aabb, transformation, this->ambientShader);
+        auto renderAABB = std::make_shared<RenderAABB>(aabb, transformation);
 
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({renderId, renderAABB}).first;
@@ -528,14 +553,14 @@ void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &na
         renderWidget->addControlWidget(group, renderAABB);
 
         // Set the color
-        modelIterator->second->setColor(Color(1,1,1,1));
+        modelIterator->second->setMaterial(PhongMaterial(Color::White()));
         modelIterator->second->setName(name);
 
         this->updateSortedRenderModels();
     }
 
     // Update the color
-    modelIterator->second->setColor(color);
+    modelIterator->second->setMaterial(material);
 
     // Update the transformation
     modelIterator->second->setTransformation(transformation);
@@ -544,7 +569,7 @@ void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &na
 
 }
 
-void OpenGLWidget::renderSphereSlot(const std::string &group, const std::string& name, const Sphere &sphere, const Color& color, RenderWidget *renderWidget) {
+void OpenGLWidget::renderSphereSlot(const std::string &group, const std::string& name, const Sphere &sphere, const PhongMaterial& material, RenderWidget *renderWidget) {
 
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
@@ -559,7 +584,7 @@ void OpenGLWidget::renderSphereSlot(const std::string &group, const std::string&
         this->makeCurrent();
 
         // No entry present yet, create new render Model
-        auto renderSphere = std::make_shared<RenderSphere>(sphere, Transformation(), this->ambientShader, this->diffuseShader);
+        auto renderSphere = std::make_shared<RenderSphere>(sphere, Transformation());
 
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({renderId, renderSphere}).first;
@@ -571,7 +596,7 @@ void OpenGLWidget::renderSphereSlot(const std::string &group, const std::string&
         renderWidget->addControlWidget(group, renderSphere);
 
         // Set the color
-        modelIterator->second->setColor(color);
+        modelIterator->second->setMaterial(material);
         modelIterator->second->setName(name);
 
         this->updateSortedRenderModels();
@@ -585,7 +610,7 @@ void OpenGLWidget::renderSphereSlot(const std::string &group, const std::string&
 }
 
 void OpenGLWidget::renderTriangleSlot(const std::string &group, const std::string &name, const VertexTriangle &triangle,
-                                      const Color &color, RenderWidget *renderWidget) {
+                                      const PhongMaterial &material, RenderWidget *renderWidget) {
 
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
@@ -611,7 +636,7 @@ void OpenGLWidget::renderTriangleSlot(const std::string &group, const std::strin
 }
 
 void OpenGLWidget::renderLineSlot(const std::string &group, const std::string &name, const Vertex &start,
-                                  const Vertex &end, const Color &color, RenderWidget *renderWidget) {
+                                  const Vertex &end, const PhongMaterial &material, RenderWidget *renderWidget) {
 
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
@@ -626,7 +651,7 @@ void OpenGLWidget::renderLineSlot(const std::string &group, const std::string &n
         this->makeCurrent();
 
         // No entry present yet, create new render Model
-        auto renderLine = std::make_shared<RenderLine>(start, end, Transformation(), this->ambientShader);
+        auto renderLine = std::make_shared<RenderLine>(start, end, Transformation());
 
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({renderId, renderLine}).first;
@@ -638,7 +663,7 @@ void OpenGLWidget::renderLineSlot(const std::string &group, const std::string &n
         renderWidget->addControlWidget(group, renderLine);
 
         // Set the color
-        modelIterator->second->setColor(color);
+        modelIterator->second->setMaterial(material);
         modelIterator->second->setName(name);
 
         this->updateSortedRenderModels();
@@ -657,6 +682,10 @@ const std::shared_ptr<QOpenGLShaderProgram> &OpenGLWidget::getAmbientShader() co
 
 const std::shared_ptr<QOpenGLShaderProgram> &OpenGLWidget::getDiffuseShader() const {
     return diffuseShader;
+}
+
+const std::shared_ptr<QOpenGLShaderProgram> &OpenGLWidget::getPhongShader() const {
+    return phongShader;
 }
 
 void OpenGLWidget::addOrUpdateRenderModelSlot(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> renderModel, RenderWidget* renderWidget) {
@@ -698,8 +727,8 @@ void OpenGLWidget::addRenderModelListeners(const std::string &group, const std::
 
     // Add listener to redraw when model is changed
     const auto listener = std::make_shared<SimpleRenderModelListener>();
-    listener->setOnColorChanged([this](const Color& oldColor, const Color& newColor){
-        if(oldColor.a!=newColor.a){
+    listener->setOnMaterialChanged([this](const PhongMaterial &oldMaterial, const PhongMaterial &newMaterial) {
+        if (oldMaterial.getDiffuseColor().a != newMaterial.getDiffuseColor().a) {
             this->updateSortedRenderModels();
         }
     });
@@ -756,8 +785,19 @@ std::vector<uint8_t> OpenGLWidget::capturePixelBufferSlot() {
     return pixelBuffer;
 }
 
-void OpenGLWidget::captureLinearAnimationSlot(const std::string& group, std::shared_ptr<WorldSpaceMesh>& object, const Transformation& initialTransformation, const Transformation& finalTransformation, const Color& initialColor, const Color& finalColor, const QString& fileName, int steps, int delay, RenderWidget* renderWidget){
+const Transformation &OpenGLWidget::getViewTransformation() const {
+    return viewTransformation;
+}
 
+void OpenGLWidget::setViewTransformation(const Transformation &newViewTransformation) {
+    OpenGLWidget::viewTransformation = newViewTransformation;
+}
+
+void OpenGLWidget::captureLinearAnimationSlot(const Transformation &initialViewTransformation,
+                                              const Transformation &finalViewTransformation,
+                                              const KeyFrame &initialKeyFrame, const KeyFrame &finalKeyFrame,
+                                              const QString &fileName, int steps, int delay,
+                                              RenderWidget *renderWidget) {
     // Animation time (s) = delay * steps / 100
     this->makeCurrent();
 
@@ -795,14 +835,28 @@ void OpenGLWidget::captureLinearAnimationSlot(const std::string& group, std::sha
 
         progressDialog.setValue(i);
 
-        // Do the linear interpolation between transformations, color and viewMatrix
+        // Interpolate the view matrix
         float t = float(i)/(steps - 1); // Linear interpolation
-        object->setModelTransformation(Transformation::interpolate(initialTransformation, finalTransformation, t));
-        auto color = (1.0f - t) * initialColor + t * finalColor;
-        // TODO interpolate viewMatrix (Should this be a Transformation object as well?)
-//        openGLWidget.viewMatrix;this->viewMatrix = glm::rotate(viewMatrix, - rotationSpeed, glm::vec3(glm::inverse(viewMatrix) * glm::vec4(cameraUp,0.0f)));
+        this->viewTransformation = Transformation::interpolate(initialViewTransformation, finalViewTransformation, t);
 
-        renderWorldSpaceMeshSlot(group, object, {color.r, color.g, color.b, color.a}, renderWidget); // Stupid that this conversion is required
+        // Do the linear interpolation between transformations, color and viewMatrix for each object
+        assert(initialKeyFrame.getObjects().size() == finalKeyFrame.getObjects().size());
+
+        for (int objectId = 0; objectId < initialKeyFrame.getObjects().size(); ++objectId){
+            const auto& initialKeyFrameObject = initialKeyFrame.getObjects()[objectId];
+            const auto& finalKeyFrameObject = finalKeyFrame.getObjects()[objectId];
+
+            assert(initialKeyFrameObject.mesh->getId() == finalKeyFrameObject.mesh->getId());
+            assert(initialKeyFrameObject.group == finalKeyFrameObject.group);
+            const auto& group = initialKeyFrameObject.group;
+            const auto& mesh = initialKeyFrameObject.mesh;
+
+            auto interpolatedMaterial = PhongMaterial::interpolate(initialKeyFrameObject.material, finalKeyFrameObject.material, t);
+            auto interpolatedTransformation = Transformation::interpolate(initialKeyFrameObject.transformation, finalKeyFrameObject.transformation, t);
+            mesh->setModelTransformation(interpolatedTransformation);
+
+            renderWorldSpaceMeshSlot(group, initialKeyFrameObject.mesh, interpolatedMaterial, renderWidget);
+        }
 
         QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 

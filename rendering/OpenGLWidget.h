@@ -11,6 +11,7 @@
 #include "../core/WorldSpaceMesh.h"
 #include "RenderLine.h"
 #include "../core/VertexTriangle.h"
+#include "KeyFrame.h"
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QMouseEvent>
@@ -37,7 +38,7 @@ private:
     int height{};
     QPoint lastMousePosition;
 
-    glm::mat4 viewMatrix{};
+    Transformation viewTransformation;
     glm::mat4 projectionMatrix{};
 
     mutable std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>> groupedRenderModelsMap;
@@ -48,9 +49,13 @@ private:
 private:
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
     std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
+    std::shared_ptr<QOpenGLShaderProgram> phongShader;
 public:
     const std::shared_ptr<QOpenGLShaderProgram> &getAmbientShader() const;
     const std::shared_ptr<QOpenGLShaderProgram> &getDiffuseShader() const;
+    const std::shared_ptr<QOpenGLShaderProgram> &getPhongShader() const;
+
+    const Transformation &getViewTransformation() const;
 
 public:
     [[maybe_unused]] explicit OpenGLWidget(QWidget *parent = nullptr);
@@ -88,22 +93,22 @@ protected:
 private slots:
     void clear();
     void clearGroup(const std::string &group);
+    void setViewTransformation(const Transformation &newViewTransformation);
     void setGroupVisible(const std::string &group, bool visible);
-    void renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const Color &color, RenderWidget* renderWidget);
-    void renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, const Color& color, RenderWidget *renderWidget);
-    void renderSphereSlot(const std::string &group, const std::string &name, const Sphere &sphere, const Color& color, RenderWidget* renderWidget);
-    void renderTriangleSlot(const std::string &group, const std::string &name, const VertexTriangle &triangle, const Color& color, RenderWidget* renderWidget);
-    void renderLineSlot(const std::string &group, const std::string &name, const glm::vec3 &start, const glm::vec3 &end, const Color& color, RenderWidget* renderWidget);
+    void renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const PhongMaterial &material, RenderWidget* renderWidget);
+    void renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, const PhongMaterial& material, RenderWidget *renderWidget);
+    void renderSphereSlot(const std::string &group, const std::string &name, const Sphere &sphere, const PhongMaterial& material, RenderWidget* renderWidget);
+    void renderTriangleSlot(const std::string &group, const std::string &name, const VertexTriangle &triangle, const PhongMaterial& material, RenderWidget* renderWidget);
+    void renderLineSlot(const std::string &group, const std::string &name, const glm::vec3 &start, const glm::vec3 &end, const PhongMaterial& material, RenderWidget* renderWidget);
 
     void addOrUpdateRenderModelSlot(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> sharedPtr, RenderWidget* renderWidget);
     void captureSceneSlot();
-    void captureSceneToFileSlot(const QString& fileName);
     void captureAnimationSlot();
+    void captureSceneToFileSlot(const QString& fileName);
 
-    void captureLinearAnimationSlot(const std::string &group, std::shared_ptr<WorldSpaceMesh>& object,
-                                    const Transformation &initialTransformation, const Transformation &finalTransformation,
-                                    const Color &initialColor, const Color &finalColor, const QString &fileName,
-                                    int steps, int delay, RenderWidget *renderWidget);
+    void captureLinearAnimationSlot(const Transformation& initialViewTransformation, const Transformation& finalViewTransformation,
+                                    const KeyFrame& initialKeyFrame, const KeyFrame& finalKeyFrame,
+                                    const QString& fileName, int steps, int delay, RenderWidget* renderWidget);
 
 private:
     std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>& getOrInsertRenderModelsMap(const std::string &group) const;

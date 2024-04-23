@@ -15,12 +15,11 @@
 #include <QCheckBox>
 #include <QGridLayout>
 #include "Exception.h"
+#include "OpenGLWidget.h"
 
-RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& ambientShader, const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader):
+RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
         AbstractRenderModel(worldSpaceMesh.getModelTransformation(), worldSpaceMesh.getModelSpaceMesh()->getName()),
-        ambientShader(ambientShader),
-        diffuseShader(diffuseShader),
-        boundingBox(worldSpaceMesh, ambientShader)
+        boundingBox(worldSpaceMesh)
 {
 
     const std::vector<Vertex>& vertices = worldSpaceMesh.getModelSpaceMesh()->getVertices();
@@ -78,12 +77,12 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh, const std::shared_p
 
     auto& aabb = worldSpaceMesh.getModelSpaceMesh()->getBounds();
 
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(glm::max(0.0f, aabb.getMaximum().x),0,0), Transformation(), ambientShader));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,glm::max(0.0f, aabb.getMaximum().y),0), Transformation(), ambientShader));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,glm::max(0.0f, aabb.getMaximum().z)), Transformation(), ambientShader));
-    axisRenderLines[0]->setColor(Color(1,0,0,1));
-    axisRenderLines[1]->setColor(Color(0,1,0,1));
-    axisRenderLines[2]->setColor(Color(0,0,1,1));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(glm::max(0.0f, aabb.getMaximum().x),0,0), Transformation()));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,glm::max(0.0f, aabb.getMaximum().y),0), Transformation()));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,glm::max(0.0f, aabb.getMaximum().z)), Transformation()));
+    axisRenderLines[0]->setMaterial(PhongMaterial(Color::Red()));
+    axisRenderLines[1]->setMaterial(PhongMaterial(Color::Green()));
+    axisRenderLines[2]->setMaterial(PhongMaterial(Color::Blue()));
 
     for (const auto &renderLine: axisRenderLines){
         renderLine->setTransformation(worldSpaceMesh.getModelTransformation());
@@ -112,7 +111,7 @@ void RenderMesh::setWireframeEnabled(bool newWireframeEnabled) {
     }
 }
 
-void RenderMesh::draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) {
+void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) {
 
     if(this->isVisible()){
 
@@ -131,11 +130,13 @@ void RenderMesh::draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMa
 
             GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
 
-            this->ambientShader->bind();
+            auto& ambientShader = openGLWidget->getAmbientShader();
+
+            ambientShader->bind();
             const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
-            this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+            ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
             QVector4D drawColor;
-            const auto color = this->getColor();
+            const auto color = this->getMaterial().getDiffuseColor();
             drawColor = QVector4D(color.r, color.g, color.b, color.a);
             if(lightMode){
                 if(glm::vec3(color) == glm::vec3(1,1,1)){
@@ -145,7 +146,7 @@ void RenderMesh::draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMa
                     drawColor = QVector4D(1, 1, 1, color.a);
                 }
             }
-            this->ambientShader->setUniformValue("u_Color", drawColor);
+            ambientShader->setUniformValue("u_Color", drawColor);
         }
         else{
             // TODO what if we want to draw the surface and the wireframe at the same time?
@@ -156,25 +157,35 @@ void RenderMesh::draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMa
             glm::vec3 viewSpaceLightDirection = glm::vec4(0, 0, 1, 1) * viewMatrix;
             const glm::vec3 modelLightDirection = glm::vec3(glm::vec4(viewSpaceLightDirection, 1.0f) *
                                                                     this->getTransformationMatrix());
+            glm::vec3 cameraPosition = glm::inverse(viewMatrix) * glm::vec4(0,0,0,1000);
+            glm::vec3 modelSpaceCameraPosition = glm::vec3(glm::inverse(this->getTransformationMatrix()) * glm::vec4(cameraPosition, 1.0f));
             const float ambientLighting = 0.05f; // TODO make this a configurable member of OpenGLWidget
-            const auto color = this->getColor();
-            this->diffuseShader->bind();
-            this->diffuseShader->setUniformValue("u_Ambient", ambientLighting);
-            this->diffuseShader->setUniformValue("u_LightDirection", QVector3D(modelLightDirection.x, modelLightDirection.y, modelLightDirection.z));
-            this->diffuseShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
-            this->diffuseShader->setUniformValue("u_Color", QVector4D(color.r, color.g, color.b, color.a));
+            const auto& material = this->getMaterial();
+            const auto& diffuseColor = material.getDiffuseColor();
+            const auto& specularColor = material.getSpecularColor();
 
+            auto& phongShader = openGLWidget->getPhongShader();
+            phongShader->bind();
+            phongShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+            phongShader->setUniformValue("u_LightDirection", QVector3D(modelLightDirection.x, modelLightDirection.y, modelLightDirection.z));
+            phongShader->setUniformValue("u_ViewPosition", QVector3D(modelSpaceCameraPosition.x, modelSpaceCameraPosition.y, modelSpaceCameraPosition.z));
+            phongShader->setUniformValue("u_AmbientIntensity", ambientLighting);
+            phongShader->setUniformValue("u_DiffuseIntensity", 1.0f-ambientLighting);
+            phongShader->setUniformValue("u_SpecularIntensity", 0.5f);
+            phongShader->setUniformValue("u_DiffuseColor", QVector4D(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a));
+            phongShader->setUniformValue("u_SpecularColor", QVector4D(specularColor.r, specularColor.g, specularColor.b, specularColor.a));
+            phongShader->setUniformValue("u_SpecularPower", 8.0f);
         }
 
-        GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int),  GL_UNSIGNED_INT, nullptr));
+        GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
 
         if(this->axisEnabled){
             for (const auto &axisRenderLine: this->axisRenderLines){
-                axisRenderLine->draw(viewMatrix, projectionMatrix, lightMode);
+                axisRenderLine->draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
             }
         }
 
-        if(this->boundingBoxEnabled) boundingBox.draw(viewMatrix, projectionMatrix, lightMode);
+        if(this->boundingBoxEnabled) boundingBox.draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
     }
 }
 
@@ -185,8 +196,6 @@ RenderMesh &RenderMesh::operator=(RenderMesh &&other) noexcept {
         this->vertexBuffer = other.vertexBuffer;
         this->cullingEnabled = other.cullingEnabled;
         this->wireframeEnabled = other.wireframeEnabled;
-        this->ambientShader = other.ambientShader;
-        this->diffuseShader = other.diffuseShader;
         this->boundingBoxEnabled = other.boundingBoxEnabled;
         this->axisEnabled = other.axisEnabled;
         this->boundingBox = std::move(other.boundingBox);
@@ -267,9 +276,9 @@ QMenu* RenderMesh::getContextMenu() {
     // TODO add option to save the transformed mesh (int its current position) to a file
 }
 
-void RenderMesh::setColor(const Color &newColor) {
-    AbstractRenderModel::setColor(newColor);
-    this->boundingBox.setColor(Color(newColor.r, newColor.g, newColor.b, 1.0f));
+void RenderMesh::setMaterial(const PhongMaterial& newMaterial) {
+    AbstractRenderModel::setMaterial(newMaterial);
+    this->boundingBox.setMaterial(newMaterial);
 }
 
 RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* parent) {

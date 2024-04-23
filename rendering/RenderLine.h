@@ -10,12 +10,10 @@
 #include "AbstractRenderModel.h"
 
 class RenderLine: public AbstractRenderModel  {
-private:
-    std::shared_ptr<QOpenGLShaderProgram> ambientShader;
 public:
-    RenderLine(const Vertex &vertexA, const Vertex& vertexB, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+    RenderLine(const Vertex &vertexA, const Vertex& vertexB, const Transformation& transformation);
 
-    void draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
+    void draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
 //    RenderModelDetailDialog *createRenderModelDetailDialog(QWidget* parent) override;
 //    void draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
 };

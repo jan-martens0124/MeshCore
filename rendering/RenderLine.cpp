@@ -5,12 +5,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "RenderLine.h"
 #include "Exception.h"
+#include "OpenGLWidget.h"
 
-RenderLine::RenderLine(const Vertex &startPoint, const Vertex &endPoint, const Transformation &transformation,
-                       const std::shared_ptr<QOpenGLShaderProgram> &shader):
-                       AbstractRenderModel(transformation, "AABB"),
-                       ambientShader(shader)
-{
+RenderLine::RenderLine(const Vertex &startPoint, const Vertex &endPoint, const Transformation &transformation): AbstractRenderModel(transformation, "AABB"){
     std::vector<glm::vec3> data;
     data.push_back(startPoint);
     data.push_back(endPoint);
@@ -36,22 +33,24 @@ RenderLine::RenderLine(const Vertex &startPoint, const Vertex &endPoint, const T
     GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr));
 }
 
-void RenderLine::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
+void RenderLine::draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
     if(this->isVisible()){
 
         // Bind required buffers and shaders
         this->initializeOpenGLFunctions();
         this->vertexArray->bind();
         this->indexBuffer->bind();
-        this->ambientShader->bind();
+
+        auto& ambientShader = openGLWidget->getAmbientShader();
+        ambientShader->bind();
 
         // Set MVP matrix uniform
         const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
-        this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+        ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
 
         // Set color uniform
         QVector4D drawColor;
-        const auto color = this->getColor();
+        const auto color = this->getMaterial().getDiffuseColor();
         drawColor = QVector4D(color.r, color.g, color.b, color.a);
         if(lightMode){
             if(glm::vec3(color) == glm::vec3(1,1,1)){
@@ -61,7 +60,7 @@ void RenderLine::draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMa
                 drawColor = QVector4D(1, 1, 1, color.a);
             }
         }
-        this->ambientShader->setUniformValue("u_Color", drawColor);
+        ambientShader->setUniformValue("u_Color", drawColor);
 
 
         GL_CALL(glDrawElements(GL_LINES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));

@@ -13,8 +13,10 @@
 #include <qaction.h>
 #include <qcolordialog.h>
 #include "RenderModelDetailDialog.h"
-#include "Color.h"
+#include "PhongMaterial.h"
 #include "RenderListeners.h"
+
+class OpenGLWidget;
 
 class AbstractRenderModel: protected QOpenGLFunctions {
 
@@ -24,7 +26,7 @@ private:
 
 private:
     bool visible = true;
-    Color color = Color(1.0f);
+    PhongMaterial material = PhongMaterial(Color(1.0f));
 
 protected:
     QOpenGLBuffer* indexBuffer;
@@ -40,15 +42,15 @@ public:
     AbstractRenderModel& operator=(AbstractRenderModel&& other) noexcept;
     virtual ~AbstractRenderModel();
 
-    virtual void draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) = 0;
+    virtual void draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) = 0;
 
 public:
     [[nodiscard]] const std::string &getName() const;
     void setName(const std::string &newName);
     [[nodiscard]] bool isVisible() const;
     void setVisible(bool newVisible);
-    [[nodiscard]] const Color &getColor() const;
-    virtual void setColor(const Color &newColor);
+    [[nodiscard]] const PhongMaterial &getMaterial() const;
+    virtual void setMaterial(const PhongMaterial &material);
     [[nodiscard]] glm::mat4 getTransformationMatrix() const;
     virtual void setTransformation(const Transformation &transformation);
     const Transformation& getTransformation() const;

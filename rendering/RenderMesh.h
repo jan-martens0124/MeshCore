@@ -10,6 +10,7 @@
 #include "AbstractRenderModel.h"
 #include "RenderAABB.h"
 #include "RenderLine.h"
+#include "PhongMaterial.h"
 
 class RenderMesh: public AbstractRenderModel {
 private:
@@ -19,9 +20,6 @@ private:
     bool surfaceEnabled = true;
     bool boundingBoxEnabled = false;
     bool axisEnabled = false;
-
-    std::shared_ptr<QOpenGLShaderProgram> ambientShader;
-    std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
 
     RenderAABB boundingBox;
     std::vector<std::shared_ptr<RenderLine>> axisRenderLines;
@@ -38,10 +36,8 @@ public:
     RenderMesh& operator=(RenderMesh&& other) noexcept;
     ~RenderMesh() override = default;
 
-    RenderMesh(const WorldSpaceMesh &worldSpaceMesh,
-                const std::shared_ptr<QOpenGLShaderProgram>& ambientShader,
-                const std::shared_ptr<QOpenGLShaderProgram>& diffuseShader);
-    void draw(const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) override;
+    RenderMesh(const WorldSpaceMesh &worldSpaceMesh);
+    void draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) override;
 
     [[nodiscard]] bool isWireframeEnabled() const;
     [[nodiscard]] bool isCullingEnabled() const;
@@ -56,7 +52,7 @@ public:
 
     RenderModelDetailDialog* createRenderModelDetailDialog(QWidget* parent) override;
 
-    void setColor(const Color &newColor) override;
+    void setMaterial(const PhongMaterial& newMaterial) override;
 
     void setTransformation(const Transformation &newTransformation) override;
 

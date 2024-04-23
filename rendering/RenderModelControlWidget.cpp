@@ -16,11 +16,14 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
 
 
     ui->visibleCheckBox->setChecked(this->renderModel->isVisible());
-    const auto &color = this->renderModel->getColor();
+    const auto &color = this->renderModel->getMaterial().getDiffuseColor();
     ui->colorPushButton->setStyleSheet("background-color: " + QColor(color.r*255, color.g*255, color.b*255, color.a*255).name());
 
-    listener->setOnColorChanged([&](const Color& oldColor, const Color& newColor) {
-        this->ui->colorPushButton->setStyleSheet("background-color: " + QColor(newColor.r*255, newColor.g*255, newColor.b*255, newColor.a*255).name());
+    listener->setOnMaterialChanged([&](const PhongMaterial& oldMaterial, const PhongMaterial& newMaterial) {
+        const auto& newColor = newMaterial.getDiffuseColor();
+        this->ui->colorPushButton->setStyleSheet("background-color: " +
+                                                 QColor(newColor.r * 255, newColor.g * 255, newColor.b * 255,
+                                                        newColor.a * 255).name());
     });
 
     listener->setOnVisibleChanged([&](bool oldVisible, bool newVisible) {
@@ -43,10 +46,12 @@ RenderModelControlWidget::RenderModelControlWidget(const std::shared_ptr<Abstrac
     });
 
     connect(ui->colorPushButton, &QPushButton::clicked, [=](){
-        auto initialColor = this->renderModel->getColor();
+        auto originalMaterial = this->renderModel->getMaterial();
+        auto initialColor = originalMaterial.getDiffuseColor();
         auto resultColor = QColorDialog::getColor(QColor(255.f*initialColor.r, 255.f*initialColor.g, 255.f*initialColor.b, 255.f*initialColor.a), nullptr, QString(), QColorDialog::ShowAlphaChannel);
         if(resultColor.isValid()){
-            this->renderModel->setColor(Color(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f));
+            Color newDiffuseColor(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f);
+            this->renderModel->setMaterial(PhongMaterial(newDiffuseColor, originalMaterial.getSpecularColor())); // Keep original specular color
         }
     });
 

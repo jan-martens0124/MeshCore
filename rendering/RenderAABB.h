@@ -13,15 +13,14 @@
 class RenderAABB: public AbstractRenderModel {
 private:
     AABB aabb;
-    std::shared_ptr<QOpenGLShaderProgram> ambientShader;
 public:
 
-    RenderAABB(const AABB &aabb, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
-    RenderAABB(const WorldSpaceMesh& worldSpaceMesh, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+    RenderAABB(const AABB &aabb, const Transformation& transformation);
+    RenderAABB(const WorldSpaceMesh& worldSpaceMesh);
 
     RenderModelDetailDialog *createRenderModelDetailDialog(QWidget* parent) override;
 
-    void draw(const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
+    void draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) override;
 };
 
 
