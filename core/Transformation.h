@@ -101,6 +101,14 @@ public:
         return matrix;
     }
 
+
+    MC_FUNC_QUALIFIER Transformation getInverse() const {
+        Transformation result(this->rotation.getInverse());
+        result.scale = 1.0f / this->scale;
+        result.position = result.scale * result.rotation.rotateVertex(-this->position);
+        return result;
+    }
+
     MC_FUNC_QUALIFIER glm::mat4 getInverseMatrix() const {
         if(!this->validInverseMatrix){
             this->inverseMatrix = glm::inverse(this->getMatrix());

@@ -30,13 +30,13 @@ static std::ostream & operator<<(std::ostream & os, const Sphere& sphere){
 static std::ostream& operator<<(std::ostream& o, const Transformation& transformation) {
     o << "\tScale: " << transformation.getScale() << "\n";
     o << "\tPosition: " << transformation.getPosition() << "\n";
-    o << "\tRotation: quat(" << transformation.getRotation().x << "," << transformation.getRotation().y << "," << transformation.getRotation().z << ","  << transformation.getRotation().w << "," << ")\n";
+    o << "\tRotation: quat(" << transformation.getRotation().w << "," << transformation.getRotation().x << "," << transformation.getRotation().y << "," << transformation.getRotation().z << ")\n";
     auto transform = transformation.getMatrix();
-    o << "\n\t[" << transform.operator[](0).x << "," << transform.operator[](1).x << "," << transform.operator[](2).x << "," << transform.operator[](3).x << "\n\t"
+    o << "\t[" << transform.operator[](0).x << "," << transform.operator[](1).x << "," << transform.operator[](2).x << "," << transform.operator[](3).x << "\n\t"
                  << transform.operator[](0).y << "," << transform.operator[](1).y << "," << transform.operator[](2).y << "," << transform.operator[](3).y << "\n\t"
                  << transform.operator[](0).z << "," << transform.operator[](1).z << "," << transform.operator[](2).z << "," << transform.operator[](3).z << "\n\t"
                  << transform.operator[](0).w << "," << transform.operator[](1).w << "," << transform.operator[](2).w << "," << transform.operator[](3).w
-    << ']';
+    << "]\n";
     return o;
 }
 

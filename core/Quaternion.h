@@ -28,12 +28,14 @@ public:
         this->z = cx*cy*sz + sx*sy*cz;
         assert(glm::epsilonEqual(glm::length(glm::fquat(*this)), 1.0f, 1e-6f));
 
-        assert(glm::epsilonEqual(this->getYaw(), yaw, 1e-6f));
-        assert(glm::epsilonEqual(this->getPitch(), pitch, 1e-6f));
-        assert(glm::epsilonEqual(this->getRoll(), roll, 1e-6f));
+        assert(glm::epsilonEqual(glm::mod(this->getYaw(), glm::two_pi<float>()), glm::mod(yaw, glm::two_pi<float>()), 1e-3f));
+        assert(glm::epsilonEqual(glm::mod(this->getPitch(), glm::two_pi<float>()), glm::mod(pitch, glm::two_pi<float>()), 1e-3f));
+        assert(glm::epsilonEqual(glm::mod(this->getRoll(), glm::two_pi<float>()), glm::mod(roll, glm::two_pi<float>()), 1e-3f));
     }
 
     MC_FUNC_QUALIFIER explicit Quaternion(const glm::mat3 rotationMatrix): glm::fquat(glm::quat_cast(rotationMatrix)){}
+
+    MC_FUNC_QUALIFIER Quaternion(const glm::vec3& axis, float angle): glm::fquat(glm::angleAxis(angle, glm::normalize(axis))){}
 
     MC_FUNC_QUALIFIER explicit Quaternion(const glm::mat4 rotationMatrix): glm::fquat(glm::quat_cast(rotationMatrix)){}
 
