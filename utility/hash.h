@@ -7,6 +7,8 @@
 
 #include "../core/VertexTriangle.h"
 #include "../core/Sphere.h"
+#include "../core/Plane.h"
+
 
 #if GLM_HAS_CXX11_STL
     #include <glm/gtx/hash.hpp>
@@ -41,6 +43,17 @@
             return result;
         }
     };
+
+    template<> struct std::hash<Plane> {
+        size_t operator()(const Plane &plane) const {
+            size_t result = 0;
+            auto vectorHash = std::hash<glm::vec3>();
+            auto floatHash = std::hash<float>();
+            glm::detail::hash_combine(result, vectorHash(plane.getNormal()));
+            glm::detail::hash_combine(result, floatHash(plane.getD()));
+            return result;
+        }
+    };
 #else
     #include <functional>
 
@@ -70,6 +83,12 @@
     template<> struct std::hash<Sphere> {
         size_t operator()(const Sphere &sphere) const {
             return std::hash<float>()(sphere.getCenter().x + sphere.getCenter().y + sphere.getCenter().z + sphere.getRadius());
+        }
+    };
+
+    template<> struct std::hash<Plane> {
+        size_t operator()(const Plane &plane) const {
+            return std::hash<float>()(plane.getNormal().x + plane.getNormal().y + plane.getNormal().z + plane.getD());
         }
     };
 #endif

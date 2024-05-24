@@ -9,6 +9,7 @@
 #include "forms/ui_renderwidget.h"
 #include "RenderModelControlWidget.h"
 #include "RenderGroupControlWidget.h"
+#include "core/Plane.h"
 
 RenderWidget::RenderWidget(QWidget *parent):
     QWidget(parent), ui(new Ui::RenderWidget)
@@ -154,6 +155,15 @@ void RenderWidget::renderBox(const std::string &group, const std::string& name, 
                               Q_ARG(std::string, name),
                               Q_ARG(AABB, aabb),
                               Q_ARG(Transformation, transformation),
+                              Q_ARG(PhongMaterial, PhongMaterial(color)),
+                              Q_ARG(RenderWidget*, this));
+}
+
+void RenderWidget::renderPlane(const std::string &group, const std::string& name, const Plane &plane, const Color& color) {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderPlaneSlot", Qt::AutoConnection,
+                              Q_ARG(std::string, group),
+                              Q_ARG(std::string, name),
+                              Q_ARG(Plane, plane),
                               Q_ARG(PhongMaterial, PhongMaterial(color)),
                               Q_ARG(RenderWidget*, this));
 }
