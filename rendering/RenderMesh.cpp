@@ -115,6 +115,12 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
 
     if(this->isVisible()){
 
+        if(this->axisEnabled){
+            for (const auto &axisRenderLine: this->axisRenderLines){
+                axisRenderLine->draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
+            }
+        }
+
         this->initializeOpenGLFunctions();
         this->vertexArray->bind();
         this->indexBuffer->bind();
@@ -178,12 +184,6 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
         }
 
         GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
-
-        if(this->axisEnabled){
-            for (const auto &axisRenderLine: this->axisRenderLines){
-                axisRenderLine->draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
-            }
-        }
 
         if(this->boundingBoxEnabled) boundingBox.draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
     }

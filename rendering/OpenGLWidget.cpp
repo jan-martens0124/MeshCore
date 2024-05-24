@@ -530,9 +530,11 @@ void OpenGLWidget::renderBoxSlot(const std::string &group, const std::string &na
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
 
     // Find the model in this group
+//    auto hash = std::hash<AABB>{}(aabb);
+//    glm::detail::hash_combine(hash, std::hash<glm::mat4>{}(transformation.getMatrix()));
     auto hash = std::hash<AABB>{}(aabb);
-    glm::detail::hash_combine(hash, std::hash<glm::mat4>{}(transformation.getMatrix()));
-    auto renderId = std::to_string(std::hash<AABB>{}(aabb));
+    glm::detail::hash_combine(hash, std::hash<std::string>{}(name));
+    auto renderId = std::to_string(hash);
     auto modelIterator = renderModelsMap.find(renderId);
 
     // Create a new model if not found

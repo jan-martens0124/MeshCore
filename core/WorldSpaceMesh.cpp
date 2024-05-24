@@ -57,8 +57,10 @@ std::shared_ptr<ModelSpaceMesh> WorldSpaceMesh::getTransformedModelSpaceMesh() c
     const auto& modelSpaceVertices = this->modelSpaceMesh->getVertices();
     std::vector<Vertex> transformedVertices;
     transformedVertices.reserve(modelSpaceVertices.size());
-    for (int i = 0; i < modelSpaceVertices.size(); ++i){
-        transformedVertices.emplace_back(this->getModelTransformation().transformVertex(modelSpaceVertices[i]));
+    for (auto modelSpaceVertex : modelSpaceVertices){
+        transformedVertices.emplace_back(this->getModelTransformation().transformVertex(modelSpaceVertex));
     }
-    return std::make_shared<ModelSpaceMesh>(transformedVertices, this->modelSpaceMesh->getTriangles());
+    auto result = std::make_shared<ModelSpaceMesh>(transformedVertices, this->modelSpaceMesh->getTriangles());
+    result->setName(this->modelSpaceMesh->getName() + "-Transformed");
+    return result;
 }

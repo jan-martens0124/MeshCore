@@ -115,8 +115,8 @@ QMenu* AbstractRenderModel::getContextMenu(){
     visibleAction->setChecked(this->isVisible());
     contextMenu->addAction(visibleAction);
 
-    QAction* colorAction = contextMenu->addAction(QString("Change material..."));
-    QObject::connect(colorAction, &QAction::triggered, [=](){
+    QAction* diffuseColorAction = contextMenu->addAction(QString("Change diffuse color..."));
+    QObject::connect(diffuseColorAction, &QAction::triggered, [=](){
         auto& initialMaterial = this->getMaterial();
         auto& initialDiffuseColor = initialMaterial.getDiffuseColor();
         auto resultColor = QColorDialog::getColor(QColor(255.f * initialDiffuseColor.r, 255.f * initialDiffuseColor.g, 255.f * initialDiffuseColor.b, 255.f * initialDiffuseColor.a), nullptr, QString(), QColorDialog::ShowAlphaChannel);
@@ -126,7 +126,18 @@ QMenu* AbstractRenderModel::getContextMenu(){
         }
     });
 
-    contextMenu->addAction(colorAction);
+    QAction* specularColorAction = contextMenu->addAction(QString("Change specular color..."));
+    QObject::connect(specularColorAction, &QAction::triggered, [=](){
+        auto& initialMaterial = this->getMaterial();
+        auto& initialSpecularColor = initialMaterial.getSpecularColor();
+        auto resultColor = QColorDialog::getColor(QColor(255.f * initialSpecularColor.r, 255.f * initialSpecularColor.g, 255.f * initialSpecularColor.b, 255.f * initialSpecularColor.a), nullptr, QString(), QColorDialog::ShowAlphaChannel);
+        if(resultColor.isValid()){
+            Color newSpecularColor(resultColor.red() / 255.f, resultColor.green() / 255.f, resultColor.blue() / 255.f, resultColor.alpha() / 255.f);
+            this->setMaterial(PhongMaterial(initialMaterial.getDiffuseColor(), newSpecularColor));
+        }
+    });
+
+    contextMenu->addAction(diffuseColorAction);
 
     return contextMenu;
 }

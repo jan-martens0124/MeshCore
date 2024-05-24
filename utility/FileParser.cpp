@@ -35,7 +35,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::loadMeshFile(const std::string &file
     if(!std::filesystem::exists(filePath)){
         auto absolutePath = std::filesystem::absolute(filePath);
         std::cout << "Warning: File " << absolutePath << " does not exist!" << std::endl;
-        return std::make_shared<ModelSpaceMesh>(ModelSpaceMesh(std::vector<Vertex>(), std::vector<IndexTriangle>()));
+        return nullptr;
     }
 
     // Check if the file is already cached

@@ -5,6 +5,7 @@
 #ifndef OPTIXMESHCORE_SPHEREFACTORY_H
 #define OPTIXMESHCORE_SPHEREFACTORY_H
 
+#include "../core/VertexTriangle.h"
 #include "../core/Sphere.h"
 #include "../external/miniball/Miniball.hpp"
 #include <vector>

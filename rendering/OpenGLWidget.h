@@ -31,7 +31,7 @@ Q_OBJECT
 private:
 
     bool lightMode = false;
-    bool usePerspective = true;
+    bool usePerspective = false;
     bool axisEnabled = false;
 
     int width{};

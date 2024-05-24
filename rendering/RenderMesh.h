@@ -56,10 +56,6 @@ public:
 
     void setTransformation(const Transformation &newTransformation) override;
 
-    const std::vector<std::shared_ptr<RenderLine>> &getAxisRenderLines() const;
-
-    void setAxisRenderLines(const std::vector<std::shared_ptr<RenderLine>> &axisRenderLines);
-
     bool isAxisEnabled() const;
 
     void setAxisEnabled(bool axisEnabled);

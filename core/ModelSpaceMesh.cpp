@@ -191,7 +191,8 @@ std::optional<std::shared_ptr<ModelSpaceMesh>> ModelSpaceMesh::getConvexHull() c
     }
 
     auto hull = std::make_shared<ModelSpaceMesh>(hullVertices, hullTriangles);
-    assert(hull->getBounds() == this->getBounds() && "The convex hull should have the same bounding box as the original mesh");
+    assert(glm::all(glm::epsilonEqual(hull->getBounds().getMinimum(), this->getBounds().getMinimum(), 1e-5f)) && "The convex hull should have the same bounding box as the original mesh");
+    assert(glm::all(glm::epsilonEqual(hull->getBounds().getMaximum(), this->getBounds().getMaximum(), 1e-5f)) && "The convex hull should have the same bounding box as the original mesh");
     convexHull = hull;
     convexHull.value()->setName("Convex hull of " + this->getName());
     return hull;
