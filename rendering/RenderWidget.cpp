@@ -332,3 +332,12 @@ void RenderWidget::captureAnimation() const {
 [[maybe_unused]] void RenderWidget::setTimeLabelSlot(const QString &time) {
     this->ui->timeLabel->setText(time);
 }
+
+void RenderWidget::renderRay(const std::string &group, const std::string &name, const Ray &ray, const Color &color) {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "renderRaySlot", Qt::AutoConnection,
+                              Q_ARG(std::string, group),
+                              Q_ARG(std::string, name),
+                              Q_ARG(Ray, ray),
+                              Q_ARG(PhongMaterial, PhongMaterial(color)),
+                              Q_ARG(RenderWidget*, this));
+}

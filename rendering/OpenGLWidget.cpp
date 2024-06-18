@@ -11,6 +11,7 @@
 #include "RenderWidget.h"
 #include "Exception.h"
 #include "../external/gifencoder/GifEncoder.h"
+#include "RenderRay.h"
 #include <glm/gtx/hash.hpp>
 #include <QProgressDialog>
 
@@ -928,6 +929,50 @@ void OpenGLWidget::renderPlaneSlot(const std::string &group, const std::string &
 
     // Update the transformation
 //    modelIterator->second->setTransformation(transformation);
+
+    this->update();
+}
+
+void OpenGLWidget::renderRaySlot(const std::string &group, const std::string &name, const Ray &ray, const PhongMaterial &material, RenderWidget *renderWidget) {
+
+    // Find the group
+    auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
+
+    // Find the model in this group
+    auto hash = std::hash<Ray>{}(ray);
+    glm::detail::hash_combine(hash, std::hash<std::string>{}(name));
+    auto renderId = std::to_string(hash);
+    auto modelIterator = renderModelsMap.find(renderId);
+
+    // Create a new model if not found
+    if(modelIterator == renderModelsMap.end()){
+
+        this->makeCurrent();
+
+        // No entry present yet, create new render Model
+        auto renderRay = std::make_shared<RenderRay>(ray);
+
+        // Insert it in the renderModelsMap
+        modelIterator = renderModelsMap.insert({renderId, renderRay}).first;
+
+        // Add required listeners
+        this->addRenderModelListeners(group, renderRay);
+
+        // Add control widget to the renderWidget
+        renderWidget->addControlWidget(group, renderRay);
+
+        // Set the color
+        modelIterator->second->setMaterial(PhongMaterial(Color::White()));
+        modelIterator->second->setName(name);
+
+        this->updateSortedRenderModels();
+    }
+
+    // Update the color
+    modelIterator->second->setMaterial(material);
+
+    // Update the transformation
+    // modelIterator->second->setTransformation(transformation);
 
     this->update();
 }

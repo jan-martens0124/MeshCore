@@ -8,7 +8,7 @@
 #include "../core/VertexTriangle.h"
 #include "../core/Sphere.h"
 #include "../core/Plane.h"
-
+#include "../core/Ray.h"
 
 #if GLM_HAS_CXX11_STL
     #include <glm/gtx/hash.hpp>
@@ -54,6 +54,17 @@
             return result;
         }
     };
+
+    template<> struct std::hash<Ray> {
+        size_t operator()(const Ray &ray) const {
+            size_t result = 0;
+            auto vertexHash = std::hash<Vertex>();
+            auto vectorHash = std::hash<glm::vec3>();
+            glm::detail::hash_combine(result, vertexHash(ray.getOrigin()));
+            glm::detail::hash_combine(result, vectorHash(ray.getDirection()));
+            return result;
+        }
+    };
 #else
     #include <functional>
 
@@ -89,6 +100,12 @@
     template<> struct std::hash<Plane> {
         size_t operator()(const Plane &plane) const {
             return std::hash<float>()(plane.getNormal().x + plane.getNormal().y + plane.getNormal().z + plane.getD());
+        }
+    };
+
+    template<> struct std::hash<Ray> {
+        size_t operator()(const Ray &ray) const {
+            return std::hash<float>()(ray.getOrigin().x + ray.getOrigin().y + ray.getOrigin().z + ray.getDirection().x + ray.getDirection().y + ray.getDirection().z);
         }
     };
 #endif

@@ -7,12 +7,13 @@
 
 #include "AbstractRenderModel.h"
 #include "../core/OBB.h"
+#include "../core/Plane.h"
+#include "../core/Ray.h"
 #include "../core/Sphere.h"
+#include "../core/VertexTriangle.h"
 #include "../core/WorldSpaceMesh.h"
 #include "RenderLine.h"
-#include "../core/VertexTriangle.h"
 #include "KeyFrame.h"
-#include "../core/Plane.h"
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QMouseEvent>
@@ -99,6 +100,7 @@ private slots:
     void renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const PhongMaterial &material, RenderWidget* renderWidget);
     void renderPlaneSlot(const std::string &group, const std::string &name, const Plane &plane, const PhongMaterial& material, RenderWidget* renderWidget);
     void renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, const PhongMaterial& material, RenderWidget *renderWidget);
+    void renderRaySlot(const std::string &group, const std::string &name, const Ray &ray, const PhongMaterial& material, RenderWidget* renderWidget);
     void renderSphereSlot(const std::string &group, const std::string &name, const Sphere &sphere, const PhongMaterial& material, RenderWidget* renderWidget);
     void renderTriangleSlot(const std::string &group, const std::string &name, const VertexTriangle &triangle, const PhongMaterial& material, RenderWidget* renderWidget);
     void renderLineSlot(const std::string &group, const std::string &name, const glm::vec3 &start, const glm::vec3 &end, const PhongMaterial& material, RenderWidget* renderWidget);

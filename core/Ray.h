@@ -34,6 +34,14 @@ public:
         glm::vec3 transformedDirection = transformationMatrix * glm::vec4(this->direction, 0);
         return {transformedOrigin, transformedDirection};
     }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] const Vertex &getOrigin() const {
+        return origin;
+    }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] const glm::vec3 &getDirection() const {
+        return direction;
+    }
 };
 
 #endif //MESHCORE_RAY_H
