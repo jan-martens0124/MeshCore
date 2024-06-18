@@ -67,8 +67,17 @@ void run(RenderWidget* renderWidget){
     transformationB.factorRotation(Quaternion(glm::pi<float>()/2,0,0)); // YPR
     transformationB.deltaPosition(glm::vec3(0,0,-10));
 
+    KeyFrame keyFrame1;
+    keyFrame1.addObject("Meshes", bananaWorldSpaceMesh, transformationA, PhongMaterial(Color::Yellow()));
+    KeyFrame keyFrame2;
+    keyFrame2.addObject("Meshes", bananaWorldSpaceMesh, transformationB, PhongMaterial(Color::Yellow()));
+    KeyFrame keyFrame3;
+    keyFrame3.addObject("Meshes", bananaWorldSpaceMesh, transformationB, PhongMaterial(Color::Red()));
+    KeyFrame keyFrame4;
+    keyFrame4.addObject("Meshes", bananaWorldSpaceMesh, transformationA, PhongMaterial(Color::Yellow()));
+
     // TODO this interface has its limitations (rotating viewmatrix, interpolating multiple transformations for multiple meshes, ...)
-    renderWidget->captureLinearAnimation("Meshes", bananaWorldSpaceMesh, transformationA, transformationB, Color::Yellow(), Color::Yellow(), "test.gif", 200, 2);
-    renderWidget->captureLinearAnimation("Meshes", bananaWorldSpaceMesh, transformationB, transformationB, Color::Yellow(), Color::Red(), "test2.gif", 50, 2);
-    renderWidget->captureLinearAnimation("Meshes", bananaWorldSpaceMesh, transformationB, transformationA, Color::Red(), Color::Yellow(), "test3.gif", 200, 2);
+    renderWidget->captureLinearAnimation(renderWidget->getOpenGLWidget()->getViewTransformation(), renderWidget->getOpenGLWidget()->getViewTransformation(), keyFrame1, keyFrame2, "test.gif", 200, 2);
+    renderWidget->captureLinearAnimation(renderWidget->getOpenGLWidget()->getViewTransformation(), renderWidget->getOpenGLWidget()->getViewTransformation(), keyFrame2, keyFrame3, "test2.gif", 200, 2);
+    renderWidget->captureLinearAnimation(renderWidget->getOpenGLWidget()->getViewTransformation(), renderWidget->getOpenGLWidget()->getViewTransformation(), keyFrame3, keyFrame4, "test3.gif", 200, 2);
 }
