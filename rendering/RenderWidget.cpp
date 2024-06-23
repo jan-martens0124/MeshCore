@@ -60,21 +60,21 @@ void RenderWidget::renderWorldSpaceMesh(const std::string &group, const std::sha
 
 void RenderWidget::captureLinearAnimation(const Transformation& initialViewTransformation, const Transformation& finalViewTransformation,
                                           const KeyFrame& initialKeyFrame, const KeyFrame& finalKeyFrame,
-                                          const QString& fileName, int steps, int delay){
+                                          const std::string& fileName, int steps, int delay){
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "captureLinearAnimationSlot",
                               Qt::BlockingQueuedConnection,
                               Q_ARG(Transformation , initialViewTransformation),
                               Q_ARG(Transformation , finalViewTransformation),
                               Q_ARG(KeyFrame , initialKeyFrame),
                               Q_ARG(KeyFrame , finalKeyFrame),
-                              Q_ARG(QString, fileName),
+                              Q_ARG(QString, QString::fromStdString(fileName)),
                               Q_ARG(int, steps),
                               Q_ARG(int, delay),
                               Q_ARG(RenderWidget*, this));
 }
 
 void RenderWidget::captureLinearAnimation(const Transformation& initialViewTransformation, const Transformation& finalViewTransformation,
-                                          const QString& fileName, int steps, int delay){
+                                          const std::string& fileName, int steps, int delay){
     this->captureLinearAnimation(initialViewTransformation, finalViewTransformation, {}, {}, fileName, steps, delay);
 }
 
@@ -121,9 +121,11 @@ void RenderWidget::clearGroup(const std::string &group) {
 }
 
 void RenderWidget::setViewTransformation(const Transformation &transformation) const {
-    QMetaObject::invokeMethod(this->getOpenGLWidget(), "setViewTransformation",
-                              Qt::AutoConnection,
-                              Q_ARG(Transformation, transformation));
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "setViewTransformation", Qt::AutoConnection, Q_ARG(Transformation, transformation));
+}
+
+void RenderWidget::resetViewTransformation() const {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "resetView", Qt::AutoConnection);
 }
 
 QTreeWidgetItem *RenderWidget::getOrAddGroupWidget(const std::string &group) {

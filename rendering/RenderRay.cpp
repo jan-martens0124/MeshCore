@@ -3,6 +3,7 @@
 //
 
 #include "RenderRay.h"
+#include "RenderMesh.h"
 
 RenderRay::RenderRay(const Ray& ray, const Transformation &transformation, float widthLengthRatio): AbstractRenderModel(transformation, "Ray"){
 
@@ -99,4 +100,9 @@ void RenderRay::draw(const OpenGLWidget *openGLWidget, const glm::mat4 &viewMatr
 void RenderRay::setMaterial(const PhongMaterial &material) {
     AbstractRenderModel::setMaterial(material);
     this->arrowMesh->setMaterial(material);
+}
+
+void RenderRay::setTransformation(const Transformation &transformation) {
+    AbstractRenderModel::setTransformation(transformation);
+    this->arrowMesh->setTransformation(transformation);
 }

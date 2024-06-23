@@ -105,6 +105,10 @@ public:
     MC_FUNC_QUALIFIER [[nodiscard]] float getSurfaceArea() const {
         return glm::length(glm::cross(edges[0], edges[1])) / 2.0f;
     }
+
+    MC_FUNC_QUALIFIER [[nodiscard]] Vertex getCentroid() const {
+        return (vertices[0] + vertices[1] + vertices[2]) / 3.0f;
+    }
 };
 
 #endif //MESHCORE_VERTEXTRIANGLE_H

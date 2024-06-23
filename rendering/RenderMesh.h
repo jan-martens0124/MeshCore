@@ -11,6 +11,7 @@
 #include "RenderAABB.h"
 #include "RenderLine.h"
 #include "PhongMaterial.h"
+#include "RenderRay.h"
 
 class RenderMesh: public AbstractRenderModel {
 private:
@@ -20,9 +21,12 @@ private:
     bool surfaceEnabled = true;
     bool boundingBoxEnabled = false;
     bool axisEnabled = false;
+    bool normalsEnabled = false;
 
     RenderAABB boundingBox;
     std::vector<std::shared_ptr<RenderLine>> axisRenderLines;
+    std::vector<std::shared_ptr<RenderRay>> normalRenderRays;
+    std::vector<Ray> normalRays;
 
     unsigned int numberOfVertices;
     unsigned int numberOfTriangles;
@@ -36,29 +40,31 @@ public:
     RenderMesh& operator=(RenderMesh&& other) noexcept;
     ~RenderMesh() override = default;
 
-    RenderMesh(const WorldSpaceMesh &worldSpaceMesh);
+    explicit RenderMesh(const WorldSpaceMesh &worldSpaceMesh);
     void draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) override;
 
     [[nodiscard]] bool isWireframeEnabled() const;
     [[nodiscard]] bool isCullingEnabled() const;
     [[nodiscard]] bool isBoundingBoxEnabled() const;
-
+    [[nodiscard]] bool isAxisEnabled() const;
+    [[nodiscard]] bool isSurfaceEnabled() const;
+    [[nodiscard]] bool isNormalsEnabled() const;
 
     void setWireframeEnabled(bool newWireframeEnabled);
     void setCullingEnabled(bool newCullingEnabled);
     void setBoundingBoxEnabled(bool newBoundingBoxEnabled);
+    void setAxisEnabled(bool axisEnabled);
+    void setSurfaceEnabled(bool newSurfaceEnabled);
+    void setNormalsEnabled(bool newNormalsEnabled);
 
     QMenu* getContextMenu() override;
 
     RenderModelDetailDialog* createRenderModelDetailDialog(QWidget* parent) override;
 
     void setMaterial(const PhongMaterial& newMaterial) override;
-
     void setTransformation(const Transformation &newTransformation) override;
 
-    bool isAxisEnabled() const;
-
-    void setAxisEnabled(bool axisEnabled);
+    void initializeNormals();
 };
 
 

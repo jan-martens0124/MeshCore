@@ -45,15 +45,16 @@ public:
 
     void captureLinearAnimation(const Transformation &initialViewTransformation, const Transformation &finalViewTransformation,
                                 const KeyFrame &initialKeyFrame, const KeyFrame &finalKeyFrame,
-                                const QString &fileName, int steps, int delay);
+                                const std::string& fileName, int steps, int delay);
 
-    void captureLinearAnimation(const Transformation &initialViewTransformation, const Transformation &finalViewTransformation, const QString &fileName, int steps, int delay);
+    void captureLinearAnimation(const Transformation &initialViewTransformation, const Transformation &finalViewTransformation, const std::string& fileName, int steps, int delay);
 
 
     void clear();
     void clearGroup(const std::string &group);
 
     void setViewTransformation(const Transformation& transformation) const;
+    void resetViewTransformation() const;
 
 private:
     // Render generic objects that extend AbstractRenderModel

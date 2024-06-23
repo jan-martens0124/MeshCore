@@ -74,9 +74,7 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
     GL_CALL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*) (3 * sizeof(GLfloat))));
 
     // Store the axis render line
-
     auto& aabb = worldSpaceMesh.getModelSpaceMesh()->getBounds();
-
     axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(glm::max(0.0f, aabb.getMaximum().x),0,0), Transformation()));
     axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,glm::max(0.0f, aabb.getMaximum().y),0), Transformation()));
     axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,glm::max(0.0f, aabb.getMaximum().z)), Transformation()));
@@ -86,6 +84,26 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
 
     for (const auto &renderLine: axisRenderLines){
         renderLine->setTransformation(worldSpaceMesh.getModelTransformation());
+    }
+
+    // Store the normals
+    for (const auto &triangle: triangles){
+        auto vertexTriangle = VertexTriangle(vertices[triangle.vertexIndex0], vertices[triangle.vertexIndex1], vertices[triangle.vertexIndex2]);
+        auto center = vertexTriangle.getCentroid();
+        auto normal = vertexTriangle.normal;
+        normal = glm::normalize(normal) * glm::sqrt(glm::length(normal)); // Normals scale with surface, but we want them to scale with the scaling factor of the mod
+        this->normalRays.emplace_back(center, normal);
+    }
+}
+
+void RenderMesh::initializeNormals() {
+    normalRenderRays.clear();
+    normalRenderRays.reserve(normalRays.size());
+    for (const auto &normalRay: this->normalRays){
+        auto renderRay = std::make_shared<RenderRay>(normalRay, this->getTransformation());
+        renderRay->setMaterial(PhongMaterial(Color::Red()));
+        renderRay->setTransformation(this->getTransformation());
+        this->normalRenderRays.emplace_back(renderRay);
     }
 }
 
@@ -143,7 +161,8 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
             ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
             QVector4D drawColor;
             const auto color = this->getMaterial().getDiffuseColor();
-            drawColor = QVector4D(color.r, color.g, color.b, color.a);
+            const auto wireframeColorFactor = 0.5f; // TODO correct for light mode, but what if dark? It should become ligther no?
+            drawColor = QVector4D(wireframeColorFactor * color.r, wireframeColorFactor * color.g, wireframeColorFactor * color.b, color.a);
             if(lightMode){
                 if(glm::vec3(color) == glm::vec3(1,1,1)){
                     drawColor = QVector4D(0, 0, 0, color.a);
@@ -153,10 +172,11 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
                 }
             }
             ambientShader->setUniformValue("u_Color", drawColor);
+
+            GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
         }
-        else{
-            // TODO what if we want to draw the surface and the wireframe at the same time?
-            //  How to determine the right color=> separate: default color, combined: color for surface and black/white wireframe
+        if(this->surfaceEnabled){
+
             GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
             const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
@@ -167,8 +187,17 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
             glm::vec3 modelSpaceCameraPosition = glm::vec3(glm::inverse(this->getTransformationMatrix()) * glm::vec4(cameraPosition, 1.0f));
             const float ambientLighting = 0.05f; // TODO make this a configurable member of OpenGLWidget
             const auto& material = this->getMaterial();
-            const auto& diffuseColor = material.getDiffuseColor();
-            const auto& specularColor = material.getSpecularColor();
+
+            auto diffuseColor = material.getDiffuseColor();
+            auto specularColor = material.getSpecularColor();
+
+            if(this->wireframeEnabled){
+                // Make the colors more pastel
+                auto pastelFactor = 0.2f;
+                diffuseColor.r = (diffuseColor.r + pastelFactor) / (1+pastelFactor);
+                diffuseColor.g = (diffuseColor.g + pastelFactor) / (1+pastelFactor);
+                diffuseColor.b = (diffuseColor.b + pastelFactor) / (1+pastelFactor);
+            }
 
             auto& phongShader = openGLWidget->getPhongShader();
             phongShader->bind();
@@ -181,11 +210,9 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
             phongShader->setUniformValue("u_DiffuseColor", QVector4D(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a));
             phongShader->setUniformValue("u_SpecularColor", QVector4D(specularColor.r, specularColor.g, specularColor.b, specularColor.a));
             phongShader->setUniformValue("u_SpecularPower", 8.0f);
+
+            GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
         }
-
-        GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
-
-        if(this->boundingBoxEnabled) boundingBox.draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
     }
 }
 
@@ -198,11 +225,16 @@ RenderMesh &RenderMesh::operator=(RenderMesh &&other) noexcept {
         this->wireframeEnabled = other.wireframeEnabled;
         this->boundingBoxEnabled = other.boundingBoxEnabled;
         this->axisEnabled = other.axisEnabled;
+        this->normalsEnabled = other.normalsEnabled;
+        this->surfaceEnabled = other.surfaceEnabled;
         this->boundingBox = std::move(other.boundingBox);
         this->numberOfTriangles = other.numberOfTriangles;
         this->numberOfVertices = other.numberOfVertices;
         this->unscaledSurfaceArea = other.unscaledSurfaceArea;
         this->unscaledVolume = other.unscaledVolume;
+        this->axisRenderLines = std::move(other.axisRenderLines);
+        this->normalRays = std::move(other.normalRays);
+        this->normalRenderRays = std::move(other.normalRenderRays);
 
         other.indexBuffer = nullptr;
         other.vertexArray = nullptr;
@@ -239,6 +271,14 @@ QMenu* RenderMesh::getContextMenu() {
 
     contextMenu->addSeparator();
 
+    QAction* surfaceAction = contextMenu->addAction(QString("Surface"));
+    QObject::connect(surfaceAction, &QAction::triggered, [=](bool enabled){
+        this->setSurfaceEnabled(enabled);
+    });
+    surfaceAction->setCheckable(true);
+    surfaceAction->setChecked(this->isSurfaceEnabled());
+    contextMenu->addAction(surfaceAction);
+
     QAction* wireframeAction = contextMenu->addAction(QString("Wireframe"));
     QObject::connect(wireframeAction, &QAction::triggered, [=](bool enabled){
         this->setWireframeEnabled(enabled);
@@ -270,6 +310,14 @@ QMenu* RenderMesh::getContextMenu() {
     axisAction->setCheckable(true);
     axisAction->setChecked(this->isAxisEnabled());
     contextMenu->addAction(axisAction);
+
+    QAction* normalsAction = contextMenu->addAction(QString("Normals"));
+    QObject::connect(normalsAction, &QAction::triggered, [=](bool enabled){
+        this->setNormalsEnabled(enabled);
+    });
+    normalsAction->setCheckable(true);
+    normalsAction->setChecked(this->isNormalsEnabled());
+    contextMenu->addAction(normalsAction);
 
     return contextMenu;
 
@@ -304,12 +352,19 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
     });
     optionsLayout->addWidget(visibleCheckBox, 0, 0);
 
+    auto surfaceCheckBox = new QCheckBox(QString("Show Surface"));
+    surfaceCheckBox->setChecked(this->isSurfaceEnabled());
+    QObject::connect(surfaceCheckBox, &QCheckBox::clicked, [&](bool enabled) {
+        this->setSurfaceEnabled(enabled);
+    });
+    optionsLayout->addWidget(surfaceCheckBox, 1, 0);
+
     auto wireframeCheckBox = new QCheckBox(QString("Show Wireframe"));
     wireframeCheckBox->setChecked(this->isWireframeEnabled());
     QObject::connect(wireframeCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setWireframeEnabled(enabled);
     });
-    optionsLayout->addWidget(wireframeCheckBox, 1, 0);
+    optionsLayout->addWidget(wireframeCheckBox, 2, 0);
 
     auto cullingCheckBox = new QCheckBox(QString("Enable Culling"));
     cullingCheckBox->setChecked(this->isCullingEnabled());
@@ -317,21 +372,28 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
     QObject::connect(cullingCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setCullingEnabled(enabled);
     });
-    optionsLayout->addWidget(cullingCheckBox, 2, 0);
+    optionsLayout->addWidget(cullingCheckBox, 3, 0);
 
     auto boundingBoxCheckBox = new QCheckBox(QString("Show Bounding Box"));
     boundingBoxCheckBox->setChecked(this->isBoundingBoxEnabled());
     QObject::connect(boundingBoxCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setBoundingBoxEnabled(enabled);
     });
-    optionsLayout->addWidget(boundingBoxCheckBox, 3, 0);
+    optionsLayout->addWidget(boundingBoxCheckBox, 0, 1);
 
     auto axisCheckBox = new QCheckBox(QString("Show Axis"));
     axisCheckBox->setChecked(this->isAxisEnabled());
     QObject::connect(axisCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setAxisEnabled(enabled);
     });
-    optionsLayout->addWidget(axisCheckBox, 4, 0);
+    optionsLayout->addWidget(axisCheckBox, 1, 1);
+
+    auto normalsCheckBox = new QCheckBox(QString("Show Normals"));
+    normalsCheckBox->setChecked(this->isNormalsEnabled());
+    QObject::connect(normalsCheckBox, &QCheckBox::clicked, [&](bool enabled) {
+        this->setNormalsEnabled(enabled);
+    });
+    optionsLayout->addWidget(normalsCheckBox, 2, 1);
 
     auto listener = std::make_shared<SimpleRenderModelListener>();
     this->addListener(listener);
@@ -365,4 +427,29 @@ void RenderMesh::setTransformation(const Transformation &newTransformation) {
     for (const auto &axisRenderLine: this->axisRenderLines){
         axisRenderLine->setTransformation(newTransformation);
     }
+    for (const auto &normalRenderRay: this->normalRenderRays){
+        normalRenderRay->setTransformation(newTransformation);
+    }
+}
+
+void RenderMesh::setSurfaceEnabled(bool newSurfaceEnabled) {
+    RenderMesh::surfaceEnabled = newSurfaceEnabled;
+    for (const auto &listener: this->listeners){
+        listener->notify();
+    }
+}
+
+bool RenderMesh::isSurfaceEnabled() const {
+    return surfaceEnabled;
+}
+
+void RenderMesh::setNormalsEnabled(bool newNormalsEnabled) {
+    RenderMesh::normalsEnabled = newNormalsEnabled;
+    for (const auto &listener: this->listeners){
+        listener->notify();
+    }
+}
+
+bool RenderMesh::isNormalsEnabled() const {
+    return normalsEnabled;
 }

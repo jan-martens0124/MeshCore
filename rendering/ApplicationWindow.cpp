@@ -54,7 +54,7 @@ ApplicationWindow::ApplicationWindow() {
 //    zoomInAction->setShortcut(QKeySequence::ZoomIn);
 
     QAction* resetViewAction = viewMenu->addAction(QString("Reset view"));
-    connect(resetViewAction, &QAction::triggered, renderWidget->getOpenGLWidget(), &OpenGLWidget::resetView);
+    connect(resetViewAction, &QAction::triggered, renderWidget, &RenderWidget::resetViewTransformation);
     resetViewAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_0));
 
 //    QAction* toggleWireFrame = viewMenu->addAction(QString("Enable Wireframe"));

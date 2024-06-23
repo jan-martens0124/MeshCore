@@ -63,7 +63,6 @@ public:
     [[maybe_unused]] explicit OpenGLWidget(QWidget *parent = nullptr);
 
 public:
-    void resetView();
 
     [[nodiscard]] bool isUsePerspective() const;
     [[nodiscard]] bool isLightMode() const;
@@ -93,6 +92,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
 
 private slots:
+    void resetView();
     void clear();
     void clearGroup(const std::string &group);
     void setViewTransformation(const Transformation &newViewTransformation);

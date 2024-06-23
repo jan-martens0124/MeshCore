@@ -7,14 +7,17 @@
 
 #include <QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
-#include "RenderMesh.h"
 #include "core/Ray.h"
+
+class RenderMesh;
 
 class RenderRay: public AbstractRenderModel {
     std::shared_ptr<RenderMesh> arrowMesh{};
 
 public:
-    explicit RenderRay(const Ray& ray, const Transformation& transformation=Transformation{}, float widthLengthRatio=0.15);
+    void setTransformation(const Transformation &transformation) override;
+
+    explicit RenderRay(const Ray& ray, const Transformation& transformation=Transformation{}, float widthLengthRatio=0.10);
 
     void setMaterial(const PhongMaterial &material) override;
 
