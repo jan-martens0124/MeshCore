@@ -22,6 +22,10 @@ public:
         this->addObject({group, mesh, transformation, material});
     }
 
+    void addObject(const std::string& group, std::shared_ptr<WorldSpaceMesh> mesh, const Transformation& transformation, const Color& color){
+        this->addObject({group, mesh, transformation, PhongMaterial(color)});
+    }
+
     void addObject(const KeyFrameObject& object){
         objects.push_back(object);
     }

@@ -139,6 +139,15 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
             }
         }
 
+        if(this->boundingBoxEnabled) boundingBox.draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
+
+        if(this->normalsEnabled) {
+            if(this->normalRenderRays.empty()) this->initializeNormals();
+            for (const auto &normalRenderRay: this->normalRenderRays) {
+                normalRenderRay->draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
+            }
+        }
+
         this->initializeOpenGLFunctions();
         this->vertexArray->bind();
         this->indexBuffer->bind();

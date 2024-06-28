@@ -153,9 +153,14 @@ public:
     MC_FUNC_QUALIFIER const glm::vec3& getPosition() const {
         return position;
     }
+
     MC_FUNC_QUALIFIER void setPosition(const glm::vec3 &newPosition) {
         this->invalidateMatrices();
         this->position = newPosition;
+    }
+
+    MC_FUNC_QUALIFIER void setPosition(float newX, float newY, float newZ) {
+        this->setPosition(glm::vec3(newX, newY, newZ));
     }
 
     MC_FUNC_QUALIFIER void setPositionX(const float newX) {

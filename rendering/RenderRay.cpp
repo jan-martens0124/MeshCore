@@ -15,8 +15,8 @@ RenderRay::RenderRay(const Ray& ray, const Transformation &transformation, float
         const auto sectorCount = 32;
 
         const auto length = glm::length(ray.direction);
-        const auto radius = length * widthLengthRatio / 3.0f;
-        const auto headWidthFactor = 3.0f;
+        const auto radius = length * widthLengthRatio / 2.0f;
+        const auto headWidthFactor = 2.0f;
         const auto headBaseFactor = 0.66f;
 
         // Top and bottom vertex
