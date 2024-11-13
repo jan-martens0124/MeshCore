@@ -29,7 +29,7 @@ private:
     mutable std::optional<Vertex> volumeCentroid;
     mutable std::optional<Vertex> surfaceCentroid;
     mutable std::optional<AABB> bounds;
-    mutable std::optional<std::shared_ptr<ModelSpaceMesh>> convexHull;
+    mutable std::shared_ptr<ModelSpaceMesh> convexHull = nullptr;
     mutable std::optional<std::vector<std::vector<size_t>>> connectedVertexIndices;
 
 private:
@@ -51,7 +51,7 @@ public:
     const AABB &getBounds() const;
 
     [[nodiscard]] const std::vector<std::vector<size_t>>& getConnectedVertexIndices() const;
-    std::optional<std::shared_ptr<ModelSpaceMesh>> getConvexHull() const;
+    const std::shared_ptr<ModelSpaceMesh>& getConvexHull() const;
     bool isConvex() const;
     float getVolume() const;
     Vertex getVolumeCentroid() const;

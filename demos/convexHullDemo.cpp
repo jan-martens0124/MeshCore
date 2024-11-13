@@ -31,22 +31,15 @@ void run(RenderWidget* renderWidget){
     // Visualize an example
     {
         auto originalModelSpaceMesh = FileParser::loadMeshFile("../datasets/E. F. Silva et al. 2021/dragon.obj");
-        auto optionalConvexHull = originalModelSpaceMesh->getConvexHull();
+        auto convexHull = originalModelSpaceMesh->getConvexHull();
 
         auto name = originalModelSpaceMesh->getName();
 
-        if(!optionalConvexHull.has_value()){
-            std::cout << "Could not compute convex hull for " << name << std::endl;
-        }
-        else{
-            originalModelSpaceMesh->setName("Original");
-            auto convexHull = optionalConvexHull.value();
-            convexHull->setName("Convex Hull");
+        originalModelSpaceMesh->setName("Original");
+        convexHull->setName("Convex Hull");
 
-
-            renderWidget->renderWorldSpaceMesh(name, std::make_shared<WorldSpaceMesh>(originalModelSpaceMesh), Color::White());
-            renderWidget->renderWorldSpaceMesh(name, std::make_shared<WorldSpaceMesh>(convexHull), Color(1,0,0,0.5));
-        }
+        renderWidget->renderWorldSpaceMesh(name, std::make_shared<WorldSpaceMesh>(originalModelSpaceMesh), Color::White());
+        renderWidget->renderWorldSpaceMesh(name, std::make_shared<WorldSpaceMesh>(convexHull), Color(1,0,0,0.5));
     }
 
     // Run a small benchmark
@@ -63,13 +56,6 @@ void run(RenderWidget* renderWidget){
         end = std::chrono::high_resolution_clock::now();
         auto convexHullTime = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-        if(!optionalConvexHull.has_value()){
-            std::cout << "Could not compute convex hull for " << modelSpaceMesh->getName() << std::endl;
-            continue;
-        }
-        else{
-            std::cout << "Computed convex hull for " << modelSpaceMesh->getName() << " in " << convexHullTime << " ms (File loading took " << fileLoadingTime << " ms)" << std::endl;
-        }
-
+        std::cout << "Computed convex hull for " << modelSpaceMesh->getName() << " in " << convexHullTime << " ms (File loading took " << fileLoadingTime << " ms)" << std::endl;
     }
 }

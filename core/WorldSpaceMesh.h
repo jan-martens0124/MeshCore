@@ -36,6 +36,8 @@ public:
     [[nodiscard]] std::shared_ptr<ModelSpaceMesh> getModelSpaceMesh() const;
     [[nodiscard]] std::shared_ptr<ModelSpaceMesh> getTransformedModelSpaceMesh() const;
 
+    [[nodiscard]] AABB computeWorldSpaceAABB() const;
+
     [[nodiscard]] Transformation& getModelTransformation();
     [[nodiscard]] const Transformation& getModelTransformation() const;
     void setModelTransformation(Transformation transformation);

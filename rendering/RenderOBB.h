@@ -14,10 +14,9 @@ private:
     Quaternion obbRotation;
     float unscaledSurfaceArea;
     float unscaledVolume;
-    std::shared_ptr<QOpenGLShaderProgram> ambientShader;
 public:
 
-    RenderOBB(const OBB &obb, const Transformation& transformation, const std::shared_ptr<QOpenGLShaderProgram>& shader);
+    RenderOBB(const OBB &obb, const Transformation& transformation);
 
     RenderModelDetailDialog *createRenderModelDetailDialog(QWidget* parent) override;
 

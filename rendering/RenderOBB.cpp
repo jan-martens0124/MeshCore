@@ -7,6 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <QGridLayout>
 #include <QLabel>
+#include "OpenGLWidget.h"
 
 RenderModelDetailDialog *RenderOBB::createRenderModelDetailDialog(QWidget *parent) {
     auto dialog = AbstractRenderModel::createRenderModelDetailDialog(parent);
@@ -26,10 +27,8 @@ RenderModelDetailDialog *RenderOBB::createRenderModelDetailDialog(QWidget *paren
     return dialog;
 }
 
-RenderOBB::RenderOBB(const OBB &obb, const Transformation &transformation,
-                     const std::shared_ptr<QOpenGLShaderProgram> &shader):
-        AbstractRenderModel(transformation, "OBB"),
-        ambientShader(shader), obbRotation(obb.getRotation()) {
+RenderOBB::RenderOBB(const OBB &obb, const Transformation &transformation):
+        AbstractRenderModel(transformation, "OBB"), obbRotation(obb.getRotation()) {
 
 
     std::vector<unsigned int> indices;
@@ -117,17 +116,18 @@ void RenderOBB::draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatr
 
     if (this->isVisible()) {
 
+        auto& ambientShader = openGLWidget->getAmbientShader();
+
         // Bind required buffers and shaders
         this->initializeOpenGLFunctions();
         this->vertexArray->bind();
         this->indexBuffer->bind();
-        this->ambientShader->bind();
+        ambientShader->bind();
 
         // Set MVP matrix uniform
         const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix() *
                 this->obbRotation.computeMatrix();
-        this->ambientShader->setUniformValue("u_ModelViewProjectionMatrix",
-                                             QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+        ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
 
         // Set color uniform
         QVector4D drawColor;
@@ -140,7 +140,7 @@ void RenderOBB::draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatr
                 drawColor = QVector4D(1, 1, 1, color.a);
             }
         }
-        this->ambientShader->setUniformValue("u_Color", drawColor);
+        ambientShader->setUniformValue("u_Color", drawColor);
 
 
         GL_CALL(glDrawElements(GL_LINES, this->indexBuffer->size() / sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));

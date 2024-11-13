@@ -67,24 +67,29 @@ RenderModelDetailDialog::RenderModelDetailDialog(AbstractRenderModel* renderMode
         }
     });
 
-    this->ui->yawLineEdit->setEnabled(false);
-    this->ui->pitchLineEdit->setEnabled(false);
-    this->ui->rollLineEdit->setEnabled(false);
-
     connect(this->ui->yawLineEdit, &QLineEdit::textEdited, [=](const QString& text){
-//        auto transformation = renderModel->getTransformation();
-//        transformation.setYaw(text.toFloat());
-//        renderModel->setTransformation(transformation);
+        auto transformation = renderModel->getTransformation();
+        auto yaw = text.toFloat();
+        auto pitch = transformation.getRotation().getPitch();
+        auto roll = transformation.getRotation().getRoll();
+        transformation.setRotation(Quaternion(yaw, pitch, roll));
+        renderModel->setTransformation(transformation);
     });
     connect(this->ui->pitchLineEdit, &QLineEdit::textEdited, [=](const QString& text){
-//        auto transformation = renderModel->getTransformation();
-//        transformation.setPitch(text.toFloat());
-//        renderModel->setTransformation(transformation);
+        auto transformation = renderModel->getTransformation();
+        auto yaw = transformation.getRotation().getYaw();
+        auto pitch = text.toFloat();
+        auto roll = transformation.getRotation().getRoll();
+        transformation.setRotation(Quaternion(yaw, pitch, roll));
+        renderModel->setTransformation(transformation);
     });
     connect(this->ui->rollLineEdit, &QLineEdit::textEdited, [=](const QString& text){
-//        auto transformation = renderModel->getTransformation();
-//        transformation.setRoll(text.toFloat());
-//        renderModel->setTransformation(transformation);
+        auto transformation = renderModel->getTransformation();
+        auto yaw = transformation.getRotation().getYaw();
+        auto pitch = transformation.getRotation().getPitch();
+        auto roll = text.toFloat();
+        transformation.setRotation(Quaternion(yaw, pitch, roll));
+        renderModel->setTransformation(transformation);
     });
     connect(this->ui->xLineEdit, &QLineEdit::textEdited, [=](const QString& text){
         auto transformation = renderModel->getTransformation();

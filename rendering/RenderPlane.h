@@ -8,10 +8,14 @@
 #include <QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
 #include "core/Plane.h"
+#include "RenderRay.h"
 
 class RenderPlane: public AbstractRenderModel {
 
     bool cullingEnabled = true;
+    bool normalEnabled = false;
+
+    RenderRay renderNormal;
 
 public:
     explicit RenderPlane(const Plane& plane, const Transformation& transformation=Transformation{});
@@ -20,8 +24,9 @@ public:
     QMenu* getContextMenu() override;
 
     bool isCullingEnabled() const;
-
     void setCullingEnabled(bool cullingEnabled);
+
+    void setTransformation(const Transformation &transformation) override;
 };
 
 #endif //EXTENDEDMESHCORE_RENDERPLANE_H

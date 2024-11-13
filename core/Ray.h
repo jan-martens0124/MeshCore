@@ -13,10 +13,12 @@
 
 class Ray {
 public:
-    const Vertex origin;
-    const glm::vec3 direction;
-    const glm::vec3 inverseDirection;
+    Vertex origin;
+    glm::vec3 direction;
+    glm::vec3 inverseDirection;
 public:
+    MC_FUNC_QUALIFIER Ray() = default;
+
     MC_FUNC_QUALIFIER Ray(Vertex origin, glm::vec3 direction): origin(origin), direction(direction), inverseDirection(1.0f/direction) {}
 
     MC_FUNC_QUALIFIER [[nodiscard]] Ray getTransformed(const Transformation &transformation) const {

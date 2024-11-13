@@ -64,3 +64,14 @@ std::shared_ptr<ModelSpaceMesh> WorldSpaceMesh::getTransformedModelSpaceMesh() c
     result->setName(this->modelSpaceMesh->getName() + "-Transformed");
     return result;
 }
+
+AABB WorldSpaceMesh::computeWorldSpaceAABB() const {
+    Vertex minimum(std::numeric_limits<float>::max());
+    Vertex maximum(-std::numeric_limits<float>::max());
+    for (const auto &vertex: this->modelSpaceMesh->getVertices()){
+        auto transformedVertex = this->modelTransformation.transformVertex(vertex);
+        minimum = glm::min(minimum, transformedVertex);
+        maximum = glm::max(maximum, transformedVertex);
+    }
+    return {minimum, maximum};
+}

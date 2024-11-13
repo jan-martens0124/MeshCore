@@ -11,6 +11,7 @@
 #include "RenderWidget.h"
 #include "Exception.h"
 #include "../external/gifencoder/GifEncoder.h"
+#include "../utility/io.h"
 #include "RenderRay.h"
 #include <glm/gtx/hash.hpp>
 #include <QProgressDialog>
@@ -27,6 +28,7 @@ Q_DECLARE_METATYPE(Sphere)
 Q_DECLARE_METATYPE(Transformation)
 Q_DECLARE_METATYPE(glm::vec3)
 Q_DECLARE_METATYPE(Plane)
+Q_DECLARE_METATYPE(Ray)
 
 void OpenGLWidget::initializeGL() {
 
@@ -44,6 +46,7 @@ void OpenGLWidget::initializeGL() {
     qRegisterMetaType<glm::vec3>();
     qRegisterMetaType<Sphere>();
     qRegisterMetaType<Plane>();
+    qRegisterMetaType<Ray>();
 
     GL_CALL(glClearColor(0,0,0,1));
 
@@ -199,42 +202,42 @@ void OpenGLWidget::keyPressEvent(QKeyEvent* event){
         this->update();
     }
     if (key == Qt::Key_Left) {
-        const float rotationSpeed = 0.05f;
+        const float rotationSpeed = glm::pi<float>()/60.0f;
         const glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
         Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraUp), -rotationSpeed);
         this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_Right) {
-        const float rotationSpeed = 0.05f;
+        const float rotationSpeed = glm::pi<float>()/60.0f;
         const glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
         Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraUp), rotationSpeed);
         this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_Up) {
-        const float rotationSpeed = 0.05f;
+        const float rotationSpeed = glm::pi<float>()/60.0f;
         const glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
         Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraRight), -rotationSpeed);
         this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_Down) {
-        const float rotationSpeed = 0.05f;
+        const float rotationSpeed = glm::pi<float>()/60.0f;
         const glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
         Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraRight), rotationSpeed);
         this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_A) {
-        const float rotationSpeed = 0.05f;
+        const float rotationSpeed = glm::pi<float>()/60.0f;
         const glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
         Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraFront), rotationSpeed);
         this->viewTransformation.factorRotation(rotation);
         this->update();
     }
     if (key == Qt::Key_E) {
-        const float rotationSpeed = 0.05f;
+        const float rotationSpeed = glm::pi<float>()/60.0f;
         const glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
         Quaternion rotation = Quaternion(viewTransformation.inverseTransformVector(cameraFront), -rotationSpeed);
         this->viewTransformation.factorRotation(rotation);

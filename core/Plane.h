@@ -14,7 +14,7 @@ class Plane {
 
 public:
     Plane() = default;
-    Plane(const glm::vec3 &normal, float d) : normal(glm::normalize(normal)), d(d) {}
+    Plane(const glm::vec3 &normal, float d) : normal(normal), d(d) {}
     Plane(const glm::vec3 &normal, const Vertex& point): normal(glm::normalize(normal)), d(-glm::dot(normal, point)) {}
     Plane(const Plane &plane) = default;
 

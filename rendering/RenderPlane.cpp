@@ -10,6 +10,11 @@
 void RenderPlane::draw(const OpenGLWidget *openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
     if(this->isVisible()){
 
+        // Draw normal if enabled
+        if(this->normalEnabled){
+            this->renderNormal.draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
+        }
+
         // Bind required buffers and shaders
         this->initializeOpenGLFunctions();
         this->vertexArray->bind();
@@ -48,7 +53,8 @@ void RenderPlane::draw(const OpenGLWidget *openGLWidget, const glm::mat4 &viewMa
     }
 }
 
-RenderPlane::RenderPlane(const Plane &plane, const Transformation &transformation): AbstractRenderModel(transformation, "Plane") {
+RenderPlane::RenderPlane(const Plane &plane, const Transformation &transformation): AbstractRenderModel(transformation, "Plane"),
+                                                                                    renderNormal(Ray(glm::dvec3(0,0,0), plane.getNormal())) {
 
     auto axis = glm::cross(plane.getNormal(), glm::vec3(0,0,1));
     float angle = -glm::acos(glm::dot(plane.getNormal(), glm::vec3(0,0,1)));
@@ -58,6 +64,10 @@ RenderPlane::RenderPlane(const Plane &plane, const Transformation &transformatio
     }
 
     Quaternion normalAlignmentRotation(axis, angle);
+
+    this->renderNormal = RenderRay(Ray(normalAlignmentRotation.rotateVertex(glm::vec3(0,0,-plane.getD())), plane.getNormal()));
+    this->renderNormal.setMaterial(PhongMaterial(Color::Red()));
+    this->renderNormal.getTransformation().factorScale(10);
 
     std::vector<glm::vec3> data;
     data.push_back(normalAlignmentRotation.rotateVertex(glm::vec3(100,100,-plane.getD())));
@@ -112,6 +122,14 @@ QMenu *RenderPlane::getContextMenu() {
     cullingAction->setChecked(this->isCullingEnabled());
     contextMenu->addAction(cullingAction);
 
+    QAction* normalAction = contextMenu->addAction(QString("Normal"));
+    QObject::connect(normalAction, &QAction::triggered, [=](bool enabled){
+        this->normalEnabled = enabled;
+    });
+    normalAction->setCheckable(true);
+    normalAction->setChecked(this->normalEnabled);
+    contextMenu->addAction(normalAction);
+
     return contextMenu;
 }
 
@@ -122,3 +140,10 @@ bool RenderPlane::isCullingEnabled() const {
 void RenderPlane::setCullingEnabled(bool cullingEnabled) {
     RenderPlane::cullingEnabled = cullingEnabled;
 }
+
+void RenderPlane::setTransformation(const Transformation &transformation) {
+    AbstractRenderModel::setTransformation(transformation);
+    this->renderNormal.setTransformation(transformation);
+}
+
+

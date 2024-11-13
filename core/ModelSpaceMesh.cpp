@@ -143,14 +143,11 @@ std::vector<IndexEdge> ModelSpaceMesh::getSufficientIntersectionEdges() const {
     return returnVector;
 }
 
-std::optional<std::shared_ptr<ModelSpaceMesh>> ModelSpaceMesh::getConvexHull() const {
+const std::shared_ptr<ModelSpaceMesh>& ModelSpaceMesh::getConvexHull() const {
 
     // Return the value if already calculated before
-    if(convexHull.has_value()){
-
-        // If previously no mesh was found, return empty optional
-        if(convexHull.value() == nullptr) return std::nullopt;
-        return convexHull.value();
+    if(convexHull != nullptr){
+        return convexHull;
     }
 
     // Otherwise, use the quickhull library to calculate the convex hull
@@ -193,9 +190,9 @@ std::optional<std::shared_ptr<ModelSpaceMesh>> ModelSpaceMesh::getConvexHull() c
     auto hull = std::make_shared<ModelSpaceMesh>(hullVertices, hullTriangles);
     assert(glm::all(glm::epsilonEqual(hull->getBounds().getMinimum(), this->getBounds().getMinimum(), 1e-5f)) && "The convex hull should have the same bounding box as the original mesh");
     assert(glm::all(glm::epsilonEqual(hull->getBounds().getMaximum(), this->getBounds().getMaximum(), 1e-5f)) && "The convex hull should have the same bounding box as the original mesh");
-    convexHull = hull;
-    convexHull.value()->setName("Convex hull of " + this->getName());
-    return hull;
+    hull->setName("Convex hull of " + this->getName());
+    this->convexHull = std::move(hull);
+    return this->convexHull;
 }
 
 const std::string &ModelSpaceMesh::getName() const {
