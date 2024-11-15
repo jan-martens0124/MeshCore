@@ -68,7 +68,5 @@ add_executable(F-AnimationDemo demos/animationDemo.cpp ${SOURCES})
 target_link_libraries(F-AnimationDemo MeshCore)
 
 ### Tests ###
-enable_testing()
-add_executable(TestConvexHull tests/TestConvexHull.cpp)
-target_link_libraries(TestConvexHull MeshCore)
-add_test(NAME TestConvexHull COMMAND TestConvexHull)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # include this directory
+add_subdirectory(tests)
