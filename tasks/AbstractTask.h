@@ -21,6 +21,8 @@ protected:
     std::atomic<bool> stopCalled;
 
 public:
+    virtual ~AbstractTask() = default;
+
     AbstractTask();
 
     virtual void run();

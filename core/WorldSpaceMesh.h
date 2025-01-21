@@ -11,7 +11,7 @@
 #include <memory>
 #include <iostream>
 
-class WorldSpaceMesh {
+class WorldSpaceMesh: public GJKConvexShape {
 private:
     static int nextId;
     std::string id;
@@ -41,6 +41,10 @@ public:
     [[nodiscard]] Transformation& getModelTransformation();
     [[nodiscard]] const Transformation& getModelTransformation() const;
     void setModelTransformation(Transformation transformation);
+
+    // GJKConvexShape interface
+    glm::vec3 computeSupport(const glm::vec3 &direction) const override;
+    glm::vec3 getCenter() const override;
 };
 
 

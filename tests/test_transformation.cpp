@@ -74,7 +74,7 @@ TEST(TransformationTest, TransformVertex2){
     EXPECT_TRUE(glm::all(glm::epsilonEqual(transformation.transformVertex(Vertex(1, 2, 3)), 4.0f*Quaternion(transformation.getRotation().computeMatrix()).rotateVertex(Vertex(1, 2, 3)) + Vertex(1, 2, 3), 1e-5f)));
 }
 
-TEST(Transformation, Inverse){
+TEST(TransformationTest, Inverse){
     Transformation transformation;
     transformation.setPosition(Vertex(1, 2, 3));
     transformation.setScale(4);

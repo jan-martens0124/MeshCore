@@ -77,12 +77,7 @@ public:
         auto m10 = 2.0f * (qxy - qwz);
         auto m20 = 2.0f * (qxz + qwy);
 
-        if(glm::abs(m20) < (1-1e-8)){
             return std::atan2(-m10, m00);
-        }
-        else{
-            return 0.0f;
-        }
     }
 
     MC_FUNC_QUALIFIER [[nodiscard]] float getPitch() const {

@@ -14,8 +14,9 @@
 #include "IndexTriangle.h"
 #include "IndexEdge.h"
 #include "AABB.h"
+#include "../geometric/GJK.h"
 
-class ModelSpaceMesh {
+class ModelSpaceMesh: public GJKConvexShape {
 private:
     std::string name;
     std::vector<Vertex> vertices;
@@ -60,6 +61,10 @@ public:
 
     const std::string &getName() const;
     void setName(const std::string &newName);
+
+    // GJKConvexShape interface
+    glm::vec3 computeSupport(const glm::vec3 &direction) const override;
+    glm::vec3 getCenter() const override;
 };
 
 

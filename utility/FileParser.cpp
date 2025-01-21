@@ -446,6 +446,13 @@ std::string formatDouble(float input){
     return str;
 }
 
+std::string formatInteger(unsigned int input){
+    std::string str = std::to_string(input);
+    // Remove commas if present
+    str.erase(std::remove(str.begin(), str.end(), ','), str.end());
+    return str;
+}
+
 void FileParser::saveFileOBJ(const std::string &filePath, const std::shared_ptr<ModelSpaceMesh> &mesh) {
     std::ofstream basicOfstream(filePath);
     if(!basicOfstream.is_open()){
@@ -461,7 +468,7 @@ void FileParser::saveFileOBJ(const std::string &filePath, const std::shared_ptr<
 
     // Write triangles
     for (const auto &triangle : mesh->getTriangles()) {
-        basicOfstream << "f " << triangle.vertexIndex0 + 1 << " " << triangle.vertexIndex1 + 1 << " " << triangle.vertexIndex2 + 1 << std::endl;
+        basicOfstream << "f " << formatInteger(triangle.vertexIndex0 + 1) << " " << formatInteger(triangle.vertexIndex1 + 1) << " " << formatInteger(triangle.vertexIndex2 + 1) << std::endl;
     }
     basicOfstream.close();
 }

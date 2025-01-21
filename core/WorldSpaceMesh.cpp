@@ -75,3 +75,21 @@ AABB WorldSpaceMesh::computeWorldSpaceAABB() const {
     }
     return {minimum, maximum};
 }
+
+glm::vec3 WorldSpaceMesh::computeSupport(const glm::vec3 &direction) const {
+
+    // Transform the direction to modelSpace
+    auto& transformation = this->getModelTransformation();
+    auto modelSpaceDirection = transformation.getRotation().inverseRotateVertex(direction);
+
+    // Determine support in model space
+    auto modelSpaceSupport = this->modelSpaceMesh->computeSupport(modelSpaceDirection);
+
+    // Transform the support back to world space
+    return this->getModelTransformation().transformVertex(modelSpaceSupport);
+}
+
+glm::vec3 WorldSpaceMesh::getCenter() const {
+    auto modelSpaceCenter = this->modelSpaceMesh->getCenter();
+    return this->getModelTransformation().transformVertex(modelSpaceCenter);
+}

@@ -341,3 +341,20 @@ const std::vector<std::vector<size_t>>& ModelSpaceMesh::getConnectedVertexIndice
     return connectedVertexIndices.value();
 }
 
+glm::vec3 ModelSpaceMesh::computeSupport(const glm::vec3 &direction) const {
+    auto bestSupport = -std::numeric_limits<float>::max();
+    auto bestVertex = glm::vec3(0.0f);
+    for (const auto &vertex: this->vertices){
+        auto support = glm::dot(vertex, direction);
+        if(support > bestSupport){
+            bestSupport = support;
+            bestVertex = vertex;
+        }
+    }
+    return bestVertex;
+}
+
+glm::vec3 ModelSpaceMesh::getCenter() const {
+    return getBounds().getCenter(); // Alternatively, we could use something like the volume centroid here
+}
+
