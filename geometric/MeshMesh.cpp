@@ -111,10 +111,9 @@ namespace Distance{
 
         // Use the GJK algorithm if both meshes are convex
         if(modelSpaceMeshA->isConvex() && modelSpaceMeshB->isConvex()){
-            auto initialDirection = modelSpaceTransformationA.transformVertex(modelSpaceMeshA->getBounds().getCenter()) - modelSpaceTransformationB.transformVertex(modelSpaceMeshB->getBounds().getCenter());
-            auto gjkResult = GJK::computeDistanceSqr(GJKMesh(&worldSpaceMeshA), GJKMesh(&worldSpaceMeshB), initialDirection);
+            auto gjkResult = GJK::computeDistanceSqr(worldSpaceMeshA, worldSpaceMeshB);
             if(gjkResult.has_value()){
-                return glm::sqrt(gjkResult.value())*modelSpaceTransformationA.getScale();
+                return glm::sqrt(gjkResult.value());
             }
             else{
                 return 0.0f;
@@ -167,16 +166,13 @@ namespace Distance{
 
         const auto& modelSpaceMeshA = worldSpaceMeshA.getModelSpaceMesh();
         const auto& modelSpaceMeshB = worldSpaceMeshB.getModelSpaceMesh();
-        const auto& modelSpaceTransformationA = worldSpaceMeshA.getModelTransformation();
-        const auto& modelSpaceTransformationB = worldSpaceMeshB.getModelTransformation();
 
         // Use the GJK algorithm if both meshes are convex
         if(modelSpaceMeshA->isConvex() && modelSpaceMeshB->isConvex()){
-            auto initialDirection = modelSpaceTransformationA.transformVertex(modelSpaceMeshA->getBounds().getCenter()) - modelSpaceTransformationB.transformVertex(modelSpaceMeshB->getBounds().getCenter());
-            auto gjkResult = GJK::computeClosestPoints(GJKMesh(&worldSpaceMeshA), GJKMesh(&worldSpaceMeshB), initialDirection);
+            auto gjkResult = GJK::computeClosestPoints(worldSpaceMeshA, worldSpaceMeshB);
             if(gjkResult.has_value()){
-                *closestVertexA = modelSpaceTransformationA.transformVertex(gjkResult.value().first);
-                *closestVertexB = modelSpaceTransformationB.transformVertex(gjkResult.value().second);
+                *closestVertexA = gjkResult.value().first;
+                *closestVertexB = gjkResult.value().second;
                 return glm::distance(*closestVertexA, *closestVertexB);
             }
             else{
@@ -185,6 +181,8 @@ namespace Distance{
         }
 
         // If not convex, use methods based on AABBVolumeHierarchy
+        const auto& modelSpaceTransformationA = worldSpaceMeshA.getModelTransformation();
+        const auto& modelSpaceTransformationB = worldSpaceMeshB.getModelTransformation();
         if(modelSpaceMeshA->getTriangles().size() >= modelSpaceMeshB->getTriangles().size()){
             const auto modelBToModelASpaceTransformation = modelSpaceTransformationA.getInverseMatrix() * modelSpaceTransformationB.getMatrix();
 
