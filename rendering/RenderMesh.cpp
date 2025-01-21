@@ -194,7 +194,7 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
                                                                     this->getTransformationMatrix());
             glm::vec3 cameraPosition = glm::inverse(viewMatrix) * glm::vec4(0,0,0,1000);
             glm::vec3 modelSpaceCameraPosition = glm::vec3(glm::inverse(this->getTransformationMatrix()) * glm::vec4(cameraPosition, 1.0f));
-            const float ambientLighting = 0.05f; // TODO make this a configurable member of OpenGLWidget
+            const float ambientLighting = 0.25f; // TODO make this a configurable member of OpenGLWidget
             const auto& material = this->getMaterial();
 
             auto diffuseColor = material.getDiffuseColor();

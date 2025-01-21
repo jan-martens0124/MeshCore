@@ -909,16 +909,16 @@ void OpenGLWidget::renderPlaneSlot(const std::string &group, const std::string &
         this->makeCurrent();
 
         // No entry present yet, create new render Model
-        auto renderAABB = std::make_shared<RenderPlane>(plane);
+        auto renderPlane = std::make_shared<RenderPlane>(plane);
 
         // Insert it in the renderModelsMap
-        modelIterator = renderModelsMap.insert({renderId, renderAABB}).first;
+        modelIterator = renderModelsMap.insert({renderId, renderPlane}).first;
 
         // Add required listeners
-        this->addRenderModelListeners(group, renderAABB);
+        this->addRenderModelListeners(group, renderPlane);
 
         // Add control widget to the renderWidget
-        renderWidget->addControlWidget(group, renderAABB);
+        renderWidget->addControlWidget(group, renderPlane);
 
         // Set the color
         modelIterator->second->setMaterial(PhongMaterial(Color::White()));

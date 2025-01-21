@@ -10,6 +10,8 @@
 #include "../core/WorldSpaceMesh.h"
 #include "../core/OBB.h"
 #include "../core/Sphere.h"
+#include "../core/Line.h"
+#include "../core/Plane.h"
 
 namespace Intersection{
 
@@ -59,6 +61,11 @@ namespace Intersection{
     bool debugIntersects(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB);
     bool intersect(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB);
     bool inside(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB);
+
+    // Plane
+    std::optional<Line> intersect(const Plane& planeA, const Plane& planeB);
+    std::optional<glm::vec3> intersect(const Plane& plane, const Line& line);
+    std::optional<glm::vec3> intersect(const Plane& planeA, const Plane& planeB, const Plane& planeC);
 }
 
 #endif //OPTIXMESHCORE_INTERSECTION_H

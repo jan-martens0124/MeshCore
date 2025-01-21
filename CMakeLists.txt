@@ -9,39 +9,36 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 endif()
 
-### GLM ###
+### REQUIRED Dependencies for core functionality: GLM, Boost, GSL, TBB ###
 add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 find_package(glm REQUIRED)
-
-### Boost ###
 find_package(Boost REQUIRED)
+find_package(GSL REQUIRED)
+find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
 
-### QT ###
+### MeshCore::Core library can be used for targets that run without UI ###
+file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp )
+add_library(MeshCore::Core STATIC ${SOURCES})
+target_link_libraries(MeshCore::Core PUBLIC TBB::tbb TBB::tbbmalloc Boost::boost GSL::gsl glm::glm)
+
+### Tests ###
+# Only uses MeshCore::Core
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # include this directory
+add_subdirectory(tests)
+
+### Dependencies for user interface: QT, OpenGL, GLEW and giflib ###
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
-find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
-
-### OpenGL ###
+find_package(Qt5 COMPONENTS Core Widgets)
 find_package(OpenGL REQUIRED)
-
-### GLEW ###
 find_package(GLEW REQUIRED)
-
-### GSL ###
-find_package(GSL REQUIRED)
-
-### TBB ###
-find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
-
-### giflib ###
 find_package(GIF REQUIRED)
-link_libraries(GIF::GIF)
 
-file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp rendering/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp external/gifencoder/*.cpp)
-
-add_library(MeshCore STATIC ${SOURCES})
-target_link_libraries(MeshCore PUBLIC Qt5::Widgets Qt5::Core TBB::tbb TBB::tbbmalloc Boost::boost OpenGL::GL GLEW::GLEW GSL::gsl glm::glm)
+### MeshCore is the complete library with UI that expands upon MeshCore::Core, requires Qt, OpenGL, ...
+file(GLOB UI_SOURCES rendering/*.cpp external/gifencoder/*.cpp)
+add_library(MeshCore STATIC ${UI_SOURCES})
+target_link_libraries(MeshCore PUBLIC MeshCore::Core Qt5::Widgets Qt5::Core OpenGL::GL GLEW::GLEW GIF::GIF)
 
 ### SimpleRenderDemo.exe ###
 add_executable(A-SimpleRenderDemo demos/renderDemo.cpp ${SOURCES})
@@ -66,7 +63,3 @@ target_link_libraries(E-DistanceDemo MeshCore)
 ### AnimationDemo.exe ###
 add_executable(F-AnimationDemo demos/animationDemo.cpp ${SOURCES})
 target_link_libraries(F-AnimationDemo MeshCore)
-
-### Tests ###
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # include this directory
-add_subdirectory(tests)
