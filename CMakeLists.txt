@@ -16,13 +16,13 @@ find_package(Boost REQUIRED)
 find_package(GSL REQUIRED)
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
 
-### MeshCore::Core library can be used for targets that run without UI ###
+### MeshCoreBase library can be used for targets that run without UI ###
 file(GLOB SOURCES tasks/*.cpp utility/*.cpp core/*.cpp geometric/*.cpp acceleration/*.cpp external/quickhull/*.cpp )
-add_library(MeshCore::Core STATIC ${SOURCES})
-target_link_libraries(MeshCore::Core PUBLIC TBB::tbb TBB::tbbmalloc Boost::boost GSL::gsl glm::glm)
+add_library(MeshCoreBase STATIC ${SOURCES})
+target_link_libraries(MeshCoreBase PUBLIC TBB::tbb TBB::tbbmalloc Boost::boost GSL::gsl glm::glm)
 
 ### Tests ###
-# Only uses MeshCore::Core
+# Only uses MeshCoreBase
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}) # include this directory
 add_subdirectory(tests)
 
@@ -35,10 +35,10 @@ find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(GIF REQUIRED)
 
-### MeshCore is the complete library with UI that expands upon MeshCore::Core, requires Qt, OpenGL, ...
+### MeshCore is the complete library with UI that expands upon MeshCoreBase, requires Qt, OpenGL, ...
 file(GLOB UI_SOURCES rendering/*.cpp external/gifencoder/*.cpp)
 add_library(MeshCore STATIC ${UI_SOURCES})
-target_link_libraries(MeshCore PUBLIC MeshCore::Core Qt5::Widgets Qt5::Core OpenGL::GL GLEW::GLEW GIF::GIF)
+target_link_libraries(MeshCore PUBLIC MeshCoreBase Qt5::Widgets Qt5::Core OpenGL::GL GLEW::GLEW GIF::GIF)
 
 ### SimpleRenderDemo.exe ###
 add_executable(A-SimpleRenderDemo demos/renderDemo.cpp ${SOURCES})

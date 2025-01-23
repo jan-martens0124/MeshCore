@@ -474,7 +474,10 @@ void FileParser::saveFileOBJ(const std::string &filePath, const std::shared_ptr<
 }
 
 std::shared_ptr<ModelSpaceMesh> FileParser::parseFileBinvox(const std::string &filePath) {
-    std::ifstream stream(filePath);
+
+    // Open a file stream
+    // It's important to add the ios::binary flag to avoid false EOF detection before the end of the file
+    std::ifstream stream(filePath, std::ios::in | std::ios::binary);
     std::string line;
 
     // Parse the first line
