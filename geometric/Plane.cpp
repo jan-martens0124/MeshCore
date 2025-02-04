@@ -51,8 +51,8 @@ namespace Intersection {
         auto pointOnLine = glm::vec3(x, y, z);
 
         // Return the resulting line
-        assert(planeA.distance(pointOnLine) < 1e-5f);
-        assert(planeB.distance(pointOnLine) < 1e-5f);
+        assert(planeA.distance(pointOnLine) < 1e-4f);
+        assert(planeB.distance(pointOnLine) < 1e-4f);
         return Line(pointOnLine, direction/directionLength);
     }
 

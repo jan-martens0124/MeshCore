@@ -54,7 +54,7 @@ void RenderPlane::draw(const OpenGLWidget *openGLWidget, const glm::mat4 &viewMa
 }
 
 RenderPlane::RenderPlane(const Plane &plane, const Transformation &transformation): AbstractRenderModel(transformation, "Plane"),
-                                                                                    renderNormal(Ray(glm::dvec3(0,0,0), plane.getNormal())) {
+                                                                                    renderNormal(Ray(glm::vec3(0,0,0), plane.getNormal())) {
 
     auto axis = glm::cross(plane.getNormal(), glm::vec3(0,0,1));
     float angle = -glm::acos(glm::dot(plane.getNormal(), glm::vec3(0,0,1)));

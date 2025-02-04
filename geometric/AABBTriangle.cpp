@@ -49,7 +49,7 @@ dest[1] = v1[1] - v2[1]; \
 dest[2] = v1[2] - v2[2];
 
 
-int planeBoxOverlap(const glm::dvec3& normal, const glm::dvec3& vert, const glm::dvec3& maxbox)	// -NJMP-
+int planeBoxOverlap(const glm::vec3& normal, const glm::vec3& vert, const glm::vec3& maxbox)	// -NJMP-
 {
 	int q;
 	double vmin[3], vmax[3], v;

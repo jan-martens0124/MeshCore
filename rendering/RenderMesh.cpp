@@ -24,8 +24,10 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
 
     const std::vector<Vertex>& vertices = worldSpaceMesh.getModelSpaceMesh()->getVertices();
     const std::vector<IndexTriangle>& triangles = worldSpaceMesh.getModelSpaceMesh()->getTriangles();
+    const std::vector<IndexFace>& faces = worldSpaceMesh.getModelSpaceMesh()->getFaces();
 
     this->numberOfVertices = vertices.size();
+    this->numberOfFaces = faces.size();
     this->numberOfTriangles = triangles.size();
     this->unscaledSurfaceArea = worldSpaceMesh.getModelSpaceMesh()->getSurfaceArea();
     this->unscaledVolume = worldSpaceMesh.getModelSpaceMesh()->getVolume();
@@ -238,6 +240,7 @@ RenderMesh &RenderMesh::operator=(RenderMesh &&other) noexcept {
         this->surfaceEnabled = other.surfaceEnabled;
         this->boundingBox = std::move(other.boundingBox);
         this->numberOfTriangles = other.numberOfTriangles;
+        this->numberOfFaces = other.numberOfFaces;
         this->numberOfVertices = other.numberOfVertices;
         this->unscaledSurfaceArea = other.unscaledSurfaceArea;
         this->unscaledVolume = other.unscaledVolume;
@@ -344,9 +347,10 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
 
     auto* detailsLayout = new QGridLayout();
     detailsLayout->addWidget(new QLabel(QString::fromStdString("Number of vertices: " + std::to_string(numberOfVertices))), 0, 0);
-    detailsLayout->addWidget(new QLabel(QString::fromStdString("Number of triangles: " + std::to_string(numberOfTriangles))), 1, 0);
-    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled surface area: " + std::to_string(unscaledSurfaceArea))), 2, 0);
-    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled volume: " + std::to_string(unscaledVolume))), 3, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Number of faces: " + std::to_string(numberOfFaces))), 1, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Number of triangles: " + std::to_string(numberOfTriangles))), 2, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled surface area: " + std::to_string(unscaledSurfaceArea))), 3, 0);
+    detailsLayout->addWidget(new QLabel(QString::fromStdString("Unscaled volume: " + std::to_string(unscaledVolume))), 4, 0);
 
     auto* detailsWidget = new QWidget();
     detailsWidget->setLayout(detailsLayout);
@@ -416,7 +420,7 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
     });
 
     auto volumeWidget = new QLabel(QString::fromStdString("Volume: " + std::to_string(unscaledVolume * this->getTransformation().getScale() * this->getTransformation().getScale() * this->getTransformation().getScale())));
-    detailsLayout->addWidget(volumeWidget, 4, 0);
+    detailsLayout->addWidget(volumeWidget, 5, 0);
     listener->setOnTransformationChanged([=](const Transformation& oldTransformation, const Transformation& newTransformation) {
         volumeWidget->setText(QString::fromStdString("Volume: " + std::to_string(unscaledVolume * newTransformation.getScale() * newTransformation.getScale() * newTransformation.getScale())));
     });

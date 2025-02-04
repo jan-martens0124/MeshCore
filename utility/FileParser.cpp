@@ -94,13 +94,12 @@ void FileParser::saveFile(const std::string &filePath, const std::shared_ptr<Mod
 
     std::string extension = filePath.substr(filePath.find_last_of('.') + 1);
 
-    // TODO enable this again
-//    if(std::filesystem::exists(filePath)){
-//        std::cout << "Warning: File " << filePath << " already exists!" << std::endl;
-//        return;
-//    }
+    if(std::filesystem::exists(filePath)){
+        std::cout << "Warning: File " << filePath << " already exists!" << std::endl;
+        return;
+    }
 
-    if( extension == "obj") saveFileOBJ(filePath, mesh);
+    if(extension == "obj") saveFileOBJ(filePath, mesh);
     else{
         // Return empty mesh if file extension not supported
         std::cout << "Warning: Extension ." << extension << " for saving " << filePath << " not supported!" << std::endl;
@@ -141,7 +140,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileOBJ(const std::string &file
                 float value0 = std::stof(content.substr(0, whitespace0));
                 float value1 = std::stof(content.substr(whitespace0 + 1, whitespace1 - whitespace0 - 1));
                 float value2 = std::stof(content.substr(whitespace1 + 1));
-                vertices.emplace_back(Vertex(value0, value1, value2));
+                vertices.emplace_back(value0, value1, value2);
             }
             else if (type == "f"){
 

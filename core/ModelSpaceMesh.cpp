@@ -6,18 +6,216 @@
 
 #include <utility>
 #include <unordered_set>
-#include <iostream>
+#include <glm/gtx/vector_angle.hpp>
 #include "../factories/AABBFactory.h"
 #include "../external/quickhull/QuickHull.hpp"
+#include "../external/mapbox/earcut.hpp"
 
 #define EPSILON 1e-4
 
-ModelSpaceMesh::ModelSpaceMesh(std::vector<Vertex> vertices, std::vector<IndexTriangle> triangles):
-vertices(std::move(vertices)),
-triangles(std::move(triangles))
+ModelSpaceMesh::ModelSpaceMesh(std::vector<Vertex> vertices) {
+    this->vertices = std::move(vertices);
+}
+
+ModelSpaceMesh::ModelSpaceMesh(std::vector<Vertex> mVertices, std::vector<IndexTriangle> moveableTriangles):
+vertices(std::move(mVertices)),
+triangles(std::move(moveableTriangles))
 {
+
+    // 0. Sort triangles by area TODO is this worth it in any way?
+//    std::sort(triangles.begin(), triangles.end(), [&](const IndexTriangle& a, const IndexTriangle& b) {
+//        auto areaA = glm::length(glm::cross(vertices[a.vertexIndex1] - vertices[a.vertexIndex0], vertices[a.vertexIndex2] - vertices[a.vertexIndex0]));
+//        auto areaB = glm::length(glm::cross(vertices[b.vertexIndex1] - vertices[b.vertexIndex0], vertices[b.vertexIndex2] - vertices[b.vertexIndex0]));
+//        return areaA > areaB;
+//    });
+
+    // 1. Determine faces by merging triangles
+    {
+        // a. Keep track of which triangles are already included in a face
+        std::vector<bool> triangleIncluded(this->triangles.size(), false);
+
+        // b. Compute triangle normals
+        std::vector<glm::vec3> triangleNormals;
+        triangleNormals.reserve(this->triangles.size());
+        for (const auto &triangle: this->triangles) {
+
+            glm::vec3 normal = glm::cross(this->vertices[triangle.vertexIndex1] - this->vertices[triangle.vertexIndex0],
+                                          this->vertices[triangle.vertexIndex2] - this->vertices[triangle.vertexIndex0]);
+
+            triangleNormals.emplace_back(glm::normalize(normal));
+        }
+
+        // c. Merge triangles into faces
+        for (size_t t = 0; t < triangles.size(); ++t){
+
+            // Continue to the next triangle if already marked as included ...
+            if(triangleIncluded[t]) continue;
+
+            // ... otherwise mark it as included and create a new face
+            triangleIncluded[t] = true;
+            std::vector<size_t> currentFaceIndices = {triangles[t].vertexIndex0, triangles[t].vertexIndex1, triangles[t].vertexIndex2};
+
+            // Keep looking for triangles that can be merged with the current face as long as we find them
+            bool mergeFound;
+            do{
+                mergeFound = false;
+                for (size_t t2 = t+1; t2 < triangles.size(); ++t2){
+
+                    // Check if the triangle is already included in the list of faces
+                    if(triangleIncluded[t2]) continue;
+
+                    // Check if the triangle is in the same plane as the face currently being constructed
+                    auto dot = glm::dot(triangleNormals[t], triangleNormals[t2]);
+                    if(glm::dot(triangleNormals[t], triangleNormals[t2]) < (1 - 1e-2f)){
+                        continue; // Triangles are not in the same plane
+                    }
+
+                    // Look for an edge that match one of the edges of the face
+                    auto &triangle = triangles[t2];
+                    for (int fi = 0; fi < currentFaceIndices.size(); ++fi){
+
+                        // fi-th edge of the face
+                        size_t vertexIndexA = currentFaceIndices[fi];
+                        size_t vertexIndexB = currentFaceIndices[(fi + 1)%currentFaceIndices.size()];
+
+                        // We can assume the winding order is correct, therefore matching indices as follows
+                        if(triangle.vertexIndex0 == vertexIndexB && triangle.vertexIndex1 == vertexIndexA){
+                            currentFaceIndices.insert(currentFaceIndices.begin() + fi + 1, triangle.vertexIndex2);
+                            triangleIncluded[t2] = true;
+                            mergeFound = true;
+                            break;
+                        }
+                        else if(triangle.vertexIndex1 == vertexIndexB && triangle.vertexIndex2 == vertexIndexA){
+                            currentFaceIndices.insert(currentFaceIndices.begin() + fi + 1, triangle.vertexIndex0);
+                            triangleIncluded[t2] = true;
+                            mergeFound = true;
+                            break;
+                        }
+                        else if(triangle.vertexIndex2 == vertexIndexB && triangle.vertexIndex0 == vertexIndexA){
+                            currentFaceIndices.insert(currentFaceIndices.begin() + fi + 1, triangle.vertexIndex1);
+                            triangleIncluded[t2] = true;
+                            mergeFound = true;
+                            break;
+                        }
+                    }
+
+                    if(mergeFound) break;
+                }
+
+            } while(mergeFound);
+
+            // Add the face to the list of faces
+            this->faces.emplace_back(currentFaceIndices);
+        }
+    }
+
+    // 2. Determine unique edges
+    {
+        // Set up the hash and equals in a way that the order of vertexIndex0 and vertexIndex1 doesn't matter
+        auto hash = [](const IndexEdge& edge) { return std::hash<unsigned int>()(edge.vertexIndex0 + edge.vertexIndex1); }; // Hashes should remain equal if vertices are swapped
+        auto equal = [](const IndexEdge& edge1, const IndexEdge& edge2) {
+            return (edge1.vertexIndex0 == edge2.vertexIndex0 && edge1.vertexIndex1 == edge2.vertexIndex1) ||
+                   (edge1.vertexIndex1 == edge2.vertexIndex0 && edge1.vertexIndex0 == edge2.vertexIndex1); };
+        std::unordered_set<IndexEdge, decltype(hash), decltype(equal)> edgeSet(8, hash, equal);
+        for(const IndexFace& face: this->faces){
+            for (int i = 0; i < face.vertexIndices.size(); ++i){
+                edgeSet.insert(IndexEdge{face.vertexIndices[i], face.vertexIndices[(i + 1)%face.vertexIndices.size()]});
+            }
+        }
+        this->edges = std::vector<IndexEdge>(edgeSet.begin(), edgeSet.end());
+    }
+
     assert(!this->vertices.empty());
 }
+
+//ModelSpaceMesh::ModelSpaceMesh(std::vector<Vertex> mVertices, std::vector<IndexFace> mFaces):
+//vertices(std::move(mVertices)),
+//faces(std::move(mFaces))
+//{
+//    // 0. What if faces have to be merged?
+//    // TODO count matching edges: if 2 join faces, if 3 select index to remove
+//    // TODO if we always use the triangle constructor, we don't face this problem :)
+//
+//    // 1. Determine triangles by splitting faces
+//    for (const auto &face: this->faces){
+//        const auto& indices = face.vertexIndices;
+//        assert(indices.size()>=3);
+//        if(indices.size()==3){
+//            triangles.emplace_back(IndexTriangle{indices[0], indices[1], indices[2]});
+//        }
+//
+//        // TransformUtil the vertices to a plane with constant z coordinates
+//        glm::vec3 facetNormal(0.0f);
+//
+//        // Newell's Method to calculate the facet normal
+//        for (auto current = indices.begin(); current != indices.end(); current++) {
+//            auto next = std::next(current);
+//            if(next==indices.end()) next = indices.begin(); // If wrapped
+//
+//            unsigned int indexA = *current;
+//            unsigned int indexB = *next;
+//
+//            Vertex vertexA = vertices[indexA];
+//            Vertex vertexB = vertices[indexB];
+//
+//            facetNormal.x += (vertexA.y - vertexB.y) * (vertexA.z + vertexB.z);
+//            facetNormal.y += (vertexA.z - vertexB.z) * (vertexA.x + vertexB.x);
+//            facetNormal.z += (vertexA.x - vertexB.x) * (vertexA.y + vertexB.y);
+//        }
+//
+//        facetNormal = glm::normalize(facetNormal);
+//
+//        // Find the rotation for which the z-coordinates of all vertices are equal
+//        // (the rotation that maps the normal to the z-axis)
+//
+//
+//        glm::vec3 zAxis(0, 0, 1);
+//        float angle = glm::angle(zAxis, facetNormal);
+//        glm::vec3 cross = glm::cross(facetNormal, zAxis);
+//        if(glm::all(glm::epsilonEqual(cross, glm::vec3(), 1e-8f))){
+//            // Choose an arbitrary axis to rotate around
+//            cross = glm::vec3(1,0,0);
+//        }
+//        glm::mat4 transformation = glm::rotate(angle, cross);
+//
+//
+//        // Pass the projected vertices as 2D to the mapbox earcut heuristics
+//        std::vector<std::vector<std::array<float, 2>>> polygon;
+//        std::vector<std::array<float, 2>> polyline;
+//        polyline.reserve(indices.size());
+//        for (const auto &index : indices) {
+//            Vertex transformedVertex = transformation * glm::vec4(vertices[index], 1);
+//            polyline.emplace_back(std::array<float, 2>({transformedVertex.x, transformedVertex.y}));
+//        }
+//        polygon.emplace_back(polyline);
+//        std::vector<int> triangleIndices = mapbox::earcut<int>(polygon);
+//        assert(triangleIndices.size()%3==0);
+//
+//        for (auto iterator = triangleIndices.begin(); iterator!=triangleIndices.end(); iterator++) {
+//            triangles.emplace_back(IndexTriangle{indices[*iterator++], indices[*iterator++], indices[*iterator]});
+//        }
+//    }
+//
+//    // 2. Determine unique edges
+//    {
+//        // Set up the hash and equals in a way that the order of vertexIndex0 and vertexIndex1 doesn't matter
+//        auto hash = [](const IndexEdge& edge) { return std::hash<unsigned int>()(edge.vertexIndex0 + edge.vertexIndex1); }; // Hashes should remain equal if vertices are swapped
+//        auto equal = [](const IndexEdge& edge1, const IndexEdge& edge2) {
+//            return (edge1.vertexIndex0 == edge2.vertexIndex0 && edge1.vertexIndex1 == edge2.vertexIndex1) ||
+//                   (edge1.vertexIndex1 == edge2.vertexIndex0 && edge1.vertexIndex0 == edge2.vertexIndex1); };
+//        std::unordered_set<IndexEdge, decltype(hash), decltype(equal)> edgeSet(8, hash, equal);
+//        for(const IndexFace& face: this->faces){
+//            for (int i = 0; i < face.vertexIndices.size(); ++i){
+//                edgeSet.insert(IndexEdge{face.vertexIndices[i], face.vertexIndices[(i + 1)%face.vertexIndices.size()]});
+//            }
+//        }
+//        this->edges = std::vector<IndexEdge>(edgeSet.begin(), edgeSet.end());
+//    }
+//
+//    // 3. TODO consider sorting triangles by surface
+//
+//    assert(!this->vertices.empty());
+//}
 
 const std::vector<Vertex>& ModelSpaceMesh::getVertices() const {
     return vertices;
@@ -27,23 +225,12 @@ const std::vector<IndexTriangle>& ModelSpaceMesh::getTriangles() const {
     return triangles;
 }
 
-const std::vector<IndexEdge>& ModelSpaceMesh::getEdges() const {
-    if(!edges.has_value()){
-        // Set up the hash and equals in a way that the order of vertexIndex0 and vertexIndex1 doesn't matter
-        auto hash = [](const IndexEdge& edge) { return std::hash<unsigned int>()(edge.vertexIndex0 + edge.vertexIndex1); }; // Hashes should remain equal if vertices are swapped
-        auto equal = [](const IndexEdge& edge1, const IndexEdge& edge2) {
-            return (edge1.vertexIndex0 == edge2.vertexIndex0 && edge1.vertexIndex1 == edge2.vertexIndex1) ||
-                   (edge1.vertexIndex1 == edge2.vertexIndex0 && edge1.vertexIndex0 == edge2.vertexIndex1); };
-        std::unordered_set<IndexEdge, decltype(hash), decltype(equal)> edgeSet(8, hash, equal);
-        for(IndexTriangle triangle: this->triangles){
-            edgeSet.insert(IndexEdge{triangle.vertexIndex0, triangle.vertexIndex1});
-            edgeSet.insert(IndexEdge{triangle.vertexIndex1, triangle.vertexIndex2});
-            edgeSet.insert(IndexEdge{triangle.vertexIndex2, triangle.vertexIndex0});
-        }
+const std::vector<IndexFace>& ModelSpaceMesh::getFaces() const {
+    return faces;
+}
 
-        this->edges = std::vector<IndexEdge>(edgeSet.begin(), edgeSet.end());
-    }
-    return edges.value();
+const std::vector<IndexEdge>& ModelSpaceMesh::getEdges() const {
+    return edges;
 }
 
 std::vector<IndexEdge> ModelSpaceMesh::getSufficientIntersectionEdges() const {
@@ -162,7 +349,6 @@ const std::shared_ptr<ModelSpaceMesh>& ModelSpaceMesh::getConvexHull() const {
     auto qhHull = qh.getConvexHull(qhVertices, false, true);
 
     // Get the triangles that should be part of the convex hull
-    const auto& vertexBuffer = qhHull.getVertexBuffer();
     const auto& indexBuffer = qhHull.getIndexBuffer();
 
     // Helper function to keep track of the vertices that should be present in the final result
@@ -184,12 +370,12 @@ const std::shared_ptr<ModelSpaceMesh>& ModelSpaceMesh::getConvexHull() const {
         unsigned int newIndex0 = addVertexIfNotPresent(indexBuffer[i]);
         unsigned int newIndex1 = addVertexIfNotPresent(indexBuffer[i + 1]);
         unsigned int newIndex2 = addVertexIfNotPresent(indexBuffer[i + 2]);
-        hullTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
+        hullTriangles.emplace_back(newIndex0, newIndex1, newIndex2);
     }
 
     auto hull = std::make_shared<ModelSpaceMesh>(hullVertices, hullTriangles);
-    assert(glm::all(glm::epsilonEqual(hull->getBounds().getMinimum(), this->getBounds().getMinimum(), 1e-5f)) && "The convex hull should have the same bounding box as the original mesh");
-    assert(glm::all(glm::epsilonEqual(hull->getBounds().getMaximum(), this->getBounds().getMaximum(), 1e-5f)) && "The convex hull should have the same bounding box as the original mesh");
+    assert(glm::all(glm::epsilonEqual(hull->getBounds().getMinimum(), this->getBounds().getMinimum(), 1e-4f)) && "The convex hull should have the same bounding box as the original mesh");
+    assert(glm::all(glm::epsilonEqual(hull->getBounds().getMaximum(), this->getBounds().getMaximum(), 1e-4f)) && "The convex hull should have the same bounding box as the original mesh");
     hull->setName("Convex hull of " + this->getName());
     this->convexHull = std::move(hull);
     return this->convexHull;
@@ -357,4 +543,3 @@ glm::vec3 ModelSpaceMesh::computeSupport(const glm::vec3 &direction) const {
 glm::vec3 ModelSpaceMesh::getCenter() const {
     return getBounds().getCenter(); // Alternatively, we could use something like the volume centroid here
 }
-

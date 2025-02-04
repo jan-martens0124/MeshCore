@@ -29,6 +29,7 @@ private:
     std::vector<Ray> normalRays;
 
     unsigned int numberOfVertices;
+    unsigned int numberOfFaces;
     unsigned int numberOfTriangles;
     float unscaledVolume;
     float unscaledSurfaceArea;
