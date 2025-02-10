@@ -144,7 +144,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileOBJ(const std::string &file
             }
             else if (type == "f"){
 
-                std::vector<unsigned int> indices;
+                std::vector<size_t> indices;
                 auto whitespace = content.find_first_of(' ');
                 while(whitespace!=std::string::npos){
                     auto string = content.substr(0, whitespace);
@@ -375,7 +375,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileBinarySTL(const std::string
     return std::make_shared<ModelSpaceMesh>(vertices, triangles);
 }
 
-std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices) {
+std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& vertices, const std::vector<size_t>& indices) {
 
     assert(indices.size()>=3);
     if(indices.size()==3){

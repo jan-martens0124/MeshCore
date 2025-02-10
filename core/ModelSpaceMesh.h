@@ -22,10 +22,11 @@ private:
     std::string name;
     std::vector<Vertex> vertices;
     std::vector<IndexTriangle> triangles;
-    std::vector<IndexFace> faces; // TODO implement and show in UI
-    std::vector<IndexEdge> edges; // TODO there will be triangle edges and face edges, what to do
 
     // Cached data
+    mutable std::optional<std::vector<IndexEdge>> triangleEdges;
+    mutable std::optional<std::vector<IndexFace>> faces;
+    mutable std::optional<std::vector<IndexEdge>> faceEdges;
     mutable std::optional<bool> convex;
     mutable std::optional<float> volume;
     mutable std::optional<float> surfaceArea;
@@ -39,12 +40,12 @@ private:
     void computeVolumeAndCentroid() const;
     void computeSurfaceAreaAndCentroid() const;
     void computeConvexity() const;
+    void computeFaces() const;
 
 public:
     ModelSpaceMesh() = default;
     explicit ModelSpaceMesh(std::vector<Vertex> vertices);
     ModelSpaceMesh(std::vector<Vertex> vertices, std::vector<IndexTriangle> triangles);
-//    ModelSpaceMesh(std::vector<Vertex> vertices, std::vector<IndexFace> faces);
     ModelSpaceMesh(const ModelSpaceMesh& other) = default;
     ~ModelSpaceMesh() = default;
 
@@ -52,6 +53,7 @@ public:
     [[nodiscard]] const std::vector<IndexTriangle>& getTriangles() const;
     [[nodiscard]] const std::vector<IndexFace>& getFaces() const;
     [[nodiscard]] const std::vector<IndexEdge>& getEdges() const;
+    [[nodiscard]] const std::vector<IndexEdge> &getFaceEdges() const;
     [[nodiscard]] std::vector<IndexEdge> getSufficientIntersectionEdges() const; // Edge faces enough?
 
     const AABB &getBounds() const;
@@ -70,6 +72,7 @@ public:
     // GJKConvexShape interface
     glm::vec3 computeSupport(const glm::vec3 &direction) const override;
     glm::vec3 getCenter() const override;
+
 };
 
 
