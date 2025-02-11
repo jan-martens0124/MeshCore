@@ -1,7 +1,6 @@
-# MeshCore
+<img src="logo2.svg" width="100%" height="300px" alt="MeshCore logo">
 
 Created by Jonas Tollenaere (jonas.tollenaere@kuleuven.be)
-
 
 ### Copyright
 Copyright (c) 2024 Jonas Tollenaere
