@@ -28,7 +28,6 @@ private:
     static std::shared_ptr<ModelSpaceMesh> parseFileBinvox(const std::string& filePath);
     static void saveFileOBJ(const std::string& filePath, const std::shared_ptr<ModelSpaceMesh>& mesh);
     static std::shared_ptr<ModelSpaceMesh> parseFileBinarySTL(const std::string &filePath);
-    static std::vector<IndexTriangle> triangulate(const std::vector<Vertex>& vertices, const std::vector<size_t>& indices);
 };
 
 #endif //MESHCORE2_FILEPARSER_H

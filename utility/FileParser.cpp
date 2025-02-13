@@ -3,8 +3,8 @@
 //
 
 #include "FileParser.h"
-#include "../external/mapbox/earcut.hpp"
-#include "../utility/io.h"
+#include "io.h"
+#include "Triangulation.h"
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -12,9 +12,9 @@
 #include <filesystem>
 #include <unordered_set>
 #include <glm/gtx/hash.hpp>
-#include <glm/gtx/vector_angle.hpp>
 #include <array>
 #include <cstring>
+
 std::mutex FileParser::cacheMapMutex{};
 std::unordered_map<std::string, std::weak_ptr<ModelSpaceMesh>> FileParser::meshCacheMap{};
 
@@ -154,7 +154,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileOBJ(const std::string &file
                 }
                 indices.emplace_back(stoul(content) - 1);
 
-                for(const IndexTriangle& triangle: triangulate(vertices, indices)){
+                for(const IndexTriangle& triangle: Triangulation::triangulateFace(vertices, IndexFace{indices})){
                     triangles.emplace_back(triangle);
                 }
 
@@ -192,7 +192,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileOBJ(const std::string &file
         unsigned int newIndex0 = vertexMapping.at(indexTriangle.vertexIndex0);
         unsigned int newIndex1 = vertexMapping.at(indexTriangle.vertexIndex1);
         unsigned int newIndex2 = vertexMapping.at(indexTriangle.vertexIndex2);
-        finalTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
+        finalTriangles.emplace_back(newIndex0, newIndex1, newIndex2);
     }
 
     return std::make_shared<ModelSpaceMesh>(finalVertices, finalTriangles);
@@ -285,7 +285,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileSTL(const std::string &file
                 }
             }
             assert(indices.size()==3);
-            triangles.emplace_back(IndexTriangle{indices[0], indices[1], indices[2]});
+            triangles.emplace_back(indices[0], indices[1], indices[2]);
 
             VertexTriangle triangle{vertices[indices[0]], vertices[indices[1]], vertices[indices[2]]};
 
@@ -369,73 +369,10 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileBinarySTL(const std::string
             }
         }
         assert(indices.size()==3);
-        triangles.emplace_back(IndexTriangle{indices[0], indices[1], indices[2]});
+        triangles.emplace_back(indices[0], indices[1], indices[2]);
         stream.read(attributes, 2);
     }
     return std::make_shared<ModelSpaceMesh>(vertices, triangles);
-}
-
-std::vector<IndexTriangle> FileParser::triangulate(const std::vector<Vertex>& vertices, const std::vector<size_t>& indices) {
-
-    assert(indices.size()>=3);
-    if(indices.size()==3){
-        return std::vector<IndexTriangle>({IndexTriangle{indices[0], indices[1], indices[2]}});
-    }
-
-    // TransformUtil the vertices to a plane with constant z coordinates
-    glm::vec3 facetNormal(0.0f);
-
-    // Newell's Method to calculate the facet normal
-    for (auto current = indices.begin(); current != indices.end(); current++) {
-        auto next = std::next(current);
-        if(next==indices.end()) next = indices.begin(); // If wrapped
-
-        unsigned int indexA = *current;
-        unsigned int indexB = *next;
-
-        Vertex vertexA = vertices[indexA];
-        Vertex vertexB = vertices[indexB];
-
-        facetNormal.x += (vertexA.y - vertexB.y) * (vertexA.z + vertexB.z);
-        facetNormal.y += (vertexA.z - vertexB.z) * (vertexA.x + vertexB.x);
-        facetNormal.z += (vertexA.x - vertexB.x) * (vertexA.y + vertexB.y);
-    }
-
-    facetNormal = glm::normalize(facetNormal);
-
-    // Find the rotation for which the z-coordinates of all vertices are equal
-    // (the rotation that maps the normal to the z-axis)
-
-
-    glm::vec3 zAxis(0, 0, 1);
-    float angle = glm::angle(zAxis, facetNormal);
-    glm::vec3 cross = glm::cross(facetNormal, zAxis);
-    if(glm::all(glm::epsilonEqual(cross, glm::vec3(), 1e-8f))){
-        // Choose an arbitrary axis to rotate around
-        cross = glm::vec3(1,0,0);
-    }
-    glm::mat4 transformation = glm::rotate(angle, cross);
-
-
-    // Pass the projected vertices as 2D to the mapbox earcut heuristics
-    std::vector<std::vector<std::array<float, 2>>> polygon;
-    std::vector<std::array<float, 2>> polyline;
-    polyline.reserve(indices.size());
-    for (const auto &index : indices) {
-        Vertex transformedVertex = transformation * glm::vec4(vertices[index], 1);
-        polyline.emplace_back(std::array<float, 2>({transformedVertex.x, transformedVertex.y}));
-    }
-    polygon.emplace_back(polyline);
-    std::vector<int> triangleIndices = mapbox::earcut<int>(polygon);
-    assert(triangleIndices.size()%3==0);
-
-    // Vector of triangles to be returned
-    std::vector<IndexTriangle> triangles;
-    triangles.reserve(triangleIndices.size()/3);
-    for (auto iterator = triangleIndices.begin(); iterator!=triangleIndices.end(); iterator++) {
-        triangles.emplace_back(IndexTriangle{indices[*iterator++], indices[*iterator++], indices[*iterator]});
-    }
-    return triangles;
 }
 
 std::string formatDouble(float input){
@@ -579,29 +516,29 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileBinvox(const std::string &f
                     // Add the triangles
                     unsigned int numberOfVertices = vertices.size();
                     if(!previousVoxelZ){
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 7, numberOfVertices - 8, numberOfVertices - 6});
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 6, numberOfVertices - 8, numberOfVertices - 5});
+                        triangles.emplace_back(numberOfVertices - 7, numberOfVertices - 8, numberOfVertices - 6);
+                        triangles.emplace_back(numberOfVertices - 6, numberOfVertices - 8, numberOfVertices - 5);
                     }
                     if(!nextVoxelZ){
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 1, numberOfVertices - 4, numberOfVertices - 2});
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 2, numberOfVertices - 4, numberOfVertices - 3});
+                        triangles.emplace_back(numberOfVertices - 1, numberOfVertices - 4, numberOfVertices - 2);
+                        triangles.emplace_back(numberOfVertices - 2, numberOfVertices - 4, numberOfVertices - 3);
                     }
                     if(!previousVoxelX){
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 5, numberOfVertices - 8, numberOfVertices - 4});
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 1, numberOfVertices - 5, numberOfVertices - 4});
+                        triangles.emplace_back(numberOfVertices - 5, numberOfVertices - 8, numberOfVertices - 4);
+                        triangles.emplace_back(numberOfVertices - 1, numberOfVertices - 5, numberOfVertices - 4);
                     }
                     if(!nextVoxelY){
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 2, numberOfVertices - 6, numberOfVertices - 5});
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 2, numberOfVertices - 5, numberOfVertices - 1});
+                        triangles.emplace_back(numberOfVertices - 2, numberOfVertices - 6, numberOfVertices - 5);
+                        triangles.emplace_back(numberOfVertices - 2, numberOfVertices - 5, numberOfVertices - 1);
                     }
                     if(!previousVoxelY){
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 4, numberOfVertices - 7, numberOfVertices - 3});
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 4, numberOfVertices - 8, numberOfVertices - 7});
+                        triangles.emplace_back(numberOfVertices - 4, numberOfVertices - 7, numberOfVertices - 3);
+                        triangles.emplace_back(numberOfVertices - 4, numberOfVertices - 8, numberOfVertices - 7);
                     }
 
                     if(!nextVoxelX){
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 3, numberOfVertices - 7, numberOfVertices - 6});
-                        triangles.emplace_back(IndexTriangle{numberOfVertices - 3, numberOfVertices - 6, numberOfVertices - 2});
+                        triangles.emplace_back(numberOfVertices - 3, numberOfVertices - 7, numberOfVertices - 6);
+                        triangles.emplace_back(numberOfVertices - 3, numberOfVertices - 6, numberOfVertices - 2);
                     }
 
                 }
@@ -629,7 +566,7 @@ std::shared_ptr<ModelSpaceMesh> FileParser::parseFileBinvox(const std::string &f
         unsigned int newIndex0 = vertexMapping.at(indexTriangle.vertexIndex0);
         unsigned int newIndex1 = vertexMapping.at(indexTriangle.vertexIndex1);
         unsigned int newIndex2 = vertexMapping.at(indexTriangle.vertexIndex2);
-        finalTriangles.emplace_back(IndexTriangle{newIndex0, newIndex1, newIndex2});
+        finalTriangles.emplace_back(newIndex0, newIndex1, newIndex2);
     }
 
     return std::make_shared<ModelSpaceMesh>(finalVertices, finalTriangles);
