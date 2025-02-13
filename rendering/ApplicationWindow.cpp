@@ -4,11 +4,18 @@
 
 #include "ApplicationWindow.h"
 #include "../utility/FileParser.h"
-#include <QtWidgets>
+#include <QMenu>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QMenuBar>
 #include <iostream>
 #include <filesystem>
+#include <QGuiApplication>
 
 ApplicationWindow::ApplicationWindow() {
+
+    auto icon = QIcon(R"(..\..\meshcore\icons\logo3.svg)");
+    QGuiApplication::setWindowIcon(icon);
 
     QSurfaceFormat format;
     format.setDepthBufferSize(24);

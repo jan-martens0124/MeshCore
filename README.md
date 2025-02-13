@@ -1,4 +1,4 @@
-<img src="logo2.svg" width="100%" height="300px" alt="MeshCore logo">
+<img src="icons/logo2.svg" height="300px" alt="MeshCore logo" style="display: block; margin: auto;">
 
 Created by Jonas Tollenaere (jonas.tollenaere@kuleuven.be)
 

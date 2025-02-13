@@ -92,9 +92,6 @@ bool GJK::hasSeparation(const GJKConvexShape &shapeA, const GJKConvexShape &shap
 
         iteration++;
 
-        if(iteration == 1000){
-            printf("GJK: Iteration limit reached\n");
-        }
 
     } while (iteration < 1000);
 
