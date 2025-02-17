@@ -86,6 +86,14 @@ void OpenGLWidget::initializeGL() {
     phongShader->bindAttributeLocation("normal", 1);
     phongShader->link();
 
+    ShaderProgramSource polyChromeShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/rendering/shaders/PolyChrome.shader");
+    polyChromeShader = std::make_shared<QOpenGLShaderProgram>();
+    polyChromeShader->addShaderFromSourceCode(QOpenGLShader::Vertex, polyChromeShaderProgramSource.VertexSource);
+    polyChromeShader->addShaderFromSourceCode(QOpenGLShader::Fragment, polyChromeShaderProgramSource.FragmentSource);
+    polyChromeShader->bindAttributeLocation("vertex", 0);
+    polyChromeShader->bindAttributeLocation("normal", 1);
+    polyChromeShader->bindAttributeLocation("color", 2);
+    polyChromeShader->link();
 
     // Store the axis render line
     axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(1e8,0,0), Transformation()));
@@ -695,6 +703,10 @@ const std::shared_ptr<QOpenGLShaderProgram> &OpenGLWidget::getDiffuseShader() co
 
 const std::shared_ptr<QOpenGLShaderProgram> &OpenGLWidget::getPhongShader() const {
     return phongShader;
+}
+
+const std::shared_ptr<QOpenGLShaderProgram> &OpenGLWidget::getPolyChromeShader() const {
+    return polyChromeShader;
 }
 
 void OpenGLWidget::addOrUpdateRenderModelSlot(const std::string& group, const std::string& id, std::shared_ptr<AbstractRenderModel> renderModel, RenderWidget* renderWidget) {

@@ -16,12 +16,24 @@
 class RenderMesh: public AbstractRenderModel {
 private:
 
+    enum MeshTexture {
+        DEFAULT,
+        TRIANGLES,
+        FACES
+    };
+
+    QOpenGLBuffer* faceIndexBuffer;
+    QOpenGLBuffer* faceVertexBuffer;
+    QOpenGLVertexArrayObject* faceVertexArray;
+
     bool cullingEnabled = true;
     bool wireframeEnabled = false;
     bool surfaceEnabled = true;
     bool boundingBoxEnabled = false;
     bool axisEnabled = false;
     bool normalsEnabled = false;
+
+    MeshTexture renderedTexture = MeshTexture::DEFAULT;
 
     RenderAABB boundingBox;
     std::vector<std::shared_ptr<RenderLine>> axisRenderLines;
@@ -50,6 +62,7 @@ public:
     [[nodiscard]] bool isAxisEnabled() const;
     [[nodiscard]] bool isSurfaceEnabled() const;
     [[nodiscard]] bool isNormalsEnabled() const;
+    [[nodiscard]] MeshTexture getRenderedTexture() const;
 
     void setWireframeEnabled(bool newWireframeEnabled);
     void setCullingEnabled(bool newCullingEnabled);
@@ -57,6 +70,7 @@ public:
     void setAxisEnabled(bool axisEnabled);
     void setSurfaceEnabled(bool newSurfaceEnabled);
     void setNormalsEnabled(bool newNormalsEnabled);
+    void setRenderedTexture(MeshTexture newRenderedTexture);
 
     QMenu* getContextMenu() override;
 

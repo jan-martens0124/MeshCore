@@ -18,8 +18,8 @@ int main(int argc, char *argv[]){
     RenderWidget* renderWidget = window.getRenderWidget();
 
     std::thread t([&]() {
-        auto meshA = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../datasets/E. F. Silva et al. 2021/pig.obj"));
-        auto meshB = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../datasets/E. F. Silva et al. 2021/dragon.obj"));
+        auto meshA = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../../meshcore/datasets/E. F. Silva et al. 2021/pig.obj"));
+        auto meshB = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../../meshcore/datasets/E. F. Silva et al. 2021/dragon.obj"));
         meshB->getModelTransformation().setPositionX(10);
 
         while(true){

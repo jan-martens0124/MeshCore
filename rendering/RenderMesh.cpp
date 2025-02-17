@@ -14,17 +14,22 @@
 #include <QFrame>
 #include <QCheckBox>
 #include <QGridLayout>
+#include <QComboBox>
 #include "Exception.h"
 #include "OpenGLWidget.h"
+#include "utility/random.h"
+#include "utility/Triangulation.h"
 
 RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
         AbstractRenderModel(worldSpaceMesh.getModelTransformation(), worldSpaceMesh.getModelSpaceMesh()->getName()),
-        boundingBox(worldSpaceMesh)
+        boundingBox(worldSpaceMesh),
+        faceVertexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::VertexBuffer)),
+        faceIndexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::IndexBuffer)),
+        faceVertexArray(new QOpenGLVertexArrayObject())
 {
-
     const std::vector<Vertex>& vertices = worldSpaceMesh.getModelSpaceMesh()->getVertices();
     const std::vector<IndexTriangle>& triangles = worldSpaceMesh.getModelSpaceMesh()->getTriangles();
-    const std::vector<IndexFace>& faces = worldSpaceMesh.getModelSpaceMesh()->getFaces();
+    const std::vector<IndexFace>& faces = triangles.size() < 1000 ? worldSpaceMesh.getModelSpaceMesh()->getFaces() : std::vector<IndexFace>();
 
     this->numberOfVertices = vertices.size();
     this->numberOfFaces = faces.size();
@@ -32,27 +37,37 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
     this->unscaledSurfaceArea = worldSpaceMesh.getModelSpaceMesh()->getSurfaceArea();
     this->unscaledVolume = worldSpaceMesh.getModelSpaceMesh()->getVolume();
 
+    Random random;
+
+    // Data for triangles
     std::vector<unsigned int> indices;
     std::vector<float> data;
-    for(unsigned int i=0; i<triangles.size(); i++) {
-
-        IndexTriangle t = triangles[i];
-        std::vector<Vertex> triangleVertices;
-        triangleVertices.emplace_back(vertices[t.vertexIndex0]);
-        triangleVertices.emplace_back(vertices[t.vertexIndex1]);
-        triangleVertices.emplace_back(vertices[t.vertexIndex2]);
+    for(const auto& t : triangles) {
+        std::array<Vertex, 3> triangleVertices{vertices[t.vertexIndex0], vertices[t.vertexIndex1], vertices[t.vertexIndex2]};
         glm::vec3 normal = glm::triangleNormal(triangleVertices[0], triangleVertices[1], triangleVertices[2]);
+
+        // Sample random pastel color
+        auto pastelFactor = 0.2f;
+        Color triangleColor = Color((random.nextFloat()+pastelFactor)/(1+pastelFactor),
+                                    (random.nextFloat()+pastelFactor)/(1+pastelFactor),
+                                    (random.nextFloat()+pastelFactor)/(1+pastelFactor),
+                                    1.0);
 
         // We push each model space vertex once for each triangle because the normal is different for each triangle
         // (Adding up the normals in the shader doesn't provide visually satisfying results
-        for (unsigned int j = 0; j < 3; j++) {
-            data.emplace_back(triangleVertices[j].x);
-            data.emplace_back(triangleVertices[j].y);
-            data.emplace_back(triangleVertices[j].z);
+        for (const auto &triangleVertex: triangleVertices){
+            data.emplace_back(triangleVertex.x);
+            data.emplace_back(triangleVertex.y);
+            data.emplace_back(triangleVertex.z);
             data.emplace_back(normal.x);
             data.emplace_back(normal.y);
             data.emplace_back(normal.z);
-            indices.emplace_back(i * 3 + j);
+            data.emplace_back(triangleColor.r);
+            data.emplace_back(triangleColor.g);
+            data.emplace_back(triangleColor.b);
+            data.emplace_back(triangleColor.w);
+
+            indices.emplace_back(indices.size());
         }
     }
 
@@ -67,13 +82,80 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
 
     GL_CALL(glEnableVertexAttribArray(0));
     GL_CALL(glEnableVertexAttribArray(1));
+    GL_CALL(glEnableVertexAttribArray(2));
 
     this->indexBuffer->create();
     this->indexBuffer->bind();
     this->indexBuffer->allocate(&indices.front(), indices.size() * sizeof(unsigned int));
 
-    GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), nullptr));
-    GL_CALL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*) (3 * sizeof(GLfloat))));
+    GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), nullptr));
+    GL_CALL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*) (3 * sizeof(GLfloat))));
+    GL_CALL(glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*) (6 * sizeof(GLfloat))));
+
+    // Prepare data for faces
+    std::vector<float> faceData;
+    std::vector<unsigned int> faceIndices;
+    for (const auto & i : faces){
+
+        const auto& face = i;
+
+        // Compute the normal using Newell's method
+        glm::vec3 normal(0.0f);
+        for (int j = 0; j < i.vertexIndices.size(); ++j){
+            auto indexA = i.vertexIndices[j];
+            auto indexB = i.vertexIndices[(j + 1) % i.vertexIndices.size()];
+            Vertex vertexA = vertices[indexA];
+            Vertex vertexB = vertices[indexB];
+            normal.x += (vertexA.y - vertexB.y) * (vertexA.z + vertexB.z);
+            normal.y += (vertexA.z - vertexB.z) * (vertexA.x + vertexB.x);
+            normal.z += (vertexA.x - vertexB.x) * (vertexA.y + vertexB.y);
+        }
+        normal = glm::normalize(normal);
+
+        // Sample random pastel color
+        auto pastelFactor = 0.2f;
+        Color faceColor = Color((random.nextFloat()+pastelFactor)/(1+pastelFactor),
+                                (random.nextFloat()+pastelFactor)/(1+pastelFactor),
+                                (random.nextFloat()+pastelFactor)/(1+pastelFactor),
+                                1.0);
+
+        for (const auto &faceTriangle: Triangulation::triangulateFace(vertices, face)){
+            std::array<Vertex, 3> triangleVertices{vertices[faceTriangle.vertexIndex0], vertices[faceTriangle.vertexIndex1], vertices[faceTriangle.vertexIndex2]};
+            for (const auto &triangleVertex: triangleVertices){
+                faceData.emplace_back(triangleVertex.x);
+                faceData.emplace_back(triangleVertex.y);
+                faceData.emplace_back(triangleVertex.z);
+                faceData.emplace_back(normal.x);
+                faceData.emplace_back(normal.y);
+                faceData.emplace_back(normal.z);
+                faceData.emplace_back(faceColor.r);
+                faceData.emplace_back(faceColor.g);
+                faceData.emplace_back(faceColor.b);
+                faceData.emplace_back(faceColor.w);
+
+                faceIndices.emplace_back(faceIndices.size());
+            }
+        }
+    }
+
+    this->faceVertexBuffer->create();
+    this->faceVertexBuffer->bind();
+    this->faceVertexBuffer->allocate(&faceData.front(), faceData.size() * sizeof(float));
+
+    this->faceVertexArray->create();
+    this->faceVertexArray->bind();
+
+    GL_CALL(glEnableVertexAttribArray(0));
+    GL_CALL(glEnableVertexAttribArray(1));
+    GL_CALL(glEnableVertexAttribArray(2));
+
+    this->faceIndexBuffer->create();
+    this->faceIndexBuffer->bind();
+    this->faceIndexBuffer->allocate(&faceIndices.front(), faceIndices.size() * sizeof(unsigned int));
+
+    GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), nullptr));
+    GL_CALL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*) (3 * sizeof(GLfloat))));
+    GL_CALL(glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*) (6 * sizeof(GLfloat))));
 
     // Store the axis render line
     auto& aabb = worldSpaceMesh.getModelSpaceMesh()->getBounds();
@@ -210,17 +292,23 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
                 diffuseColor.b = (diffuseColor.b + pastelFactor) / (1+pastelFactor);
             }
 
-            auto& phongShader = openGLWidget->getPhongShader();
-            phongShader->bind();
-            phongShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
-            phongShader->setUniformValue("u_LightDirection", QVector3D(modelLightDirection.x, modelLightDirection.y, modelLightDirection.z));
-            phongShader->setUniformValue("u_ViewPosition", QVector3D(modelSpaceCameraPosition.x, modelSpaceCameraPosition.y, modelSpaceCameraPosition.z));
-            phongShader->setUniformValue("u_AmbientIntensity", ambientLighting);
-            phongShader->setUniformValue("u_DiffuseIntensity", 1.0f-ambientLighting);
-            phongShader->setUniformValue("u_SpecularIntensity", 0.5f);
-            phongShader->setUniformValue("u_DiffuseColor", QVector4D(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a));
-            phongShader->setUniformValue("u_SpecularColor", QVector4D(specularColor.r, specularColor.g, specularColor.b, specularColor.a));
-            phongShader->setUniformValue("u_SpecularPower", 8.0f);
+            auto& shader = this->getRenderedTexture() == DEFAULT ? openGLWidget->getPhongShader() : openGLWidget->getPolyChromeShader();
+
+            if(this->getRenderedTexture() == MeshTexture::FACES){
+                this->faceVertexArray->bind();
+                this->faceIndexBuffer->bind();
+            }
+
+            shader->bind();
+            shader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+            shader->setUniformValue("u_LightDirection", QVector3D(modelLightDirection.x, modelLightDirection.y, modelLightDirection.z));
+            shader->setUniformValue("u_ViewPosition", QVector3D(modelSpaceCameraPosition.x, modelSpaceCameraPosition.y, modelSpaceCameraPosition.z));
+            shader->setUniformValue("u_AmbientIntensity", ambientLighting);
+            shader->setUniformValue("u_DiffuseIntensity", 1.0f - ambientLighting);
+            shader->setUniformValue("u_SpecularIntensity", 0.5f);
+            shader->setUniformValue("u_DiffuseColor", QVector4D(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a));
+            shader->setUniformValue("u_SpecularColor", QVector4D(specularColor.r, specularColor.g, specularColor.b, specularColor.a));
+            shader->setUniformValue("u_SpecularPower", 8.0f);
 
             GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
         }
@@ -290,6 +378,31 @@ QMenu* RenderMesh::getContextMenu() {
     surfaceAction->setCheckable(true);
     surfaceAction->setChecked(this->isSurfaceEnabled());
     contextMenu->addAction(surfaceAction);
+
+    auto surfaceMenu = contextMenu->addMenu(QString("Texture"));
+
+    auto defaultAction = surfaceMenu->addAction(QString("Default"));
+    defaultAction->setCheckable(true);
+    defaultAction->setChecked(this->getRenderedTexture() == MeshTexture::DEFAULT);
+    QObject::connect(defaultAction, &QAction::triggered, [=](){
+        this->setRenderedTexture(MeshTexture::DEFAULT);
+    });
+
+    auto triangleAction = surfaceMenu->addAction(QString("Triangles"));
+    triangleAction->setCheckable(true);
+    triangleAction->setChecked(this->getRenderedTexture() == MeshTexture::TRIANGLES);
+    QObject::connect(triangleAction, &QAction::triggered, [=](){
+        this->setRenderedTexture(MeshTexture::TRIANGLES);
+    });
+
+    if(this->numberOfFaces){
+        auto faceAction = surfaceMenu->addAction(QString("Faces"));
+        faceAction->setCheckable(true);
+        faceAction->setChecked(this->getRenderedTexture() == MeshTexture::FACES);
+        QObject::connect(faceAction, &QAction::triggered, [=](){
+            this->setRenderedTexture(MeshTexture::FACES);
+        });
+    }
 
     QAction* wireframeAction = contextMenu->addAction(QString("Wireframe"));
     QObject::connect(wireframeAction, &QAction::triggered, [=](bool enabled){
@@ -365,6 +478,16 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
     });
     optionsLayout->addWidget(visibleCheckBox, 0, 0);
 
+    auto textureComboBox = new QComboBox();
+    textureComboBox->addItem(QString("Default"));
+    textureComboBox->addItem(QString("Triangles"));
+    if(numberOfFaces) textureComboBox->addItem(QString("Faces"));
+    textureComboBox->setCurrentIndex(static_cast<int>(this->getRenderedTexture()));
+    QObject::connect(textureComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){
+        this->setRenderedTexture(static_cast<MeshTexture>(index));
+    });
+    optionsLayout->addWidget(textureComboBox, 0, 1);
+
     auto surfaceCheckBox = new QCheckBox(QString("Show Surface"));
     surfaceCheckBox->setChecked(this->isSurfaceEnabled());
     QObject::connect(surfaceCheckBox, &QCheckBox::clicked, [&](bool enabled) {
@@ -392,21 +515,21 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
     QObject::connect(boundingBoxCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setBoundingBoxEnabled(enabled);
     });
-    optionsLayout->addWidget(boundingBoxCheckBox, 0, 1);
+    optionsLayout->addWidget(boundingBoxCheckBox, 1, 1);
 
     auto axisCheckBox = new QCheckBox(QString("Show Axis"));
     axisCheckBox->setChecked(this->isAxisEnabled());
     QObject::connect(axisCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setAxisEnabled(enabled);
     });
-    optionsLayout->addWidget(axisCheckBox, 1, 1);
+    optionsLayout->addWidget(axisCheckBox, 2, 1);
 
     auto normalsCheckBox = new QCheckBox(QString("Show Normals"));
     normalsCheckBox->setChecked(this->isNormalsEnabled());
     QObject::connect(normalsCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setNormalsEnabled(enabled);
     });
-    optionsLayout->addWidget(normalsCheckBox, 2, 1);
+    optionsLayout->addWidget(normalsCheckBox, 3, 1);
 
     auto listener = std::make_shared<SimpleRenderModelListener>();
     this->addListener(listener);
@@ -424,8 +547,6 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
     listener->setOnTransformationChanged([=](const Transformation& oldTransformation, const Transformation& newTransformation) {
         volumeWidget->setText(QString::fromStdString("Volume: " + std::to_string(unscaledVolume * newTransformation.getScale() * newTransformation.getScale() * newTransformation.getScale())));
     });
-
-
 
     auto* optionsWidget = new QWidget();
     optionsWidget->setLayout(optionsLayout);
@@ -465,4 +586,15 @@ void RenderMesh::setNormalsEnabled(bool newNormalsEnabled) {
 
 bool RenderMesh::isNormalsEnabled() const {
     return normalsEnabled;
+}
+
+RenderMesh::MeshTexture RenderMesh::getRenderedTexture() const {
+    return renderedTexture;
+}
+
+void RenderMesh::setRenderedTexture(MeshTexture newRenderedTexture) {
+    RenderMesh::renderedTexture = newRenderedTexture;
+    for (const auto &listener: this->listeners){
+        listener->notify();
+    }
 }

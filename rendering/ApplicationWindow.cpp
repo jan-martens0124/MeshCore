@@ -10,11 +10,10 @@
 #include <QMenuBar>
 #include <iostream>
 #include <filesystem>
-#include <QGuiApplication>
 
 ApplicationWindow::ApplicationWindow() {
 
-    auto icon = QIcon(R"(..\..\meshcore\icons\logo3.svg)");
+    auto icon = QIcon("../../meshcore/icons/logo3.svg");
     QGuiApplication::setWindowIcon(icon);
 
     QSurfaceFormat format;

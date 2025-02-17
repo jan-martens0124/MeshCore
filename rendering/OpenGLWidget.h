@@ -52,10 +52,12 @@ private:
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
     std::shared_ptr<QOpenGLShaderProgram> diffuseShader;
     std::shared_ptr<QOpenGLShaderProgram> phongShader;
+    std::shared_ptr<QOpenGLShaderProgram> polyChromeShader;
 public:
     const std::shared_ptr<QOpenGLShaderProgram> &getAmbientShader() const;
     const std::shared_ptr<QOpenGLShaderProgram> &getDiffuseShader() const;
     const std::shared_ptr<QOpenGLShaderProgram> &getPhongShader() const;
+    const std::shared_ptr<QOpenGLShaderProgram> &getPolyChromeShader() const;
 
     const Transformation &getViewTransformation() const;
 

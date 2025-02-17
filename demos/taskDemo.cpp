@@ -43,8 +43,8 @@ public:
 
         // Load files and create a solution
         notifyObserversStatus("Loading files");
-        auto item = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../datasets/E. F. Silva et al. 2021/apple.stl"));
-        auto container = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../datasets/E. F. Silva et al. 2021/stone_1.obj"));
+        auto item = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../../meshcore/datasets/E. F. Silva et al. 2021/apple.stl"));
+        auto container = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../../meshcore/datasets/E. F. Silva et al. 2021/stone_1.obj"));
 
         container->getModelTransformation().factorScale(2.0f);
         container->getModelTransformation().deltaPosition(-2.0f*container->getModelSpaceMesh()->getBounds().getCenter()); // Put the container in the center of the world

@@ -30,7 +30,7 @@ void run(RenderWidget* renderWidget){
 
     // Visualize an example
     {
-        auto originalModelSpaceMesh = FileParser::loadMeshFile("../datasets/E. F. Silva et al. 2021/dragon.obj");
+        auto originalModelSpaceMesh = FileParser::loadMeshFile("../../meshcore/datasets/E. F. Silva et al. 2021/dragon.obj");
         auto convexHull = originalModelSpaceMesh->getConvexHull();
 
         auto name = originalModelSpaceMesh->getName();
