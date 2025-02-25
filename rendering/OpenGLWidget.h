@@ -63,6 +63,7 @@ public:
 
 public:
     [[maybe_unused]] explicit OpenGLWidget(QWidget *parent = nullptr);
+    ~OpenGLWidget() override;
 
 public:
 

@@ -991,3 +991,8 @@ void OpenGLWidget::renderRaySlot(const std::string &group, const std::string &na
 
     this->update();
 }
+
+OpenGLWidget::~OpenGLWidget() {
+    makeCurrent();
+}
+
