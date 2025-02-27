@@ -96,6 +96,7 @@ protected:
 
 private slots:
     void resetView();
+    void setView(size_t viewIndex);
     void clear();
     void clearGroup(const std::string &group);
     void setViewTransformation(const Transformation &newViewTransformation);

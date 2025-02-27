@@ -55,6 +55,7 @@ public:
 
     void setViewTransformation(const Transformation& transformation) const;
     void resetViewTransformation() const;
+    void setView(size_t i) const;
 
 private:
     // Render generic objects that extend AbstractRenderModel

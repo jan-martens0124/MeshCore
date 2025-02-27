@@ -113,6 +113,77 @@ void OpenGLWidget::resetView() {
     this->update();
 }
 
+void OpenGLWidget::setView(size_t preset) {
+
+    auto newViewTransformation = Transformation();
+    newViewTransformation.setPosition(glm::vec3(0.0f, 0.0f, -INITIAL_VIEW_DISTANCE));
+    switch (preset) {
+        case 5:
+        case 0: // Default front view: y-axis to the right and z-axis upwards
+            newViewTransformation *= Transformation::fromRotationMatrix(glm::mat3({0, 0, 1, 1, 0, 0, 0, 1, 0}));
+            break;
+        case 4: // Default left view: x-axis to the right and z-axis upwards
+            newViewTransformation *= Transformation::fromRotationMatrix(glm::mat3({1, 0, 0, 0, 0, -1, 0, 1, 0}));
+            break;
+        case 6: // Default right view: x-axis to the left and z-axis upwards
+            newViewTransformation *= Transformation::fromRotationMatrix(glm::mat3({-1, 0, 0, 0, 0, 1, 0, 1, 0}));
+            break;
+        case 8: // Default top view: x-axis to the bottom and y-axis to the right
+            newViewTransformation *= Transformation::fromRotationMatrix(glm::mat3({0, -1, 0, 1, 0, 0, 0, 0, 1}));
+            break;
+        case 2: // Default bottom view: x-axis to the top and y-axis to the right
+            newViewTransformation *= Transformation::fromRotationMatrix(glm::mat3({0, 1, 0, 1, 0, 0, 0, 0, -1}));
+            break;
+        case 9: // Default top right front
+            newViewTransformation *= Transformation::fromRotationMatrix(glm::mat3({-glm::sqrt(2.0f)/2.0f, -glm::sqrt(2.0f)/6.0f,      2.0f/3.0f,
+                                                                                    glm::sqrt(2.0f)/2.0f, -glm::sqrt(2.0f)/6.0f,      2.0f/3.0f,
+                                                                                    0.0f,                  2.0f*glm::sqrt(2.0f)/3.0f, 1.0f/3.0f}));
+            break;
+        case 7: // Default top left front
+            newViewTransformation *= Transformation::fromRotationMatrix(glm::mat3({glm::sqrt(2.0f)/2.0f, -glm::sqrt(2.0f)/6.0f,      2.0f/3.0f,
+                                                                                   glm::sqrt(2.0f)/2.0f,  glm::sqrt(2.0f)/6.0f,     -2.0f/3.0f,
+                                                                                   0.0f,                  2.0f*glm::sqrt(2.0f)/3.0f, 1.0f/3.0f}));
+            break;
+        case 1: // Default bottom left front
+            newViewTransformation *= Transformation::fromRotationMatrix(glm::mat3({glm::sqrt(2.0f)/2.0f,  glm::sqrt(2.0f)/6.0f,       2.0f/3.0f,
+                                                                                   glm::sqrt(2.0f)/2.0f, -glm::sqrt(2.0f)/6.0f,      -2.0f/3.0f,
+                                                                                   0.0f,                  2.0f*glm::sqrt(2.0f)/3.0f, -1.0f/3.0f}));
+            break;
+        case 3: // Default bottom right front
+            newViewTransformation *= Transformation::fromRotationMatrix(glm::mat3({-glm::sqrt(2.0f)/2.0f, glm::sqrt(2.0f)/6.0f,       2.0f/3.0f,
+                                                                                    glm::sqrt(2.0f)/2.0f, glm::sqrt(2.0f)/6.0f,       2.0f/3.0f,
+                                                                                    0.0f,                 2.0f*glm::sqrt(2.0f)/3.0f, -1.0f/3.0f}));
+            break;
+        default:
+            // Do nothing
+            return;
+            break;
+    }
+
+    // Animate the view change
+    this->makeCurrent();
+    const auto initialViewTransformation = this->viewTransformation;
+    auto steps = 30;
+    for(auto i=0;i<steps;i++){
+
+        QCoreApplication::processEvents();
+
+        // Sleep for 16 ms;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+        // Interpolate the view matrix
+        float t = float(i)/(float(steps) - 1); // Linear interpolation
+        this->viewTransformation = Transformation::interpolate(initialViewTransformation, newViewTransformation, t);
+
+        QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        this->update();
+    }
+
+    this->viewTransformation = newViewTransformation;
+    QOpenGLFunctions::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    this->update();
+}
+
 void OpenGLWidget::resizeGL(int w, int h) {
     this->width = w;
     this->height = h;

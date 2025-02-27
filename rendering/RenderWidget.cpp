@@ -128,6 +128,10 @@ void RenderWidget::resetViewTransformation() const {
     QMetaObject::invokeMethod(this->getOpenGLWidget(), "resetView", Qt::AutoConnection);
 }
 
+void RenderWidget::setView(size_t i) const {
+    QMetaObject::invokeMethod(this->getOpenGLWidget(), "setView", Qt::AutoConnection, Q_ARG(size_t, i));
+}
+
 QTreeWidgetItem *RenderWidget::getOrAddGroupWidget(const std::string &group) {
     // Find the group
     auto iterator = groupTreeWidgetItems.find(group);

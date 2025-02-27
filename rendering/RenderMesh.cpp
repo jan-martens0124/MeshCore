@@ -159,9 +159,9 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
 
     // Store the axis render line
     auto& aabb = worldSpaceMesh.getModelSpaceMesh()->getBounds();
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(glm::max(0.0f, aabb.getMaximum().x),0,0), Transformation()));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,glm::max(0.0f, aabb.getMaximum().y),0), Transformation()));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,glm::max(0.0f, aabb.getMaximum().z)), Transformation()));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(glm::max(0.0f, 2.0f * aabb.getMaximum().x),0,0), Transformation()));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,glm::max(0.0f, 2.0f * aabb.getMaximum().y),0), Transformation()));
+    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,glm::max(0.0f, 2.0f * aabb.getMaximum().z)), Transformation()));
     axisRenderLines[0]->setMaterial(PhongMaterial(Color::Red()));
     axisRenderLines[1]->setMaterial(PhongMaterial(Color::Green()));
     axisRenderLines[2]->setMaterial(PhongMaterial(Color::Blue()));
