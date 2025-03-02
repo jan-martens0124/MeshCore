@@ -185,8 +185,8 @@ void OpenGLWidget::setView(size_t preset) {
 }
 
 void OpenGLWidget::resizeGL(int w, int h) {
-    this->width = w;
-    this->height = h;
+    this->width = w * this->devicePixelRatio();
+    this->height = h * this->devicePixelRatio();
 
     this->calculateProjectionMatrix();
 }
