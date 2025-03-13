@@ -17,23 +17,33 @@ class RenderMesh: public AbstractRenderModel {
 private:
 
     enum MeshTexture {
-        DEFAULT,
+        HIDDEN,
+        UNIFORM,
         TRIANGLES,
         FACES
     };
+
+    enum WireframeMode {
+        DISABLED,
+        TRIANGLE_EDGES,
+        FACE_EDGES
+    };
+
+    MeshTexture renderedTexture = MeshTexture::UNIFORM;
+    WireframeMode wireframeMode = WireframeMode::DISABLED;
 
     QOpenGLBuffer* faceIndexBuffer;
     QOpenGLBuffer* faceVertexBuffer;
     QOpenGLVertexArrayObject* faceVertexArray;
 
+    QOpenGLBuffer* faceEdgeIndexBuffer;
+    QOpenGLBuffer* faceEdgeVertexBuffer;
+    QOpenGLVertexArrayObject* faceEdgeVertexArray;
+
     bool cullingEnabled = true;
-    bool wireframeEnabled = false;
-    bool surfaceEnabled = true;
     bool boundingBoxEnabled = false;
     bool axisEnabled = false;
     bool normalsEnabled = false;
-
-    MeshTexture renderedTexture = MeshTexture::DEFAULT;
 
     RenderAABB boundingBox;
     std::vector<std::shared_ptr<RenderLine>> axisRenderLines;
@@ -56,21 +66,19 @@ public:
     explicit RenderMesh(const WorldSpaceMesh &worldSpaceMesh);
     void draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) override;
 
-    [[nodiscard]] bool isWireframeEnabled() const;
     [[nodiscard]] bool isCullingEnabled() const;
     [[nodiscard]] bool isBoundingBoxEnabled() const;
     [[nodiscard]] bool isAxisEnabled() const;
-    [[nodiscard]] bool isSurfaceEnabled() const;
     [[nodiscard]] bool isNormalsEnabled() const;
     [[nodiscard]] MeshTexture getRenderedTexture() const;
+    [[nodiscard]] WireframeMode getWireframeMode() const;
 
-    void setWireframeEnabled(bool newWireframeEnabled);
     void setCullingEnabled(bool newCullingEnabled);
     void setBoundingBoxEnabled(bool newBoundingBoxEnabled);
     void setAxisEnabled(bool axisEnabled);
-    void setSurfaceEnabled(bool newSurfaceEnabled);
     void setNormalsEnabled(bool newNormalsEnabled);
     void setRenderedTexture(MeshTexture newRenderedTexture);
+    void setWireframeMode(WireframeMode newWireframeMode);
 
     QMenu* getContextMenu() override;
 

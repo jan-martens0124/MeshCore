@@ -25,11 +25,17 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
         boundingBox(worldSpaceMesh),
         faceVertexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::VertexBuffer)),
         faceIndexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::IndexBuffer)),
-        faceVertexArray(new QOpenGLVertexArrayObject())
+        faceVertexArray(new QOpenGLVertexArrayObject()),
+        faceEdgeIndexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::IndexBuffer)),
+        faceEdgeVertexBuffer(new QOpenGLBuffer(QOpenGLBuffer::Type::VertexBuffer)),
+        faceEdgeVertexArray(new QOpenGLVertexArrayObject())
 {
     const std::vector<Vertex>& vertices = worldSpaceMesh.getModelSpaceMesh()->getVertices();
     const std::vector<IndexTriangle>& triangles = worldSpaceMesh.getModelSpaceMesh()->getTriangles();
+
+    // We only force the computation of faces and face edges if the number of triangles is small enough
     const std::vector<IndexFace>& faces = triangles.size() < 1000 ? worldSpaceMesh.getModelSpaceMesh()->getFaces() : std::vector<IndexFace>();
+    const std::vector<IndexEdge>& faceEdges = triangles.size() < 1000 ? worldSpaceMesh.getModelSpaceMesh()->getFaceEdges() : std::vector<IndexEdge>();
 
     this->numberOfVertices = vertices.size();
     this->numberOfFaces = faces.size();
@@ -37,7 +43,7 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
     this->unscaledSurfaceArea = worldSpaceMesh.getModelSpaceMesh()->getSurfaceArea();
     this->unscaledVolume = worldSpaceMesh.getModelSpaceMesh()->getVolume();
 
-    Random random;
+    Random random(vertices.size()); // Just to avoid identical color patterns for different meshes
 
     // Data for triangles
     std::vector<unsigned int> indices;
@@ -157,6 +163,38 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
     GL_CALL(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*) (3 * sizeof(GLfloat))));
     GL_CALL(glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 10 * sizeof(GLfloat), (void*) (6 * sizeof(GLfloat))));
 
+    // Data for edges
+    std::vector<float> faceEdgeData;
+    std::vector<unsigned int> faceEdgeIndices;
+    for (const auto &faceEdge: faceEdges){
+        const auto& v0 = vertices[faceEdge.vertexIndex0];
+        const auto& v1 = vertices[faceEdge.vertexIndex1];
+        faceEdgeData.emplace_back(v0.x);
+        faceEdgeData.emplace_back(v0.y);
+        faceEdgeData.emplace_back(v0.z);
+        faceEdgeIndices.emplace_back(faceEdgeIndices.size());
+        faceEdgeData.emplace_back(v1.x);
+        faceEdgeData.emplace_back(v1.y);
+        faceEdgeData.emplace_back(v1.z);
+        faceEdgeIndices.emplace_back(faceEdgeIndices.size());
+    }
+
+    this->faceEdgeVertexBuffer->create();
+    this->faceEdgeVertexBuffer->bind();
+    this->faceEdgeVertexBuffer->allocate(&faceEdgeData.front(), faceEdgeData.size() * sizeof(float));
+
+    this->faceEdgeVertexArray->create();
+    this->faceEdgeVertexArray->bind();
+
+    GL_CALL(glEnableVertexAttribArray(0));
+
+    this->faceEdgeIndexBuffer->create();
+    this->faceEdgeIndexBuffer->bind();
+    this->faceEdgeIndexBuffer->allocate(&faceEdgeIndices.front(), faceEdgeIndices.size() * sizeof(unsigned int));
+
+    GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr));
+
+
     // Store the axis render line
     auto& aabb = worldSpaceMesh.getModelSpaceMesh()->getBounds();
     axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(glm::max(0.0f, 2.0f * aabb.getMaximum().x),0,0), Transformation()));
@@ -202,17 +240,6 @@ void RenderMesh::setCullingEnabled(bool newCullingEnabled) {
     }
 }
 
-bool RenderMesh::isWireframeEnabled() const {
-    return wireframeEnabled;
-}
-
-void RenderMesh::setWireframeEnabled(bool newWireframeEnabled) {
-    RenderMesh::wireframeEnabled = newWireframeEnabled;
-    for (const auto &listener: this->listeners){
-        listener->notify();
-    }
-}
-
 void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMatrix, const glm::mat4& projectionMatrix, bool lightMode) {
 
     if(this->isVisible()){
@@ -233,8 +260,6 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
         }
 
         this->initializeOpenGLFunctions();
-        this->vertexArray->bind();
-        this->indexBuffer->bind();
 
         if(this->cullingEnabled){
             GL_CALL(glEnable(GL_CULL_FACE));
@@ -243,7 +268,44 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
             GL_CALL(glDisable(GL_CULL_FACE));
         }
 
-        if(this->wireframeEnabled){
+        if(this->wireframeMode == WireframeMode::FACE_EDGES){
+
+            this->faceEdgeIndexBuffer->bind();
+            this->faceEdgeVertexArray->bind();
+
+            auto& ambientShader = openGLWidget->getAmbientShader();
+
+            ambientShader->bind();
+            const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
+            ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
+            QVector4D drawColor;
+            auto color = this->getMaterial().getDiffuseColor();
+
+
+            // Make the colors less pastel and darker
+            auto pastelFactor = -0.5f;
+            color.r = (color.r + pastelFactor) / (1+pastelFactor);
+            color.g = (color.g + pastelFactor) / (1+pastelFactor);
+            color.b = (color.b + pastelFactor) / (1+pastelFactor);
+            const auto wireframeColorFactor = 0.25f;
+            drawColor = QVector4D(wireframeColorFactor * color.r, wireframeColorFactor * color.g, wireframeColorFactor * color.b, color.a);
+
+            if(lightMode){
+                if(glm::vec3(color) == glm::vec3(1,1,1)){
+                    drawColor = QVector4D(0, 0, 0, color.a);
+                }
+                else if(glm::vec3(color) == glm::vec3(0,0,0)){
+                    drawColor = QVector4D(1, 1, 1, color.a);
+                }
+            }
+//            drawColor = QVector4D(0, 0, 0, color.a);
+            ambientShader->setUniformValue("u_Color", drawColor);
+            GL_CALL(glDrawElements(GL_LINES, this->faceEdgeIndexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
+        }
+        else if(this->wireframeMode == WireframeMode::TRIANGLE_EDGES){
+
+            this->vertexArray->bind();
+            this->indexBuffer->bind();
 
             GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_LINE));
 
@@ -253,9 +315,17 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
             const glm::mat4 modelViewProjectionMatrix = projectionMatrix * viewMatrix * this->getTransformationMatrix();
             ambientShader->setUniformValue("u_ModelViewProjectionMatrix", QMatrix4x4(glm::value_ptr(modelViewProjectionMatrix)).transposed());
             QVector4D drawColor;
-            const auto color = this->getMaterial().getDiffuseColor();
-            const auto wireframeColorFactor = 0.5f; // TODO correct for light mode, but what if dark? It should become ligther no?
+            auto color = this->getMaterial().getDiffuseColor();
+
+
+            // Make the colors less pastel and darker
+            auto pastelFactor = -0.5f;
+            color.r = (color.r + pastelFactor) / (1+pastelFactor);
+            color.g = (color.g + pastelFactor) / (1+pastelFactor);
+            color.b = (color.b + pastelFactor) / (1+pastelFactor);
+            const auto wireframeColorFactor = 0.25f;
             drawColor = QVector4D(wireframeColorFactor * color.r, wireframeColorFactor * color.g, wireframeColorFactor * color.b, color.a);
+
             if(lightMode){
                 if(glm::vec3(color) == glm::vec3(1,1,1)){
                     drawColor = QVector4D(0, 0, 0, color.a);
@@ -264,11 +334,13 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
                     drawColor = QVector4D(1, 1, 1, color.a);
                 }
             }
+//            drawColor = QVector4D(0, 0, 0, color.a);
             ambientShader->setUniformValue("u_Color", drawColor);
 
             GL_CALL(glDrawElements(GL_TRIANGLES, this->indexBuffer->size()/sizeof(unsigned int), GL_UNSIGNED_INT, nullptr));
         }
-        if(this->surfaceEnabled){
+        if(this->renderedTexture != HIDDEN){
+
 
             GL_CALL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
@@ -278,25 +350,30 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
                                                                     this->getTransformationMatrix());
             glm::vec3 cameraPosition = glm::inverse(viewMatrix) * glm::vec4(0,0,0,1000);
             glm::vec3 modelSpaceCameraPosition = glm::vec3(glm::inverse(this->getTransformationMatrix()) * glm::vec4(cameraPosition, 1.0f));
-            const float ambientLighting = 0.25f; // TODO make this a configurable member of OpenGLWidget
-            const auto& material = this->getMaterial();
 
+            const float ambientLighting = 0.25f;
+            const auto& material = this->getMaterial();
             auto diffuseColor = material.getDiffuseColor();
             auto specularColor = material.getSpecularColor();
 
-            if(this->wireframeEnabled){
-                // Make the colors more pastel
+            if(this->wireframeMode != WireframeMode::DISABLED){
+
+                // Make the uniform color more pastel for increased contrast with the edges
                 auto pastelFactor = 0.2f;
                 diffuseColor.r = (diffuseColor.r + pastelFactor) / (1+pastelFactor);
                 diffuseColor.g = (diffuseColor.g + pastelFactor) / (1+pastelFactor);
                 diffuseColor.b = (diffuseColor.b + pastelFactor) / (1+pastelFactor);
             }
 
-            auto& shader = this->getRenderedTexture() == DEFAULT ? openGLWidget->getPhongShader() : openGLWidget->getPolyChromeShader();
-
+            // Bind the right shader and buffers for the selected texture
+            auto& shader = this->getRenderedTexture() == UNIFORM ? openGLWidget->getPhongShader() : openGLWidget->getPolyChromeShader();
             if(this->getRenderedTexture() == MeshTexture::FACES){
                 this->faceVertexArray->bind();
                 this->faceIndexBuffer->bind();
+            }
+            else{
+                this->vertexArray->bind();
+                this->indexBuffer->bind();
             }
 
             shader->bind();
@@ -321,11 +398,11 @@ RenderMesh &RenderMesh::operator=(RenderMesh &&other) noexcept {
         this->vertexArray = other.vertexArray;
         this->vertexBuffer = other.vertexBuffer;
         this->cullingEnabled = other.cullingEnabled;
-        this->wireframeEnabled = other.wireframeEnabled;
+        this->wireframeMode = other.wireframeMode;
         this->boundingBoxEnabled = other.boundingBoxEnabled;
         this->axisEnabled = other.axisEnabled;
         this->normalsEnabled = other.normalsEnabled;
-        this->surfaceEnabled = other.surfaceEnabled;
+        this->renderedTexture = other.renderedTexture;
         this->boundingBox = std::move(other.boundingBox);
         this->numberOfTriangles = other.numberOfTriangles;
         this->numberOfFaces = other.numberOfFaces;
@@ -371,21 +448,28 @@ QMenu* RenderMesh::getContextMenu() {
 
     contextMenu->addSeparator();
 
-    QAction* surfaceAction = contextMenu->addAction(QString("Surface"));
-    QObject::connect(surfaceAction, &QAction::triggered, [=](bool enabled){
-        this->setSurfaceEnabled(enabled);
-    });
-    surfaceAction->setCheckable(true);
-    surfaceAction->setChecked(this->isSurfaceEnabled());
-    contextMenu->addAction(surfaceAction);
+//    QAction* surfaceAction = contextMenu->addAction(QString("Surface"));
+//    QObject::connect(surfaceAction, &QAction::triggered, [=](bool enabled){
+//        this->setSurfaceEnabled(enabled);
+//    });
+//    surfaceAction->setCheckable(true);
+//    surfaceAction->setChecked(this->isSurfaceEnabled());
+//    contextMenu->addAction(surfaceAction);
 
     auto surfaceMenu = contextMenu->addMenu(QString("Texture"));
 
-    auto defaultAction = surfaceMenu->addAction(QString("Default"));
-    defaultAction->setCheckable(true);
-    defaultAction->setChecked(this->getRenderedTexture() == MeshTexture::DEFAULT);
-    QObject::connect(defaultAction, &QAction::triggered, [=](){
-        this->setRenderedTexture(MeshTexture::DEFAULT);
+    auto hiddenAction = surfaceMenu->addAction(QString("Hidden"));
+    hiddenAction->setCheckable(true);
+    hiddenAction->setChecked(this->getRenderedTexture() == MeshTexture::HIDDEN);
+    QObject::connect(hiddenAction, &QAction::triggered, [=](){
+        this->setRenderedTexture(MeshTexture::HIDDEN);
+    });
+
+    auto uniformAction = surfaceMenu->addAction(QString("Uniform"));
+    uniformAction->setCheckable(true);
+    uniformAction->setChecked(this->getRenderedTexture() == MeshTexture::UNIFORM);
+    QObject::connect(uniformAction, &QAction::triggered, [=](){
+        this->setRenderedTexture(MeshTexture::UNIFORM);
     });
 
     auto triangleAction = surfaceMenu->addAction(QString("Triangles"));
@@ -404,13 +488,30 @@ QMenu* RenderMesh::getContextMenu() {
         });
     }
 
-    QAction* wireframeAction = contextMenu->addAction(QString("Wireframe"));
-    QObject::connect(wireframeAction, &QAction::triggered, [=](bool enabled){
-        this->setWireframeEnabled(enabled);
+    auto wireframeMenu = contextMenu->addMenu(QString("Wireframe"));
+
+    auto disabledAction = wireframeMenu->addAction(QString("Disabled"));
+    disabledAction->setCheckable(true);
+    disabledAction->setChecked(this->getWireframeMode() == WireframeMode::DISABLED);
+    QObject::connect(disabledAction, &QAction::triggered, [=](){
+        this->setWireframeMode(WireframeMode::DISABLED);
     });
-    wireframeAction->setCheckable(true);
-    wireframeAction->setChecked(this->isWireframeEnabled());
-    contextMenu->addAction(wireframeAction);
+
+    auto triangleEdgesAction = wireframeMenu->addAction(QString("Triangle Edges"));
+    triangleEdgesAction->setCheckable(true);
+    triangleEdgesAction->setChecked(this->getWireframeMode() == WireframeMode::TRIANGLE_EDGES);
+    QObject::connect(triangleEdgesAction, &QAction::triggered, [=](){
+        this->setWireframeMode(WireframeMode::TRIANGLE_EDGES);
+    });
+
+    if(this->numberOfFaces > 0){
+        auto faceEdgesAction = wireframeMenu->addAction(QString("Face Edges"));
+        faceEdgesAction->setCheckable(true);
+        faceEdgesAction->setChecked(this->getWireframeMode() == WireframeMode::FACE_EDGES);
+        QObject::connect(faceEdgesAction, &QAction::triggered, [=](){
+            this->setWireframeMode(WireframeMode::FACE_EDGES);
+        });
+    }
 
     QAction* cullingAction = contextMenu->addAction(QString("Culling"));
     QObject::connect(cullingAction, &QAction::triggered, [=](bool enabled){
@@ -445,8 +546,6 @@ QMenu* RenderMesh::getContextMenu() {
     contextMenu->addAction(normalsAction);
 
     return contextMenu;
-
-    // TODO add option to save the transformed mesh (int its current position) to a file
 }
 
 void RenderMesh::setMaterial(const PhongMaterial& newMaterial) {
@@ -478,29 +577,44 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
     });
     optionsLayout->addWidget(visibleCheckBox, 0, 0);
 
+    optionsLayout->addWidget(new QLabel(QString("Surface Texture")), 1, 0);
     auto textureComboBox = new QComboBox();
-    textureComboBox->addItem(QString("Default"));
+    textureComboBox->addItem(QString("Hidden"));
+    textureComboBox->addItem(QString("Uniform"));
     textureComboBox->addItem(QString("Triangles"));
     if(numberOfFaces) textureComboBox->addItem(QString("Faces"));
     textureComboBox->setCurrentIndex(static_cast<int>(this->getRenderedTexture()));
     QObject::connect(textureComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){
         this->setRenderedTexture(static_cast<MeshTexture>(index));
     });
-    optionsLayout->addWidget(textureComboBox, 0, 1);
+    optionsLayout->addWidget(textureComboBox, 1, 1);
 
-    auto surfaceCheckBox = new QCheckBox(QString("Show Surface"));
-    surfaceCheckBox->setChecked(this->isSurfaceEnabled());
-    QObject::connect(surfaceCheckBox, &QCheckBox::clicked, [&](bool enabled) {
-        this->setSurfaceEnabled(enabled);
+    optionsLayout->addWidget(new QLabel(QString("Wireframe Mode")), 2, 0);
+    auto wireframeComboBox = new QComboBox();
+    wireframeComboBox->addItem(QString("Disabled"));
+    wireframeComboBox->addItem(QString("Triangle Edges"));
+    if(numberOfFaces) wireframeComboBox->addItem(QString("Face Edges"));
+    wireframeComboBox->setCurrentIndex(static_cast<int>(this->getWireframeMode()));
+    QObject::connect(wireframeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=](int index){
+        this->setWireframeMode(static_cast<WireframeMode>(index));
     });
-    optionsLayout->addWidget(surfaceCheckBox, 1, 0);
+    optionsLayout->addWidget(wireframeComboBox, 2, 1);
 
-    auto wireframeCheckBox = new QCheckBox(QString("Show Wireframe"));
-    wireframeCheckBox->setChecked(this->isWireframeEnabled());
-    QObject::connect(wireframeCheckBox, &QCheckBox::clicked, [&](bool enabled) {
-        this->setWireframeEnabled(enabled);
-    });
-    optionsLayout->addWidget(wireframeCheckBox, 2, 0);
+
+
+//    auto surfaceCheckBox = new QCheckBox(QString("Show Surface"));
+//    surfaceCheckBox->setChecked(this->isSurfaceEnabled());
+//    QObject::connect(surfaceCheckBox, &QCheckBox::clicked, [&](bool enabled) {
+//        this->setSurfaceEnabled(enabled);
+//    });
+//    optionsLayout->addWidget(surfaceCheckBox, 1, 0);
+//
+//    auto wireframeCheckBox = new QCheckBox(QString("Show Wireframe"));
+//    wireframeCheckBox->setChecked(this->isWireframeEnabled());
+//    QObject::connect(wireframeCheckBox, &QCheckBox::clicked, [&](bool enabled) {
+//        this->setWireframeEnabled(enabled);
+//    });
+//    optionsLayout->addWidget(wireframeCheckBox, 2, 0);
 
     auto cullingCheckBox = new QCheckBox(QString("Enable Culling"));
     cullingCheckBox->setChecked(this->isCullingEnabled());
@@ -515,14 +629,14 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
     QObject::connect(boundingBoxCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setBoundingBoxEnabled(enabled);
     });
-    optionsLayout->addWidget(boundingBoxCheckBox, 1, 1);
+    optionsLayout->addWidget(boundingBoxCheckBox, 4, 0);
 
     auto axisCheckBox = new QCheckBox(QString("Show Axis"));
     axisCheckBox->setChecked(this->isAxisEnabled());
     QObject::connect(axisCheckBox, &QCheckBox::clicked, [&](bool enabled) {
         this->setAxisEnabled(enabled);
     });
-    optionsLayout->addWidget(axisCheckBox, 2, 1);
+    optionsLayout->addWidget(axisCheckBox, 4, 1);
 
     auto normalsCheckBox = new QCheckBox(QString("Show Normals"));
     normalsCheckBox->setChecked(this->isNormalsEnabled());
@@ -537,7 +651,6 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
         visibleCheckBox->setChecked(newVisible);
     });
     listener->setOnChanged([=]() {
-        wireframeCheckBox->setChecked(this->isWireframeEnabled());
         cullingCheckBox->setChecked(this->isCullingEnabled());
         boundingBoxCheckBox->setChecked(this->isBoundingBoxEnabled());
     });
@@ -566,17 +679,6 @@ void RenderMesh::setTransformation(const Transformation &newTransformation) {
     }
 }
 
-void RenderMesh::setSurfaceEnabled(bool newSurfaceEnabled) {
-    RenderMesh::surfaceEnabled = newSurfaceEnabled;
-    for (const auto &listener: this->listeners){
-        listener->notify();
-    }
-}
-
-bool RenderMesh::isSurfaceEnabled() const {
-    return surfaceEnabled;
-}
-
 void RenderMesh::setNormalsEnabled(bool newNormalsEnabled) {
     RenderMesh::normalsEnabled = newNormalsEnabled;
     for (const auto &listener: this->listeners){
@@ -594,6 +696,17 @@ RenderMesh::MeshTexture RenderMesh::getRenderedTexture() const {
 
 void RenderMesh::setRenderedTexture(MeshTexture newRenderedTexture) {
     RenderMesh::renderedTexture = newRenderedTexture;
+    for (const auto &listener: this->listeners){
+        listener->notify();
+    }
+}
+
+RenderMesh::WireframeMode RenderMesh::getWireframeMode() const {
+    return wireframeMode;
+}
+
+void RenderMesh::setWireframeMode(RenderMesh::WireframeMode newWireframeMode) {
+    RenderMesh::wireframeMode = newWireframeMode;
     for (const auto &listener: this->listeners){
         listener->notify();
     }
