@@ -16,6 +16,12 @@
 #include "PhongMaterial.h"
 #include "RenderListeners.h"
 
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
+#endif
+
 class OpenGLWidget;
 
 class AbstractRenderModel: protected QOpenGLFunctions {

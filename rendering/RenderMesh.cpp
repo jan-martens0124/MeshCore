@@ -6,6 +6,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/normal.hpp>
+#include <glm/gtx/component_wise.hpp>
 
 #include "ShaderProgramSource.h"
 #include <QOpenGLShaderProgram>
@@ -197,35 +198,31 @@ RenderMesh::RenderMesh(const WorldSpaceMesh& worldSpaceMesh):
 
     // Store the axis render line
     auto& aabb = worldSpaceMesh.getModelSpaceMesh()->getBounds();
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(glm::max(0.0f, 2.0f * aabb.getMaximum().x),0,0), Transformation()));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,glm::max(0.0f, 2.0f * aabb.getMaximum().y),0), Transformation()));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,glm::max(0.0f, 2.0f * aabb.getMaximum().z)), Transformation()));
-    axisRenderLines[0]->setMaterial(PhongMaterial(Color::Red()));
-    axisRenderLines[1]->setMaterial(PhongMaterial(Color::Green()));
-    axisRenderLines[2]->setMaterial(PhongMaterial(Color::Blue()));
+    auto axisLength = 1.5f * glm::compMax(aabb.getMaximum());
 
-    for (const auto &renderLine: axisRenderLines){
+    axisRenderModels.emplace_back(std::make_shared<RenderRay>(Ray(glm::vec3(0,0,0), glm::vec3(axisLength,0,0)), Transformation(), 1e-2f));
+    axisRenderModels.emplace_back(std::make_shared<RenderRay>(Ray(glm::vec3(0,0,0), glm::vec3(0,axisLength,0)), Transformation(), 1e-2f));
+    axisRenderModels.emplace_back(std::make_shared<RenderRay>(Ray(glm::vec3(0,0,0), glm::vec3(0,0,axisLength)), Transformation(), 1e-2f));
+    axisRenderModels[0]->setMaterial(PhongMaterial(Color::Red()));
+    axisRenderModels[1]->setMaterial(PhongMaterial(Color::Green()));
+    axisRenderModels[2]->setMaterial(PhongMaterial(Color::Blue()));
+
+    for (const auto &renderLine: axisRenderModels){
         renderLine->setTransformation(worldSpaceMesh.getModelTransformation());
     }
 
-    // Store the normals
+    // Store the normal render models
+    normalRenderModels.reserve(triangles.size());
     for (const auto &triangle: triangles){
         auto vertexTriangle = VertexTriangle(vertices[triangle.vertexIndex0], vertices[triangle.vertexIndex1], vertices[triangle.vertexIndex2]);
         auto center = vertexTriangle.getCentroid();
         auto normal = vertexTriangle.normal;
         normal = glm::normalize(normal) * glm::sqrt(glm::length(normal)); // Normals scale with surface, but we want them to scale with the scaling factor of the mod
-        this->normalRays.emplace_back(center, normal);
-    }
-}
-
-void RenderMesh::initializeNormals() {
-    normalRenderRays.clear();
-    normalRenderRays.reserve(normalRays.size());
-    for (const auto &normalRay: this->normalRays){
-        auto renderRay = std::make_shared<RenderRay>(normalRay, this->getTransformation());
+        Ray normalRay(center, normal);
+        auto renderRay = std::make_shared<RenderRay>(normalRay, this->getTransformation(), 5e-2f);
         renderRay->setMaterial(PhongMaterial(Color::Red()));
         renderRay->setTransformation(this->getTransformation());
-        this->normalRenderRays.emplace_back(renderRay);
+        this->normalRenderModels.emplace_back(renderRay);
     }
 }
 
@@ -245,16 +242,15 @@ void RenderMesh::draw(const OpenGLWidget* openGLWidget, const glm::mat4& viewMat
     if(this->isVisible()){
 
         if(this->axisEnabled){
-            for (const auto &axisRenderLine: this->axisRenderLines){
-                axisRenderLine->draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
+            for (const auto &axisRenderModel: this->axisRenderModels){
+                axisRenderModel->draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
             }
         }
 
         if(this->boundingBoxEnabled) boundingBox.draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
 
         if(this->normalsEnabled) {
-            if(this->normalRenderRays.empty()) this->initializeNormals();
-            for (const auto &normalRenderRay: this->normalRenderRays) {
+            for (const auto &normalRenderRay: this->normalRenderModels) {
                 normalRenderRay->draw(openGLWidget, viewMatrix, projectionMatrix, lightMode);
             }
         }
@@ -409,9 +405,8 @@ RenderMesh &RenderMesh::operator=(RenderMesh &&other) noexcept {
         this->numberOfVertices = other.numberOfVertices;
         this->unscaledSurfaceArea = other.unscaledSurfaceArea;
         this->unscaledVolume = other.unscaledVolume;
-        this->axisRenderLines = std::move(other.axisRenderLines);
-        this->normalRays = std::move(other.normalRays);
-        this->normalRenderRays = std::move(other.normalRenderRays);
+        this->axisRenderModels = std::move(other.axisRenderModels);
+        this->normalRenderModels = std::move(other.normalRenderModels);
 
         other.indexBuffer = nullptr;
         other.vertexArray = nullptr;
@@ -671,10 +666,10 @@ RenderModelDetailDialog* RenderMesh::createRenderModelDetailDialog(QWidget* pare
 void RenderMesh::setTransformation(const Transformation &newTransformation) {
     AbstractRenderModel::setTransformation(newTransformation);
     this->boundingBox.setTransformation(newTransformation);
-    for (const auto &axisRenderLine: this->axisRenderLines){
+    for (const auto &axisRenderLine: this->axisRenderModels){
         axisRenderLine->setTransformation(newTransformation);
     }
-    for (const auto &normalRenderRay: this->normalRenderRays){
+    for (const auto &normalRenderRay: this->normalRenderModels){
         normalRenderRay->setTransformation(newTransformation);
     }
 }

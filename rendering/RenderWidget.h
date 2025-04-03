@@ -79,7 +79,7 @@ public:
 
     void renderBox(const std::string &group, const std::string& name, const AABB &aabb, const Transformation& transformation=Transformation(), const Color& = Color::White());
     void renderPlane(const std::string &group, const std::string &name, const Plane &plane, const Color &color);
-    void renderRay(const std::string &group, const std::string& name, const Ray &ray, const Color &color = Color::White());
+    void renderRay(const std::string &group, const std::string& name, const Ray &ray, const Color &color = Color::White(), float widthLengthRatio=0.1f);
     void renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const Color &color = Color::White());
     void renderSphere(const std::string &group, const std::string& name, const Sphere &sphere, const PhongMaterial& material = PhongMaterial(Color::White()));
     void renderTriangle(const std::string &group, const std::string& name, const VertexTriangle &triangle, const Color &color = Color::White());

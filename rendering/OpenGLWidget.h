@@ -46,7 +46,7 @@ private:
     mutable std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<AbstractRenderModel>>> groupedRenderModelsMap;
     std::unordered_map<std::string, std::vector<std::shared_ptr<AbstractRenderGroupListener>>> groupListeners;
     std::vector<std::shared_ptr<AbstractRenderModel>> sortedRenderModels;
-    std::vector<std::shared_ptr<RenderLine>> axisRenderLines;
+    std::vector<std::shared_ptr<AbstractRenderModel>> axisRenderModels;
 
 private:
     std::shared_ptr<QOpenGLShaderProgram> ambientShader;
@@ -104,7 +104,7 @@ private slots:
     void renderWorldSpaceMeshSlot(const std::string &group, const std::shared_ptr<WorldSpaceMesh> &worldSpaceMesh, const PhongMaterial &material, RenderWidget* renderWidget);
     void renderPlaneSlot(const std::string &group, const std::string &name, const Plane &plane, const PhongMaterial& material, RenderWidget* renderWidget);
     void renderBoxSlot(const std::string &group, const std::string &name, const AABB &aabb, const Transformation& transformation, const PhongMaterial& material, RenderWidget *renderWidget);
-    void renderRaySlot(const std::string &group, const std::string &name, const Ray &ray, const PhongMaterial& material, RenderWidget* renderWidget);
+    void renderRaySlot(const std::string &group, const std::string &name, const Ray &ray, const PhongMaterial& material, float widthLengthRatio, RenderWidget* renderWidget);
     void renderSphereSlot(const std::string &group, const std::string &name, const Sphere &sphere, const PhongMaterial& material, RenderWidget* renderWidget);
     void renderTriangleSlot(const std::string &group, const std::string &name, const VertexTriangle &triangle, const PhongMaterial& material, RenderWidget* renderWidget);
     void renderLineSlot(const std::string &group, const std::string &name, const glm::vec3 &start, const glm::vec3 &end, const PhongMaterial& material, RenderWidget* renderWidget);

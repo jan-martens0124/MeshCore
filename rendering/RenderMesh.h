@@ -46,9 +46,8 @@ private:
     bool normalsEnabled = false;
 
     RenderAABB boundingBox;
-    std::vector<std::shared_ptr<RenderLine>> axisRenderLines;
-    std::vector<std::shared_ptr<RenderRay>> normalRenderRays;
-    std::vector<Ray> normalRays;
+    std::vector<std::shared_ptr<AbstractRenderModel>> axisRenderModels;
+    std::vector<std::shared_ptr<AbstractRenderModel>> normalRenderModels;
 
     unsigned int numberOfVertices;
     unsigned int numberOfFaces;
@@ -86,8 +85,6 @@ public:
 
     void setMaterial(const PhongMaterial& newMaterial) override;
     void setTransformation(const Transformation &newTransformation) override;
-
-    void initializeNormals();
 };
 
 

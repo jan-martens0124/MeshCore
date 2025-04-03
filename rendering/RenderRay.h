@@ -12,8 +12,6 @@
 class RenderMesh;
 
 class RenderRay: public AbstractRenderModel {
-    std::shared_ptr<RenderMesh> arrowMesh{};
-
 public:
     void setTransformation(const Transformation &transformation) override;
 

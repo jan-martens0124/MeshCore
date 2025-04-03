@@ -18,8 +18,8 @@
 
 [[maybe_unused]] OpenGLWidget::OpenGLWidget(QWidget *parent): QOpenGLWidget(parent) {}
 
-Q_DECLARE_METATYPE(Color);
-Q_DECLARE_METATYPE(PhongMaterial);
+Q_DECLARE_METATYPE(Color)
+Q_DECLARE_METATYPE(PhongMaterial)
 Q_DECLARE_METATYPE(std::string)
 Q_DECLARE_METATYPE(std::shared_ptr<WorldSpaceMesh>)
 Q_DECLARE_METATYPE(RenderWidget*)
@@ -47,6 +47,7 @@ void OpenGLWidget::initializeGL() {
     qRegisterMetaType<Sphere>();
     qRegisterMetaType<Plane>();
     qRegisterMetaType<Ray>();
+    qRegisterMetaType<size_t>("size_t");
 
     GL_CALL(glClearColor(0,0,0,1));
 
@@ -95,13 +96,13 @@ void OpenGLWidget::initializeGL() {
     polyChromeShader->bindAttributeLocation("color", 2);
     polyChromeShader->link();
 
-    // Store the axis render line
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(1e8,0,0), Transformation()));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,1e8,0), Transformation()));
-    axisRenderLines.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,1e8), Transformation()));
-    axisRenderLines[0]->setMaterial(PhongMaterial(Color::Red()));
-    axisRenderLines[1]->setMaterial(PhongMaterial(Color::Green()));
-    axisRenderLines[2]->setMaterial(PhongMaterial(Color::Blue()));
+    // Store the axis render models
+    axisRenderModels.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(1e8,0,0), Transformation()));
+    axisRenderModels.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,1e8,0), Transformation()));
+    axisRenderModels.emplace_back(std::make_shared<RenderLine>(glm::vec3(0,0,0), glm::vec3(0,0,1e8), Transformation()));
+    axisRenderModels[0]->setMaterial(PhongMaterial(Color::Red()));
+    axisRenderModels[1]->setMaterial(PhongMaterial(Color::Green()));
+    axisRenderModels[2]->setMaterial(PhongMaterial(Color::Blue()));
 }
 
 void OpenGLWidget::resetView() {
@@ -205,12 +206,12 @@ void OpenGLWidget::calculateProjectionMatrix(){
 void OpenGLWidget::paintGL() {
 
     if(this->axisEnabled){
-        for (const auto &axisRenderLine: this->axisRenderLines){
-            axisRenderLine->draw(this, viewTransformation.getMatrix(), projectionMatrix, lightMode);
+        auto normalizedViewTransformation = viewTransformation;
+        normalizedViewTransformation.setScale(1.0f);
+        for (const auto &axisRenderModel: axisRenderModels){
+            axisRenderModel->draw(this, normalizedViewTransformation.getMatrix(), projectionMatrix, lightMode);
         }
     }
-
-//    std::cout << viewTransformation << std::endl;
 
     for(auto& renderModel: this->sortedRenderModels){
         renderModel->draw(this, viewTransformation.getMatrix(), projectionMatrix, lightMode);
@@ -226,13 +227,8 @@ void OpenGLWidget::mouseMoveEvent(QMouseEvent *event) {
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f,  0.0f);
     glm::vec3 cameraRight = glm::vec3(1.0f, 0.0f, 0.0f);
 
-//    std::cout << "Rotation length: " << glm::length(glm::fquat(Quaternion(glm::normalize(viewTransformation.inverseTransformVector(cameraUp)), rotationSpeed * float(dx)))) << std::endl;
-//    std::cout << "Rotation length: " << glm::length(glm::fquat(Quaternion(glm::normalize(viewTransformation.inverseTransformVector(cameraRight)), rotationSpeed * float(dy)))) << std::endl;
-
     this->viewTransformation.factorRotation(Quaternion(viewTransformation.inverseTransformVector(cameraUp), rotationSpeed * float(dx)));
     this->viewTransformation.factorRotation(Quaternion(viewTransformation.inverseTransformVector(cameraRight), rotationSpeed * float(dy)));
-
-//    std::cout << this->viewTransformation << std::endl;
 
     this->update();
 }
@@ -1019,7 +1015,7 @@ void OpenGLWidget::renderPlaneSlot(const std::string &group, const std::string &
     this->update();
 }
 
-void OpenGLWidget::renderRaySlot(const std::string &group, const std::string &name, const Ray &ray, const PhongMaterial &material, RenderWidget *renderWidget) {
+void OpenGLWidget::renderRaySlot(const std::string &group, const std::string &name, const Ray &ray, const PhongMaterial &material, float widthLengthRatio, RenderWidget *renderWidget) {
 
     // Find the group
     auto& renderModelsMap = this->getOrInsertRenderModelsMap(group);
@@ -1036,7 +1032,7 @@ void OpenGLWidget::renderRaySlot(const std::string &group, const std::string &na
         this->makeCurrent();
 
         // No entry present yet, create new render Model
-        auto renderRay = std::make_shared<RenderRay>(ray);
+        auto renderRay = std::make_shared<RenderRay>(ray, Transformation(), widthLengthRatio);
 
         // Insert it in the renderModelsMap
         modelIterator = renderModelsMap.insert({renderId, renderRay}).first;
