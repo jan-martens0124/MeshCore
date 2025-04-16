@@ -2,8 +2,8 @@
 // Created by Jonas on 8/11/2021.
 //
 
-#ifndef OPTIXMESHCORE_RENDERAABB_H
-#define OPTIXMESHCORE_RENDERAABB_H
+#ifndef MESHCORE_RENDERAABB_H
+#define MESHCORE_RENDERAABB_H
 
 #include <qt5/QtGui/QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
@@ -24,4 +24,4 @@ public:
 };
 
 
-#endif //OPTIXMESHCORE_RENDERAABB_H
+#endif //MESHCORE_RENDERAABB_H

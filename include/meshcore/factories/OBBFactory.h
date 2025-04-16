@@ -2,8 +2,8 @@
 // Created by Jonas on 17/03/2022.
 //
 
-#ifndef OPTIXMESHCORE_OBBFACTORY_H
-#define OPTIXMESHCORE_OBBFACTORY_H
+#ifndef MESHCORE_OBBFACTORY_H
+#define MESHCORE_OBBFACTORY_H
 
 #include "AABBFactory.h"
 #include "meshcore/utility/hash.h"
@@ -260,4 +260,4 @@ private:
         return {AABB(minimum, maximum), rotation};
     }
 };
-#endif //OPTIXMESHCORE_OBBFACTORY_H
+#endif //MESHCORE_OBBFACTORY_H

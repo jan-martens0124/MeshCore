@@ -8,7 +8,7 @@
 
 #include <QWidget>
 #include "AbstractRenderModel.h"
-#include "OpenGLWidget.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 
 namespace Ui {
     class RenderGroupControlWidget;

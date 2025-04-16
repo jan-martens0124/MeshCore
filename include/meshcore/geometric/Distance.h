@@ -2,8 +2,8 @@
 // Created by Jonas on 9/02/2023.
 //
 
-#ifndef OPTIXMESHCORE_DISTANCE_H
-#define OPTIXMESHCORE_DISTANCE_H
+#ifndef MESHCORE_DISTANCE_H
+#define MESHCORE_DISTANCE_H
 
 #include "../core/Sphere.h"
 #include "../core/AABB.h"
@@ -37,4 +37,4 @@ namespace Distance {
 
 }
 
-#endif //OPTIXMESHCORE_DISTANCE_H
+#endif //MESHCORE_DISTANCE_H

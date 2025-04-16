@@ -11,7 +11,7 @@
 #include <QGridLayout>
 #include <glm/gtx/normal.hpp>
 #include <QLabel>
-#include "OpenGLWidget.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 
 RenderSphere::RenderSphere(const Sphere &sphere, const Transformation& transformation): AbstractRenderModel(transformation, "Sphere"), sphere(sphere){}
 

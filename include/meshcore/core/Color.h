@@ -2,8 +2,8 @@
 // Created by Jonas on 17/09/2022.
 //
 
-#ifndef OPTIXMESHCORE_COLOR_H
-#define OPTIXMESHCORE_COLOR_H
+#ifndef MESHCORE_COLOR_H
+#define MESHCORE_COLOR_H
 
 #include <glm/glm.hpp>
 
@@ -26,4 +26,4 @@ public:
     [[maybe_unused]] static Color Locust(float alpha=1.0f){return {0.666f, 0.666f, 0.5f, alpha};}
 };
 
-#endif //OPTIXMESHCORE_COLOR_H
+#endif //MESHCORE_COLOR_H

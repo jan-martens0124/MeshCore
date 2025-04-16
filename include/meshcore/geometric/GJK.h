@@ -2,8 +2,8 @@
 // File created by Jonas on 15/06/2022. Core algorithm mostly copied from an implementation by Wim Vancroonenburg
 //
 
-#ifndef OPTIXMESHCORE_GJK_H
-#define OPTIXMESHCORE_GJK_H
+#ifndef MESHCORE_GJK_H
+#define MESHCORE_GJK_H
 
 #include <set>
 #include <vector>
@@ -159,4 +159,4 @@ public:
     [[nodiscard]] glm::vec3 getCenter() const override;
 };
 
-#endif //OPTIXMESHCORE_GJK_H
+#endif //MESHCORE_GJK_H

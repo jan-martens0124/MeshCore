@@ -2,8 +2,8 @@
 // Created by Jonas on 4/10/2022.
 //
 
-#ifndef OPTIXMESHCORE_SPHEREFACTORY_H
-#define OPTIXMESHCORE_SPHEREFACTORY_H
+#ifndef MESHCORE_SPHEREFACTORY_H
+#define MESHCORE_SPHEREFACTORY_H
 
 #include "../core/VertexTriangle.h"
 #include "../core/Sphere.h"
@@ -179,4 +179,4 @@ private:
 };
 
 
-#endif //OPTIXMESHCORE_SPHEREFACTORY_H
+#endif //MESHCORE_SPHEREFACTORY_H

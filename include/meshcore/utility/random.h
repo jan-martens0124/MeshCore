@@ -2,8 +2,8 @@
 // Created by Jonas on 29/03/2022.
 //
 
-#ifndef OPTIXMESHCORE_RANDOM_H
-#define OPTIXMESHCORE_RANDOM_H
+#ifndef MESHCORE_RANDOM_H
+#define MESHCORE_RANDOM_H
 
 #include <boost/random.hpp>
 
@@ -37,4 +37,4 @@ public:
     }
 };
 
-#endif //OPTIXMESHCORE_RANDOM_H
+#endif //MESHCORE_RANDOM_H

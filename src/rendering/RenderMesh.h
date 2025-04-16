@@ -2,8 +2,8 @@
 // Created by Jonas on 18/05/2022.
 //
 
-#ifndef OPTIXMESHCORE_RENDERMESH_H
-#define OPTIXMESHCORE_RENDERMESH_H
+#ifndef MESHCORE_RENDERMESH_H
+#define MESHCORE_RENDERMESH_H
 
 
 #include <qt5/QtGui/QOpenGLShaderProgram>
@@ -88,4 +88,4 @@ public:
 };
 
 
-#endif //OPTIXMESHCORE_RENDERMESH_H
+#endif //MESHCORE_RENDERMESH_H

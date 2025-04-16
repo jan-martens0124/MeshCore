@@ -2,8 +2,8 @@
 // Created by Jonas on 24/08/2022.
 //
 
-#ifndef OPTIXMESHCORE_RENDERLINE_H
-#define OPTIXMESHCORE_RENDERLINE_H
+#ifndef MESHCORE_RENDERLINE_H
+#define MESHCORE_RENDERLINE_H
 
 
 #include <qt5/QtGui/QOpenGLShaderProgram>
@@ -19,4 +19,4 @@ public:
 };
 
 
-#endif //OPTIXMESHCORE_RENDERLINE_H
+#endif //MESHCORE_RENDERLINE_H

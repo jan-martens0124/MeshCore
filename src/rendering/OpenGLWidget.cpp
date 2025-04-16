@@ -3,12 +3,12 @@
 //
 
 #include <qfiledialog.h>
-#include "OpenGLWidget.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 #include "ShaderProgramSource.h"
 #include "RenderMesh.h"
 #include "RenderPlane.h"
 #include "RenderSphere.h"
-#include "RenderWidget.h"
+#include "include/meshcore/rendering/RenderWidget.h"
 #include "Exception.h"
 #include "src/external/gifencoder/GifEncoder.h"
 #include "meshcore/utility/io.h"

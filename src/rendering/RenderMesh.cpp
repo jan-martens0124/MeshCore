@@ -18,7 +18,7 @@
 #include "RenderMesh.h"
 #include "ShaderProgramSource.h"
 #include "Exception.h"
-#include "OpenGLWidget.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 #include "meshcore/utility/random.h"
 #include "meshcore/utility/Triangulation.h"
 

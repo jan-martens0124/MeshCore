@@ -2,8 +2,8 @@
 // Created by Jonas on 5/11/2021.
 //
 
-#ifndef OPTIXMESHCORE_INTERSECTION_H
-#define OPTIXMESHCORE_INTERSECTION_H
+#ifndef MESHCORE_INTERSECTION_H
+#define MESHCORE_INTERSECTION_H
 
 #include "../core/Ray.h"
 #include "../core/VertexTriangle.h"
@@ -68,4 +68,4 @@ namespace Intersection{
     std::optional<glm::vec3> intersect(const Plane& planeA, const Plane& planeB, const Plane& planeC);
 }
 
-#endif //OPTIXMESHCORE_INTERSECTION_H
+#endif //MESHCORE_INTERSECTION_H

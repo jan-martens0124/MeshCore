@@ -2,8 +2,8 @@
 // Created by Jonas on 15/02/2022.
 //
 
-#ifndef OPTIXMESHCORE_HASH_H
-#define OPTIXMESHCORE_HASH_H
+#ifndef MESHCORE_HASH_H
+#define MESHCORE_HASH_H
 
 #include "../core/VertexTriangle.h"
 #include "../core/Sphere.h"
@@ -110,4 +110,4 @@
     };
 #endif
 
-#endif //OPTIXMESHCORE_HASH_H
+#endif //MESHCORE_HASH_H

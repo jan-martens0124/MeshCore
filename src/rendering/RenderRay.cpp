@@ -7,7 +7,7 @@
 
 #include "RenderRay.h"
 #include "Exception.h"
-#include "OpenGLWidget.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 #include "meshcore/core/IndexTriangle.h"
 
 RenderRay::RenderRay(const Ray& ray, const Transformation &transformation, float widthLengthRatio): AbstractRenderModel(transformation, "Ray"){

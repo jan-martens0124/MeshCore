@@ -7,7 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <QGridLayout>
 #include <QLabel>
-#include "OpenGLWidget.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 
 RenderModelDetailDialog *RenderOBB::createRenderModelDetailDialog(QWidget *parent) {
     auto dialog = AbstractRenderModel::createRenderModelDetailDialog(parent);

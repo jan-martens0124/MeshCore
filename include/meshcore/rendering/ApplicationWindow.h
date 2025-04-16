@@ -7,7 +7,7 @@
 
 #include <QMainWindow>
 #include <QDialog>
-#include "src/rendering/RenderWidget.h"
+#include "RenderWidget.h"
 
 QT_BEGIN_NAMESPACE
 class QAction;

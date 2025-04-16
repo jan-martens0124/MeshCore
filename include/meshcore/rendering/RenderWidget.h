@@ -2,17 +2,17 @@
 // Created by Jonas on 29/03/2022.
 //
 
-#ifndef OPTIXMESHCORE_RENDERWIDGET_H
-#define OPTIXMESHCORE_RENDERWIDGET_H
+#ifndef MESHCORE_RENDERWIDGET_H
+#define MESHCORE_RENDERWIDGET_H
 
 #include <QApplication>
 #include <unordered_map>
 #include <iostream>
 #include <QWidget>
 #include <QTreeWidgetItem>
-#include "AbstractRenderModel.h"
-#include "RenderBoundsTree.h"
-#include "src/rendering/OpenGLWidget.h"
+#include "src/rendering/AbstractRenderModel.h"
+#include "src/rendering/RenderBoundsTree.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 #include "meshcore/rendering/KeyFrame.h"
 #include "meshcore/core/WorldSpaceMesh.h"
 #include "meshcore/tasks/AbstractTaskObserver.h"
@@ -110,4 +110,4 @@ private slots:
     [[maybe_unused]] void setTimeLabelSlot(const QString& time);
 };
 
-#endif //OPTIXMESHCORE_RENDERWIDGET_H
+#endif //MESHCORE_RENDERWIDGET_H

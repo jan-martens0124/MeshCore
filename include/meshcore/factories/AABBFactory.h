@@ -2,8 +2,8 @@
 // Created by Jonas on 17/03/2022.
 //
 
-#ifndef OPTIXMESHCORE_AABBFACTORY_H
-#define OPTIXMESHCORE_AABBFACTORY_H
+#ifndef MESHCORE_AABBFACTORY_H
+#define MESHCORE_AABBFACTORY_H
 
 #include <unordered_set>
 #include <memory>
@@ -70,4 +70,4 @@ private:
     }
 
 };
-#endif //OPTIXMESHCORE_AABBFACTORY_H
+#endif //MESHCORE_AABBFACTORY_H

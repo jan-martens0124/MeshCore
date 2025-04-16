@@ -2,8 +2,8 @@
 // Created by Jonas on 29/03/2022.
 //
 
-#ifndef OPTIXMESHCORE_LATEACCEPTANCE_H
-#define OPTIXMESHCORE_LATEACCEPTANCE_H
+#ifndef MESHCORE_LATEACCEPTANCE_H
+#define MESHCORE_LATEACCEPTANCE_H
 
 #include "AbstractLocalSearch.h"
 #include "array"
@@ -58,4 +58,4 @@ private:
     }
 };
 
-#endif //OPTIXMESHCORE_LATEACCEPTANCE_H
+#endif //MESHCORE_LATEACCEPTANCE_H

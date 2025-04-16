@@ -2,17 +2,16 @@
 // Created by Jonas on 18/05/2022.
 //
 
-#ifndef OPTIXMESHCORE_OPENGLWIDGET_H
-#define OPTIXMESHCORE_OPENGLWIDGET_H
+#ifndef MESHCORE_OPENGLWIDGET_H
+#define MESHCORE_OPENGLWIDGET_H
 
-#include "AbstractRenderModel.h"
+#include "src/rendering/AbstractRenderModel.h"
 #include "meshcore/core/OBB.h"
 #include "meshcore/core/Plane.h"
 #include "meshcore/core/Ray.h"
 #include "meshcore/core/Sphere.h"
 #include "meshcore/core/VertexTriangle.h"
 #include "meshcore/core/WorldSpaceMesh.h"
-#include "RenderLine.h"
 #include "meshcore/rendering/KeyFrame.h"
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions>
@@ -125,4 +124,4 @@ private:
 };
 
 
-#endif //OPTIXMESHCORE_OPENGLWIDGET_H
+#endif //MESHCORE_OPENGLWIDGET_H

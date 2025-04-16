@@ -2,8 +2,8 @@
 // Created by Jonas on 29/03/2022.
 //
 
-#ifndef OPTIXMESHCORE_HILLCLIMBING_H
-#define OPTIXMESHCORE_HILLCLIMBING_H
+#ifndef MESHCORE_HILLCLIMBING_H
+#define MESHCORE_HILLCLIMBING_H
 
 #include "AbstractLocalSearch.h"
 
@@ -34,4 +34,4 @@ private:
     }
 };
 
-#endif //OPTIXMESHCORE_HILLCLIMBING_H
+#endif //MESHCORE_HILLCLIMBING_H

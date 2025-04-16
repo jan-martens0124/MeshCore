@@ -2,8 +2,8 @@
 // Created by Jonas on 25/08/2022.
 //
 
-#ifndef OPTIXMESHCORE_ABSTRACTBOUNDSTREE_H
-#define OPTIXMESHCORE_ABSTRACTBOUNDSTREE_H
+#ifndef MESHCORE_ABSTRACTBOUNDSTREE_H
+#define MESHCORE_ABSTRACTBOUNDSTREE_H
 
 #include "meshcore/core/Vertex.h"
 #include "meshcore/core/Ray.h"
@@ -536,4 +536,4 @@ Vertex AbstractBoundsTree<Bounds, Degree, UniqueTriangleAssignment>::getClosestP
     return queryResult.closestVertex;
 }
 
-#endif //OPTIXMESHCORE_ABSTRACTBOUNDSTREE_H
+#endif //MESHCORE_ABSTRACTBOUNDSTREE_H

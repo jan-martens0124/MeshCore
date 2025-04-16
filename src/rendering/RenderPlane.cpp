@@ -4,7 +4,7 @@
 
 #include "RenderPlane.h"
 #include "Exception.h"
-#include "OpenGLWidget.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 #include <glm/gtc/type_ptr.hpp>
 
 void RenderPlane::draw(const OpenGLWidget *openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {

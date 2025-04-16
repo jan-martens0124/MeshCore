@@ -5,7 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "RenderLine.h"
 #include "Exception.h"
-#include "OpenGLWidget.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 
 RenderLine::RenderLine(const Vertex &startPoint, const Vertex &endPoint, const Transformation &transformation): AbstractRenderModel(transformation, "AABB"){
     std::vector<glm::vec3> data;

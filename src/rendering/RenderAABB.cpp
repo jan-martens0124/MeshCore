@@ -8,7 +8,7 @@
 #include "RenderAABB.h"
 #include "Exception.h"
 #include "meshcore/utility/io.h"
-#include "OpenGLWidget.h"
+#include "meshcore/rendering/OpenGLWidget.h"
 
 void RenderAABB::draw(const OpenGLWidget* openGLWidget, const glm::mat4 &viewMatrix, const glm::mat4 &projectionMatrix, bool lightMode) {
 

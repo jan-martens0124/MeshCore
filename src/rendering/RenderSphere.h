@@ -2,8 +2,8 @@
 // Created by Jonas on 18/07/2022.
 //
 
-#ifndef OPTIXMESHCORE_RENDERSPHERE_H
-#define OPTIXMESHCORE_RENDERSPHERE_H
+#ifndef MESHCORE_RENDERSPHERE_H
+#define MESHCORE_RENDERSPHERE_H
 
 #include <qt5/QtGui/QOpenGLShaderProgram>
 #include "AbstractRenderModel.h"
@@ -48,4 +48,4 @@ public:
 };
 
 
-#endif //OPTIXMESHCORE_RENDERSPHERE_H
+#endif //MESHCORE_RENDERSPHERE_H

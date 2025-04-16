@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include "RenderWidget.h"
+#include "include/meshcore/rendering/RenderWidget.h"
 #include "RenderModelControlWidget.h"
 #include "RenderGroupControlWidget.h"
 #include "meshcore/core/Plane.h"

@@ -2,8 +2,8 @@
 // Created by Jonas on 5/11/2021.
 //
 
-#ifndef OPTIXMESHCORE_AABBRAY_CPP
-#define OPTIXMESHCORE_AABBRAY_CPP
+#ifndef MESHCORE_AABBRAY_CPP
+#define MESHCORE_AABBRAY_CPP
 
 #include "meshcore/geometric/Intersection.h"
 
@@ -35,4 +35,4 @@ namespace Intersection {
     }
 }
 
-#endif //OPTIXMESHCORE_AABBRAY_CPP
+#endif //MESHCORE_AABBRAY_CPP
