@@ -3,7 +3,8 @@
 //
 
 #include <gtest/gtest.h>
-#include "geometric/Intersection.h"
+
+#include "meshcore/geometric/Intersection.h"
 
 TEST(PlaneIntersection, PlanePlaneIntersection) {
     Plane planeA(glm::vec3(1, 0, 0), glm::vec3(0, 0, 0));

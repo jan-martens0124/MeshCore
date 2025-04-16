@@ -3,12 +3,12 @@
 //
 
 
-#include <QtWidgets>
 #include <memory>
-#include "../meshcore/core/ModelSpaceMesh.h"
-#include "../meshcore/utility/FileParser.h"
-#include "../meshcore/acceleration/AABBVolumeHierarchy.h"
-#include "../meshcore/rendering/ApplicationWindow.h"
+
+#include "meshcore/core/ModelSpaceMesh.h"
+#include "meshcore/utility/FileParser.h"
+#include "meshcore/acceleration/AABBVolumeHierarchy.h"
+#include "meshcore/rendering/ApplicationWindow.h"
 
 int main(int argc, char *argv[]){
 

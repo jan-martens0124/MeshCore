@@ -2,9 +2,10 @@
 // Created by Jonas on 28/11/2023.
 //
 
-#include "gtest/gtest.h"
-#include "core/OBB.h"
-#include "core/Quaternion.h"
+#include <gtest/gtest.h>
+
+#include "meshcore/core/OBB.h"
+#include "meshcore/core/Quaternion.h"
 
 TEST(OBBTest, SurfaceArea) {
     // Create an OBB with known parameters

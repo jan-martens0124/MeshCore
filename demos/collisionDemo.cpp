@@ -2,12 +2,12 @@
 // Created by Jonas on 2/06/2022.
 //
 #include <iostream>
-#include <QtWidgets>
-#include <utility/FileParser.h>
-#include "rendering/ApplicationWindow.h"
 #include <thread>
-#include "acceleration/AABBOctree.h"
-#include "utility/random.h"
+
+#include "meshcore/utility/FileParser.h"
+#include "meshcore/rendering/ApplicationWindow.h"
+#include "meshcore/acceleration/AABBOctree.h"
+#include "meshcore/utility/random.h"
 
 void run(RenderWidget* renderWidget);
 

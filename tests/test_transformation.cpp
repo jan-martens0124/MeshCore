@@ -3,7 +3,8 @@
 //
 
 #include <gtest/gtest.h>
-#include "core/Transformation.h"
+
+#include "meshcore/core/Transformation.h"
 
 #define EXPECT_ANGLE_EQ(a, b) EXPECT_NEAR(glm::mod(a, 2 * glm::pi<float>()), glm::mod(b, 2 * glm::pi<float>()), 1e-5f)
 

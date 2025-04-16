@@ -3,7 +3,8 @@
 //
 
 #include <gtest/gtest.h>
-#include "core/AABB.h"
+
+#include "meshcore/core/AABB.h"
 
 TEST(AABBTest, ConstructorDefault) {
     AABB aabb;

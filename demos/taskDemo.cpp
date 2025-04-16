@@ -2,12 +2,12 @@
 // Created by Jonas on 27/09/2022.
 //
 
-#include <QtWidgets>
 #include <thread>
-#include "rendering/ApplicationWindow.h"
-#include "utility/FileParser.h"
-#include "rendering/RenderSphere.h"
-#include "utility/random.h"
+
+#include "meshcore/rendering/ApplicationWindow.h"
+#include "meshcore/utility/FileParser.h"
+#include "src/rendering/RenderSphere.h"
+#include "meshcore/utility/random.h"
 
 class DummySolution: public AbstractSolution{
 

@@ -2,14 +2,13 @@
 // Created by tolle on 20/09/2023.
 //
 
-#include "rendering/ApplicationWindow.h"
 
 #include <iostream>
-#include <QtWidgets>
 #include <thread>
 #include <filesystem>
-#include "utility/FileParser.h"
-#include "rendering/RenderSphere.h"
+
+#include "meshcore/rendering/ApplicationWindow.h"
+#include "meshcore/utility/FileParser.h"
 
 void run(RenderWidget* renderWidget);
 

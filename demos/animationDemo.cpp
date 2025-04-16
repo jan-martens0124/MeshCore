@@ -2,11 +2,10 @@
 // Created by tolle on 1/02/2024.
 //
 
-#include <QtWidgets>
 #include <thread>
-#include "rendering/ApplicationWindow.h"
-#include "utility/FileParser.h"
-#include "rendering/RenderSphere.h"
+
+#include "meshcore/rendering/ApplicationWindow.h"
+#include "meshcore/utility/FileParser.h"
 
 void run(RenderWidget* renderWidget);
 
@@ -76,7 +75,6 @@ void run(RenderWidget* renderWidget){
     KeyFrame keyFrame4;
     keyFrame4.addObject("Meshes", bananaWorldSpaceMesh, transformationA, PhongMaterial(Color::Yellow()));
 
-    // TODO this interface has its limitations (rotating viewmatrix, interpolating multiple transformations for multiple meshes, ...)
     renderWidget->captureLinearAnimation(renderWidget->getOpenGLWidget()->getViewTransformation(), renderWidget->getOpenGLWidget()->getViewTransformation(), keyFrame1, keyFrame2, "test.gif", 200, 2);
     renderWidget->captureLinearAnimation(renderWidget->getOpenGLWidget()->getViewTransformation(), renderWidget->getOpenGLWidget()->getViewTransformation(), keyFrame2, keyFrame3, "test2.gif", 200, 2);
     renderWidget->captureLinearAnimation(renderWidget->getOpenGLWidget()->getViewTransformation(), renderWidget->getOpenGLWidget()->getViewTransformation(), keyFrame3, keyFrame4, "test3.gif", 200, 2);

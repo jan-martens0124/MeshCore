@@ -5,8 +5,9 @@
 #include <filesystem>
 #include <iostream>
 #include <glm/gtc/epsilon.hpp>
-#include "utility/FileParser.h"
 #include <gtest/gtest.h>
+
+#include "meshcore/utility/FileParser.h"
 
 TEST(ConvexHullTest, TestConvexHulls) {
 

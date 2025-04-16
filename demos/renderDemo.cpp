@@ -3,11 +3,11 @@
 //
 
 #include <iostream>
-#include <QtWidgets>
 #include <thread>
-#include "rendering/ApplicationWindow.h"
-#include "utility/FileParser.h"
-#include "rendering/RenderSphere.h"
+
+#include "meshcore/rendering/ApplicationWindow.h"
+#include "meshcore/utility/FileParser.h"
+#include "src/rendering/RenderSphere.h"
 
 void run(RenderWidget* renderWidget);
 

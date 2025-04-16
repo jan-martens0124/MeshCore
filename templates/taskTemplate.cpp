@@ -2,7 +2,7 @@
 // Created by Jonas on 27/01/2023.
 //
 
-#include "rendering/ApplicationWindow.h"
+#include "meshcore/rendering/ApplicationWindow.h"
 
 int main(int argc, char *argv[]) {
 
