@@ -5,13 +5,13 @@
 #ifndef MESHCORE_INTERSECTION_H
 #define MESHCORE_INTERSECTION_H
 
-#include "../core/Ray.h"
-#include "../core/VertexTriangle.h"
-#include "../core/WorldSpaceMesh.h"
-#include "../core/OBB.h"
-#include "../core/Sphere.h"
-#include "../core/Line.h"
-#include "../core/Plane.h"
+#include "meshcore/core/Ray.h"
+#include "meshcore/core/VertexTriangle.h"
+#include "meshcore/core/WorldSpaceMesh.h"
+#include "meshcore/core/OBB.h"
+#include "meshcore/core/Sphere.h"
+#include "meshcore/core/Line.h"
+#include "meshcore/core/Plane.h"
 
 namespace Intersection{
 

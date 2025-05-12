@@ -5,6 +5,8 @@
 #ifndef EXTENDEDMESHCORE_KEYFRAME_H
 #define EXTENDEDMESHCORE_KEYFRAME_H
 
+#include "meshcore/rendering/PhongMaterial.h"
+
 struct KeyFrameObject{
     std::string group{};
     std::shared_ptr<WorldSpaceMesh> mesh{};

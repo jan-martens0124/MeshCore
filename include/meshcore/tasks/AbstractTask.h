@@ -10,10 +10,10 @@
 #include <atomic>
 #include <vector>
 #include "AbstractTaskObserver.h"
-#include "../localsearch/AbstractSolution.h"
+#include "meshcore/localsearch/AbstractSolution.h"
 
 class AbstractTask {
-private:
+
     std::thread* thread;
     std::vector<AbstractTaskObserver *> taskObservers;
 

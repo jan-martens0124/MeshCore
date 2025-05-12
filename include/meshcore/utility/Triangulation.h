@@ -6,10 +6,9 @@
 #define MESHCORE_TRIANGULATE_H
 
 #include <vector>
-#include "../core/Vertex.h"
-#include "../core/IndexFace.h"
-#include "../core/IndexTriangle.h"
-
+#include "meshcore/core/Vertex.h"
+#include "meshcore/core/IndexFace.h"
+#include "meshcore/core/IndexTriangle.h"
 
 class Triangulation{
 public:

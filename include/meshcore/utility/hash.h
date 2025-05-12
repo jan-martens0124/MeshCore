@@ -5,10 +5,10 @@
 #ifndef MESHCORE_HASH_H
 #define MESHCORE_HASH_H
 
-#include "../core/VertexTriangle.h"
-#include "../core/Sphere.h"
-#include "../core/Plane.h"
-#include "../core/Ray.h"
+#include "meshcore/core/VertexTriangle.h"
+#include "meshcore/core/Sphere.h"
+#include "meshcore/core/Plane.h"
+#include "meshcore/core/Ray.h"
 
 #if GLM_HAS_CXX11_STL
     #include <glm/gtx/hash.hpp>

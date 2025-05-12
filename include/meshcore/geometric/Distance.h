@@ -5,11 +5,11 @@
 #ifndef MESHCORE_DISTANCE_H
 #define MESHCORE_DISTANCE_H
 
-#include "../core/Sphere.h"
-#include "../core/AABB.h"
-#include "../core/OBB.h"
-#include "../core/VertexTriangle.h"
-#include "../core/WorldSpaceMesh.h"
+#include "meshcore/core/Sphere.h"
+#include "meshcore/core/AABB.h"
+#include "meshcore/core/OBB.h"
+#include "meshcore/core/VertexTriangle.h"
+#include "meshcore/core/WorldSpaceMesh.h"
 
 namespace Distance {
 

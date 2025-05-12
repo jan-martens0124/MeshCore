@@ -26,11 +26,8 @@ class OpenGLWidget;
 
 class AbstractRenderModel: protected QOpenGLFunctions {
 
-private:
     std::string name;
     RenderModelDetailDialog* detailDialog = nullptr;
-
-private:
     bool visible = true;
     PhongMaterial material = PhongMaterial(Color(1.0f));
 

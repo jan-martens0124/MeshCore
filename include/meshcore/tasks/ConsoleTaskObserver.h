@@ -9,7 +9,6 @@
 
 class ConsoleTaskObserver: public AbstractTaskObserver {
 
-private:
     std::string status;
     float progress;
     void update();

@@ -5,14 +5,12 @@
 #ifndef MESHCORE_GJK_H
 #define MESHCORE_GJK_H
 
-#include <set>
-#include <vector>
 #include <optional>
 #include <array>
-#include "../core/AABB.h"
-#include "../core/OBB.h"
-#include "../core/VertexTriangle.h"
-#include "../core/Sphere.h"
+#include "meshcore/core/AABB.h"
+#include "meshcore/core/OBB.h"
+#include "meshcore/core/VertexTriangle.h"
+#include "meshcore/core/Sphere.h"
 
 #define GJK_EPSILON 0.0001f
 

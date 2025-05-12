@@ -6,13 +6,14 @@
 #define MESHCORE_OBBFACTORY_H
 
 #include "AABBFactory.h"
-#include "meshcore/utility/hash.h"
-#include "../core/ModelSpaceMesh.h"
-#include "../core/OBB.h"
 #include <gsl/gsl_eigen.h>
 #include <unordered_set>
 #include <glm/gtc/type_ptr.hpp>
 #include <memory>
+
+#include "meshcore/utility/hash.h"
+#include "meshcore/core/ModelSpaceMesh.h"
+#include "meshcore/core/OBB.h"
 
 class OBBFactory{
 

@@ -8,7 +8,6 @@
 #include <boost/random.hpp>
 
 class Random{
-private:
     mutable boost::random::mt19937 randomEngine;
     const boost::random::uniform_real_distribution<double> uniformDoubleDistribution{};
     const boost::random::uniform_real_distribution<float> uniformFloatDistribution{};

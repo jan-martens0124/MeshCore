@@ -5,7 +5,7 @@
 #ifndef EXTENDEDMESHCORE_PHONGMATERIAL_H
 #define EXTENDEDMESHCORE_PHONGMATERIAL_H
 
-#include "../core/Color.h"
+#include "meshcore/core/Color.h"
 
 class PhongMaterial{
 

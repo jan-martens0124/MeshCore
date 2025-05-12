@@ -2,11 +2,12 @@
 // Created by Jonas on 29/03/2022.
 //
 
-#include <QtWidgets>
 #include <iomanip>
 #include <sstream>
 
-#include "include/meshcore/rendering/RenderWidget.h"
+#include "meshcore/rendering/RenderWidget.h"
+
+#include "RenderBoundsTree.h"
 #include "RenderModelControlWidget.h"
 #include "RenderGroupControlWidget.h"
 #include "meshcore/core/Plane.h"
@@ -349,4 +350,22 @@ void RenderWidget::renderRay(const std::string &group, const std::string &name, 
                               Q_ARG(PhongMaterial, PhongMaterial(color)),
                               Q_ARG(float, widthLengthRatio),
                               Q_ARG(RenderWidget*, this));
+}
+
+void RenderWidget::renderBoundsTree(const std::string &group, const std::string &name, const std::shared_ptr<AbstractBoundsTree<AABB, 8, false>>& aabbTree, const Transformation &transformation, const Color &color) {
+    QMetaObject::invokeMethod(qApp, [group, color, name, transformation, aabbTree, this] {
+        auto renderModel = std::make_shared<RenderBoundsTree>(*aabbTree, transformation);
+        renderModel->setName(name);
+        renderModel->setMaterial(PhongMaterial(color));
+        this->addOrUpdateRenderModel(group, name, renderModel);
+    });
+}
+
+void RenderWidget::renderBoundsTree(const std::string &group, const std::string &name, const std::shared_ptr<AbstractBoundsTree<AABB, 2, true>>& aabbTree, const Transformation &transformation, const Color &color) {
+    QMetaObject::invokeMethod(qApp, [group, color, name, transformation, aabbTree, this] {
+        auto renderModel = std::make_shared<RenderBoundsTree>(*aabbTree, transformation);
+        renderModel->setName(name);
+        renderModel->setMaterial(PhongMaterial(color));
+        this->addOrUpdateRenderModel(group, name, renderModel);
+    });
 }

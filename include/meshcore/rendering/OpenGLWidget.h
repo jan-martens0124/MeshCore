@@ -5,8 +5,6 @@
 #ifndef MESHCORE_OPENGLWIDGET_H
 #define MESHCORE_OPENGLWIDGET_H
 
-#include "src/rendering/AbstractRenderModel.h"
-#include "meshcore/core/OBB.h"
 #include "meshcore/core/Plane.h"
 #include "meshcore/core/Ray.h"
 #include "meshcore/core/Sphere.h"
@@ -19,11 +17,12 @@
 #include <QOpenGLShaderProgram>
 #include <glm/glm.hpp>
 #include <unordered_map>
-#include <QVBoxLayout>
 
 #define INITIAL_VIEW_DISTANCE 50.0f
 #define INITIAL_FOV 86.0f
 
+class AbstractRenderModel;
+class AbstractRenderGroupListener;
 class RenderWidget;
 
 class OpenGLWidget: public QOpenGLWidget, protected QOpenGLFunctions {

@@ -5,9 +5,8 @@
 #ifndef MESHCORE_SPHEREFACTORY_H
 #define MESHCORE_SPHEREFACTORY_H
 
-#include "../core/VertexTriangle.h"
-#include "../core/Sphere.h"
-#include "external/miniball/Miniball.hpp"
+#include "meshcore/core/VertexTriangle.h"
+#include "meshcore/core/Sphere.h"
 #include <vector>
 #include <stack>
 

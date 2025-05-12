@@ -7,8 +7,9 @@
 
 #include <unordered_set>
 #include <memory>
-#include "../core/AABB.h"
-#include "../core/VertexTriangle.h"
+
+#include "meshcore/core/AABB.h"
+#include "meshcore/core/VertexTriangle.h"
 
 class AABBFactory{
 

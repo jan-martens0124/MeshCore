@@ -6,13 +6,13 @@
 #define MESHCORE_IO_H
 
 #include <ostream>
-#include "../core/Vertex.h"
-#include "../core/Ray.h"
-#include "../core/Transformation.h"
-#include "../core/AABB.h"
-#include "../core/VertexTriangle.h"
-#include "../core/OBB.h"
-#include "../core/Sphere.h"
+#include "meshcore/core/Vertex.h"
+#include "meshcore/core/Ray.h"
+#include "meshcore/core/Transformation.h"
+#include "meshcore/core/AABB.h"
+#include "meshcore/core/VertexTriangle.h"
+#include "meshcore/core/OBB.h"
+#include "meshcore/core/Sphere.h"
 
 
 static std::ostream &operator<<(std::ostream &os, const Vertex &v) {

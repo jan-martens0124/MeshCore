@@ -7,6 +7,7 @@
 
 #include <QMainWindow>
 #include <QDialog>
+
 #include "RenderWidget.h"
 
 QT_BEGIN_NAMESPACE

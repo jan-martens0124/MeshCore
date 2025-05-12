@@ -17,7 +17,6 @@
 #include <thread>
 
 class RenderBoundsTree: public AbstractRenderModel{
-private:
     unsigned int renderDepth = 0;
     std::atomic<bool> animating = false; // For cycling through the render depth
     std::vector<std::shared_ptr<RenderBoundsTree>> children;

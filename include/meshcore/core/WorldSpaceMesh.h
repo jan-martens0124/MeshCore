@@ -7,7 +7,6 @@
 
 #include "ModelSpaceMesh.h"
 #include "Transformation.h"
-#include <optional>
 #include <memory>
 #include <iostream>
 
