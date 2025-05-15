@@ -17,7 +17,7 @@ find_package(GSL REQUIRED)
 find_package(TBB REQUIRED COMPONENTS tbb tbbmalloc)
 
 ### MeshCoreBase library can be used for targets that run without UI ###
-file(GLOB SOURCES src/acceleration/*.cpp src/core/*.cpp src/geometric/*.cpp src/tasks/*.cpp src/utility/*.cpp src/external/quickhull/*.cpp)
+file(GLOB SOURCES src/acceleration/*.cpp src/core/*.cpp src/geometric/*.cpp src/tasks/*.cpp src/utility/*.cpp src/external/quickhull/*.cpp src/factories/*.cpp)
 add_library(MeshCoreBase STATIC ${SOURCES})
 target_link_libraries(MeshCoreBase PUBLIC TBB::tbb TBB::tbbmalloc Boost::boost GSL::gsl glm::glm)
 target_include_directories(MeshCoreBase PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include) # include this directory
