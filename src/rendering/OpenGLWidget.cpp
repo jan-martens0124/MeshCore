@@ -16,6 +16,10 @@
 #include <glm/gtx/hash.hpp>
 #include <QProgressDialog>
 
+#ifndef MESHCORE_SHADER_DIR
+#define MESHCORE_SHADER_DIR "undefined_shader_directory"
+#endif
+
 [[maybe_unused]] OpenGLWidget::OpenGLWidget(QWidget *parent): QOpenGLWidget(parent) {}
 
 Q_DECLARE_METATYPE(Color)
@@ -63,7 +67,7 @@ void OpenGLWidget::initializeGL() {
     GL_CALL(glEnable(GL_CULL_FACE));
     GL_CALL(glCullFace(GL_BACK));
 
-    ShaderProgramSource basicShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/src/rendering/shaders/Ambient.shader");
+    ShaderProgramSource basicShaderProgramSource = ShaderProgramSource::parseShader(MESHCORE_SHADER_DIR + std::string("Ambient.shader"));
     ambientShader = std::make_shared<QOpenGLShaderProgram>();
     ambientShader->addShaderFromSourceCode(QOpenGLShader::Vertex, basicShaderProgramSource.VertexSource);
     ambientShader->addShaderFromSourceCode(QOpenGLShader::Fragment, basicShaderProgramSource.FragmentSource);
@@ -71,7 +75,7 @@ void OpenGLWidget::initializeGL() {
     ambientShader->bindAttributeLocation("normal", 1);
     ambientShader->link();
 
-    ShaderProgramSource diffuseShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/src/rendering/shaders/Diffuse.shader");
+    ShaderProgramSource diffuseShaderProgramSource = ShaderProgramSource::parseShader(MESHCORE_SHADER_DIR + std::string("Diffuse.shader"));
     diffuseShader = std::make_shared<QOpenGLShaderProgram>();
     diffuseShader->addShaderFromSourceCode(QOpenGLShader::Vertex, diffuseShaderProgramSource.VertexSource);
     diffuseShader->addShaderFromSourceCode(QOpenGLShader::Fragment, diffuseShaderProgramSource.FragmentSource);
@@ -79,7 +83,7 @@ void OpenGLWidget::initializeGL() {
     diffuseShader->bindAttributeLocation("normal", 1);
     diffuseShader->link();
 
-    ShaderProgramSource pongShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/src/rendering/shaders/Phong.shader");
+    ShaderProgramSource pongShaderProgramSource = ShaderProgramSource::parseShader(MESHCORE_SHADER_DIR + std::string("Phong.shader"));
     phongShader = std::make_shared<QOpenGLShaderProgram>();
     phongShader->addShaderFromSourceCode(QOpenGLShader::Vertex, pongShaderProgramSource.VertexSource);
     phongShader->addShaderFromSourceCode(QOpenGLShader::Fragment, pongShaderProgramSource.FragmentSource);
@@ -87,7 +91,7 @@ void OpenGLWidget::initializeGL() {
     phongShader->bindAttributeLocation("normal", 1);
     phongShader->link();
 
-    ShaderProgramSource polyChromeShaderProgramSource = ShaderProgramSource::parseShader("../../meshcore/src/rendering/shaders/PolyChrome.shader");
+    ShaderProgramSource polyChromeShaderProgramSource = ShaderProgramSource::parseShader(MESHCORE_SHADER_DIR + std::string("PolyChrome.shader"));
     polyChromeShader = std::make_shared<QOpenGLShaderProgram>();
     polyChromeShader->addShaderFromSourceCode(QOpenGLShader::Vertex, polyChromeShaderProgramSource.VertexSource);
     polyChromeShader->addShaderFromSourceCode(QOpenGLShader::Fragment, polyChromeShaderProgramSource.FragmentSource);

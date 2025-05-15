@@ -40,6 +40,9 @@ file(GLOB UI_SOURCES src/rendering/*.cpp src/rendering/*.h src/external/gifencod
 add_library(MeshCore STATIC ${UI_SOURCES})
 target_link_libraries(MeshCore PUBLIC MeshCoreBase Qt5::Widgets Qt5::Core Qt5::Svg OpenGL::GL GLEW::GLEW GIF::GIF)
 
+# Set the shader directory for the MeshCore library
+target_compile_definitions(MeshCore PRIVATE MESHCORE_SHADER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/rendering/shaders/")
+
 ### SimpleRenderDemo.exe ###
 add_executable(A-SimpleRenderDemo demos/renderDemo.cpp ${SOURCES})
 target_link_libraries(A-SimpleRenderDemo PRIVATE MeshCore)
