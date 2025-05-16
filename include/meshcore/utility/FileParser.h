@@ -11,6 +11,10 @@
 
 #include "meshcore/core/ModelSpaceMesh.h"
 
+#ifndef MESHCORE_DATA_DIR
+#define MESHCORE_DATA_DIR ""
+#endif
+
 class FileParser {
 public:
     static std::shared_ptr<ModelSpaceMesh> loadMeshFile(const std::string& filePath);

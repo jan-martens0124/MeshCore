@@ -29,7 +29,7 @@ void run(RenderWidget* renderWidget){
 
     // Visualize an example
     {
-        auto originalModelSpaceMesh = FileParser::loadMeshFile("../../meshcore/datasets/E. F. Silva et al. 2021/dragon.obj");
+        auto originalModelSpaceMesh = FileParser::loadMeshFile(MESHCORE_DATA_DIR + std::string("E. F. Silva et al. 2021/dragon.obj"));
         auto convexHull = originalModelSpaceMesh->getConvexHull();
 
         auto name = originalModelSpaceMesh->getName();
@@ -42,7 +42,7 @@ void run(RenderWidget* renderWidget){
     }
 
     // Run a small benchmark
-    auto map = "../../meshcore/datasets/Tollenaere, J. et al/Containers";
+    auto map = MESHCORE_DATA_DIR + std::string("Tollenaere, J. et al/Containers");
     for (const auto &entry : std::filesystem::directory_iterator(map)) {
 
         auto start = std::chrono::high_resolution_clock::now();

@@ -29,8 +29,8 @@ void run(RenderWidget* renderWidget){
     /// Here is where you would start code running on a separate thread
 
     // Load some meshes
-    std::shared_ptr<WorldSpaceMesh> bananaWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../../meshcore/datasets/E. F. Silva et al. 2021/banana.stl"));
-    std::shared_ptr<WorldSpaceMesh> rockWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile("../../meshcore/datasets/E. F. Silva et al. 2021/stone_1.obj"));
+    std::shared_ptr<WorldSpaceMesh> bananaWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile(MESHCORE_DATA_DIR + std::string("E. F. Silva et al. 2021/banana.stl")));
+    std::shared_ptr<WorldSpaceMesh> rockWorldSpaceMesh = std::make_shared<WorldSpaceMesh>(FileParser::loadMeshFile(MESHCORE_DATA_DIR + std::string("E. F. Silva et al. 2021/stone_1.obj")));
 
     std::cout << "Number of vertices: " << bananaWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
     std::cout << "Number of vertices: " << rockWorldSpaceMesh->getModelSpaceMesh()->getVertices().size() << std::endl;
