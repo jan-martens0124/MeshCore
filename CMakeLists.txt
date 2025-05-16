@@ -42,6 +42,7 @@ target_link_libraries(MeshCore PUBLIC MeshCoreBase Qt5::Widgets Qt5::Core Qt5::S
 
 # Set the shader directory for the MeshCore library
 target_compile_definitions(MeshCore PRIVATE MESHCORE_SHADER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/rendering/shaders/")
+target_compile_definitions(MeshCore PRIVATE MESHCORE_ICON_DIR="${CMAKE_CURRENT_SOURCE_DIR}/icons/")
 target_compile_definitions(MeshCore PUBLIC MESHCORE_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/datasets/")
 
 ### SimpleRenderDemo.exe ###

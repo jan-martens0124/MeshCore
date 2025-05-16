@@ -11,9 +11,13 @@
 #include <iostream>
 #include <filesystem>
 
+#ifndef MESHCORE_ICON_DIR
+#define MESHCORE_ICON_DIR ""
+#endif
+
 ApplicationWindow::ApplicationWindow() {
 
-    auto icon = QIcon("../../meshcore/icons/logo3.svg");
+    auto icon = QIcon(QString::fromStdString(MESHCORE_ICON_DIR + std::string("logo3.svg")));
     QGuiApplication::setWindowIcon(icon);
 
     QSurfaceFormat format;
