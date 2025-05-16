@@ -9,6 +9,7 @@
 #include "../core/Sphere.h"
 #include <vector>
 #include <stack>
+#include <iostream>
 
 class SphereFactory{
 public:

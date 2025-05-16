@@ -369,3 +369,39 @@ void RenderWidget::renderBoundsTree(const std::string &group, const std::string 
         this->addOrUpdateRenderModel(group, name, renderModel);
     });
 }
+
+void RenderWidget::renderBoundsTree(const std::string &group, const std::string &name, const std::shared_ptr<AbstractBoundsTree<OBB, 8, true>>& aabbTree, const Transformation &transformation, const Color &color) {
+    QMetaObject::invokeMethod(qApp, [group, color, name, transformation, aabbTree, this] {
+        auto renderModel = std::make_shared<RenderBoundsTree>(*aabbTree, transformation);
+        renderModel->setName(name);
+        renderModel->setMaterial(PhongMaterial(color));
+        this->addOrUpdateRenderModel(group, name, renderModel);
+    });
+}
+
+void RenderWidget::renderBoundsTree(const std::string &group, const std::string &name, const std::shared_ptr<AbstractBoundsTree<OBB, 2, true>>& aabbTree, const Transformation &transformation, const Color &color) {
+    QMetaObject::invokeMethod(qApp, [group, color, name, transformation, aabbTree, this] {
+        auto renderModel = std::make_shared<RenderBoundsTree>(*aabbTree, transformation);
+        renderModel->setName(name);
+        renderModel->setMaterial(PhongMaterial(color));
+        this->addOrUpdateRenderModel(group, name, renderModel);
+    });
+}
+
+void RenderWidget::renderBoundsTree(const std::string &group, const std::string &name, const std::shared_ptr<AbstractBoundsTree<Sphere, 8, true>>& aabbTree, const Transformation &transformation, const Color &color) {
+    QMetaObject::invokeMethod(qApp, [group, color, name, transformation, aabbTree, this] {
+        auto renderModel = std::make_shared<RenderBoundsTree>(*aabbTree, transformation);
+        renderModel->setName(name);
+        renderModel->setMaterial(PhongMaterial(color));
+        this->addOrUpdateRenderModel(group, name, renderModel);
+    });
+}
+
+void RenderWidget::renderBoundsTree(const std::string &group, const std::string &name, const std::shared_ptr<AbstractBoundsTree<Sphere, 2, true>>& aabbTree, const Transformation &transformation, const Color &color) {
+    QMetaObject::invokeMethod(qApp, [group, color, name, transformation, aabbTree, this] {
+        auto renderModel = std::make_shared<RenderBoundsTree>(*aabbTree, transformation);
+        renderModel->setName(name);
+        renderModel->setMaterial(PhongMaterial(color));
+        this->addOrUpdateRenderModel(group, name, renderModel);
+    });
+}

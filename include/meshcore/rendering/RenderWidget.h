@@ -76,6 +76,10 @@ public:
     // For the moment, the classes extending AbstractBoundsTree have to be added explicitly to be able to render them
     void renderBoundsTree(const std::string &group, const std::string& name, const std::shared_ptr<AbstractBoundsTree<AABB, 8, false>>& aabbTree, const Transformation& transformation, const Color &color=Color::White());
     void renderBoundsTree(const std::string &group, const std::string& name, const std::shared_ptr<AbstractBoundsTree<AABB, 2, true>>& aabbTree, const Transformation& transformation, const Color &color=Color::White());
+    void renderBoundsTree(const std::string &group, const std::string& name, const std::shared_ptr<AbstractBoundsTree<OBB, 8, true>>& aabbTree, const Transformation& transformation, const Color &color=Color::White());
+    void renderBoundsTree(const std::string &group, const std::string& name, const std::shared_ptr<AbstractBoundsTree<OBB, 2, true>>& aabbTree, const Transformation& transformation, const Color &color=Color::White());
+    void renderBoundsTree(const std::string &group, const std::string& name, const std::shared_ptr<AbstractBoundsTree<Sphere, 8, true>>& aabbTree, const Transformation& transformation, const Color &color=Color::White());
+    void renderBoundsTree(const std::string &group, const std::string& name, const std::shared_ptr<AbstractBoundsTree<Sphere, 2, true>>& aabbTree, const Transformation& transformation, const Color &color=Color::White());
 
     void addControlWidget(const std::string &group, const std::shared_ptr<AbstractRenderModel> &renderModel);
 
