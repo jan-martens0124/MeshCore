@@ -8,36 +8,43 @@
 #include "meshcore/acceleration/AABBVolumeHierarchy.h"
 #include <tbb/parallel_for.h>
 
+#include "meshcore/acceleration/BoundingVolumeHierarchy.h"
+
 namespace Intersection {
 
+    /**
+     * @brief Tests whether two meshes intersect.
+     *
+     * This function performs an intersection test between two WorldSpaceMeshes on a triangular level.
+     * These queries are accelerated using bounding volume hierarchies.
+     * This function does not implement any quick rejection tests like an AABB intersection,
+     * the best option depends on the use case and should therefore be implemented by the user.
+     *
+     * @param worldSpaceMeshA The first worldSpaceMesh
+     * @param worldSpaceMeshB The second worldSpaceMesh
+     * @return True if the worldSpaceMeshes intersect, false otherwise.
+     */
     bool intersect(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB){
 
-        const auto& modelSpaceMeshA = worldSpaceMeshA.getModelSpaceMesh();
-        const auto& modelSpaceMeshB = worldSpaceMeshB.getModelSpaceMesh();
-        const auto& modelSpaceTransformationA = worldSpaceMeshA.getModelTransformation();
-        const auto& modelSpaceTransformationB = worldSpaceMeshB.getModelTransformation();
+        // Actual intersection test
+        const auto triangleCountA = worldSpaceMeshA.getModelSpaceMesh()->getTriangles().size();
+        const auto triangleCountB = worldSpaceMeshB.getModelSpaceMesh()->getTriangles().size();
+        const auto& simplerObject = triangleCountA < triangleCountB ? worldSpaceMeshA : worldSpaceMeshB;
+        const auto& complexObject = triangleCountA < triangleCountB ? worldSpaceMeshB : worldSpaceMeshA;
 
+        const auto simpleToComplexTransformation = complexObject.getModelTransformation().getInverse() * simplerObject.getModelTransformation();
+        const auto& complexObjectTree = CachingBoundsTreeFactory<BoundingVolumeHierarchy>::getBoundsTree(complexObject.getModelSpaceMesh());
+        const auto& simplerObjectMesh = simplerObject.getModelSpaceMesh();
 
-        if(modelSpaceMeshA->getTriangles().size() >= modelSpaceMeshB->getTriangles().size()){
-            const auto modelBToModelASpaceTransformation = modelSpaceTransformationA.getInverseMatrix() * modelSpaceTransformationB.getMatrix();
-
-            const auto &modelBVertices = modelSpaceMeshB->getVertices();
-            const auto &treeA = CachingBoundsTreeFactory<AABBVolumeHierarchy>::getBoundsTree(modelSpaceMeshA);
-            return std::any_of(modelSpaceMeshB->getTriangles().begin(), modelSpaceMeshB->getTriangles().end(), [&](const auto &triangle){
-                VertexTriangle vertexTriangle(modelBVertices[triangle.vertexIndex0], modelBVertices[triangle.vertexIndex1], modelBVertices[triangle.vertexIndex2]);
-                return treeA->intersectsTriangle(vertexTriangle.getTransformed(modelBToModelASpaceTransformation));
-            });
+        for (const auto & indexTriangle : simplerObjectMesh->getTriangles()) {
+            VertexTriangle triangle(simplerObjectMesh->getVertices()[indexTriangle.vertexIndex0],
+                                    simplerObjectMesh->getVertices()[indexTriangle.vertexIndex1],
+                                    simplerObjectMesh->getVertices()[indexTriangle.vertexIndex2]);
+            if (complexObjectTree->intersectsTriangle(triangle.getTransformed(simpleToComplexTransformation))) {
+                return true;
+            }
         }
-        else{
-            const auto modelAToModelBSpaceTransformation = modelSpaceTransformationB.getInverseMatrix() * modelSpaceTransformationA.getMatrix();
-            const auto &modelAVertices = modelSpaceMeshA->getVertices();
-            const auto &treeB = CachingBoundsTreeFactory<AABBVolumeHierarchy>::getBoundsTree(modelSpaceMeshB);
-
-            return std::any_of(modelSpaceMeshA->getTriangles().begin(), modelSpaceMeshA->getTriangles().end(), [&](const auto &triangle){
-                VertexTriangle vertexTriangle(modelAVertices[triangle.vertexIndex0], modelAVertices[triangle.vertexIndex1], modelAVertices[triangle.vertexIndex2]);
-                return treeB->intersectsTriangle(vertexTriangle.getTransformed(modelAToModelBSpaceTransformation));
-            });
-        }
+        return false;
     }
 
     bool debugIntersects(const WorldSpaceMesh& worldSpaceMeshA, const WorldSpaceMesh& worldSpaceMeshB){

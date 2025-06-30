@@ -24,59 +24,33 @@
 
 /********************************************************/
 
-#ifdef __INTEL_COMPILER
-#define GLM_FORCE_PURE
-#endif
-#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "meshcore/acceleration/AABBOctree.h"
-
-
-#define CROSS(dest,v1,v2) \
-dest[0] = v1[1] * v2[2] - v1[2] * v2[1]; \
-dest[1] = v1[2] * v2[0] - v1[0] * v2[2]; \
-dest[2] = v1[0] * v2[1] - v1[1] * v2[0];
-
-
-#define DOT(v1,v2) (v1[0]*v2[0]+v1[1]*v2[1]+v1[2]*v2[2])
-
-
-
-#define SUB(dest,v1,v2) \
-dest[0] = v1[0] - v2[0]; \
-dest[1] = v1[1] - v2[1]; \
-dest[2] = v1[2] - v2[2];
-
+#include "meshcore/geometric/AABBTriangleData.h"
 
 int planeBoxOverlap(const glm::vec3& normal, const glm::vec3& vert, const glm::vec3& maxbox)	// -NJMP-
 {
 	int q;
-	double vmin[3], vmax[3], v;
-	for (q = 0; q <= 2; q++)
-	{
+	glm::vec3 vmin, vmax;
+	float v;
+	for (q = 0; q <= 2; q++) {
 		v = vert[q];					// -NJMP-
-		if (normal[q] > 0.0)
-		{
+		if (normal[q] > 0.0) {
 			vmin[q] = -maxbox[q] - v;	// -NJMP-
 			vmax[q] = maxbox[q] - v;	// -NJMP-
 		}
-		else
-		{
+		else {
 			vmin[q] = maxbox[q] - v;	// -NJMP-
 			vmax[q] = -maxbox[q] - v;	// -NJMP-
 		}
 	}
 
-	if (DOT(normal, vmin) > 0.0) return 0;	// -NJMP-
-	if (DOT(normal, vmax) >= 0.0) return 1;	// -NJMP-
+	if (glm::dot(normal, vmin) > 0.0) return 0;	// -NJMP-
+	if (glm::dot(normal, vmax) >= 0.0) return 1;	// -NJMP-
 
 	return 0;
 }
-
-
-
-
 
 /*======================== X-tests ========================*/
 
@@ -135,11 +109,11 @@ if (p0 < p1) { min = p0; max = p1; } else { min = p1; max = p0; } \
 rad = fa * boxhalfsize[0] + fb * boxhalfsize[1];   \
 if (min > rad || max < -rad) return 0;
 
-//int triBoxOverlap(double const boxcenter[3], double const boxhalfsize[3], double const vertA[3], double const vertB[3], double const vertC[3], double const e0[3], double const e1[3], double const e2[3], double const normal[3])
 namespace Intersection{
 
-    int intersect(const AABB& aabb, const VertexTriangle& vertexTriangle)
-    {
+    int intersect(const AABB& aabb, const VertexTriangle& vertexTriangle){
+
+		// TODO consider replacing this with the cleaned up version for better readability, maintainability
 
         /* Bullet 1: */
 
@@ -148,9 +122,13 @@ namespace Intersection{
         /*  that direction -- this is equivalent to testing a minimal AABB around */
         /*  the triangle against the AABB */
 
-        if(!Intersection::intersect(vertexTriangle.bounds, aabb)) return 0; // Triangles' AABB completely outside AABB
-        if(aabb.containsAABB(vertexTriangle.bounds)) return 1;    // Triangles' AABB completely inside AABB
+    	if(!intersect(aabb,vertexTriangle.bounds)){
+    		return false; // Triangles' AABB completely outside AABB
+    	}
 
+    	if(aabb.containsPoint(vertexTriangle.vertices[0]) || aabb.containsPoint(vertexTriangle.vertices[1]) || aabb.containsPoint(vertexTriangle.vertices[2])) {
+    		return true; // Containment of any vertex means intersection
+    	}
         /*    use separating axis theorem to test overlap between triangle and box */
         /*    need to test for overlap in these directions: */
         /*    1) the {x,y,z}-directions (actually, since we use the AABB of the triangle */
@@ -161,11 +139,7 @@ namespace Intersection{
 
         glm::vec3 v0{}, v1{}, v2{};
 
-        //   float axis[3];
-
         double min, max, p0, p1, p2, rad, fex, fey, fez;		// -NJMP- "d" local variable removed
-
-//	double normal[3]; //, e0[3], e1[3], e2[3];
 
         glm::vec3 half = aabb.getHalf();
         const float* boxhalfsize = glm::value_ptr(half);
@@ -178,16 +152,6 @@ namespace Intersection{
         v0 = vertexTriangle.vertices[0] - center;
         v1 = vertexTriangle.vertices[1] - center;
         v2 = vertexTriangle.vertices[2] - center;
-
-
-
-        /* compute triangle edges */
-
-//	SUB(e0, v1, v0);      /* tri edge 0 */
-//
-//	SUB(e1, v2, v1);      /* tri edge 1 */
-//
-//	SUB(e2, v0, v2);      /* tri edge 2 */
 
         /* Bullet 3:  */
 
@@ -240,8 +204,6 @@ namespace Intersection{
 
         /*  compute plane equation of triangle: normal*x+d=0 */
 
-//	CROSS(normal, e0, e1);
-
         // -NJMP- (line removed here)
 
         if (!planeBoxOverlap(vertexTriangle.normal, v0, half)) return 0;	// -NJMP-
@@ -249,4 +211,66 @@ namespace Intersection{
         return 1;   /* box and triangle overlaps */
 
     }
+
+	bool intersect(const AABB& aabb, const VertexTriangle &t, const AABBTriangleData& data) {
+
+	    // https://omnigoat.github.io/2015/03/09/box-triangle-intersection/
+	    if(!intersect(aabb,t.bounds)){
+	        return false; // Triangles' AABB completely outside AABB
+	    }
+
+		if(aabb.containsPoint(t.vertices[0]) || aabb.containsPoint(t.vertices[1]) || aabb.containsPoint(t.vertices[2])) {
+		    return true; // Containment of any vertex means intersection
+		}
+
+	    // p & delta-p
+	    const auto& p  = aabb.getMinimum();
+	    const auto dp = aabb.getMaximum() - p;
+
+	    // test for triangle-plane/box overlap
+	    auto c = glm::vec3(t.normal.x > 0.0f ? dp.x : 0.0f,
+	                        t.normal.y > 0.0f ? dp.y : 0.0f,
+	                        t.normal.z > 0.0f ? dp.z : 0.0f);
+
+	    const auto d1 = glm::dot(t.normal, c - t.vertices[0]);
+	    const auto d2 = glm::dot(t.normal, dp - c - t.vertices[0]);
+	    const auto dot = glm::dot(t.normal, p);
+
+	    if ((dot + d1) * (dot  + d2) > 0.0f) {
+	        return false;
+	    }
+
+	    // xy-plane projection-overlap
+	    auto de0xy = data.de0xy_base + std::max(0.0f, dp.x * data.ne0xy.x) + std::max(0.0f, dp.y * data.ne0xy.y);
+	    auto de1xy = data.de1xy_base + std::max(0.0f, dp.x * data.ne1xy.x) + std::max(0.0f, dp.y * data.ne1xy.y);
+	    auto de2xy = data.de2xy_base + std::max(0.0f, dp.x * data.ne2xy.x) + std::max(0.0f, dp.y * data.ne2xy.y);
+	    const auto pxy = glm::vec2(p.x, p.y);
+	    if ((glm::dot(data.ne0xy, pxy) + de0xy) < 0.0f || (glm::dot(data.ne1xy, pxy) + de1xy) < 0.0f || (glm::dot(data.ne2xy, pxy) + de2xy) < 0.0f) {
+	        return false;
+	    }
+
+	    // yz-plane projection overlap
+	    auto de0yz = data.de0yz_base + std::max(0.0f, dp.y * data.ne0yz.x) + std::max(0.0f, dp.z * data.ne0yz.y);
+	    auto de1yz = data.de1yz_base + std::max(0.0f, dp.y * data.ne1yz.x) + std::max(0.0f, dp.z * data.ne1yz.y);
+	    auto de2yz = data.de2yz_base + std::max(0.0f, dp.y * data.ne2yz.x) + std::max(0.0f, dp.z * data.ne2yz.y);
+
+	    auto pyz = glm::vec2(p.y, p.z);
+
+	    if ((glm::dot(data.ne0yz, pyz) + de0yz) < 0.0f || (glm::dot(data.ne1yz, pyz) + de1yz) < 0.0f || (glm::dot(data.ne2yz, pyz) + de2yz) < 0.0f) {
+	        return false;
+	    }
+
+	    // zx-plane projection overlap
+	    auto de0zx = data.de0zx_base + std::max(0.0f, dp.z * data.ne0zx.x) + std::max(0.0f, dp.x * data.ne0zx.y);
+	    auto de1zx = data.de1zx_base + std::max(0.0f, dp.z * data.ne1zx.x) + std::max(0.0f, dp.x * data.ne1zx.y);
+	    auto de2zx = data.de2zx_base + std::max(0.0f, dp.z * data.ne2zx.x) + std::max(0.0f, dp.x * data.ne2zx.y);
+
+	    const auto pzx = glm::vec2(p.z, p.x);
+
+	    if ((glm::dot(data.ne0zx, pzx) + de0zx) < 0.0f || (glm::dot(data.ne1zx, pzx) + de1zx) < 0.0f || (glm::dot(data.ne2zx, pzx) + de2zx) < 0.0f) {
+	        return false;
+	    }
+
+	    return true;
+	}
 }

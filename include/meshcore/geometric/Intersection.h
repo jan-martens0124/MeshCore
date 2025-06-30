@@ -13,6 +13,8 @@
 #include "meshcore/core/Line.h"
 #include "meshcore/core/Plane.h"
 
+struct AABBTriangleData; // Forward declaration for TriangleAABBData
+
 namespace Intersection{
 
     // Ray-Triangle
@@ -24,9 +26,11 @@ namespace Intersection{
 
     // AABB-Triangle
     int intersect(const AABB& aabb, const VertexTriangle& vertexTriangle);
+    bool intersect(const AABB& aabb, const VertexTriangle& vertexTriangle, const AABBTriangleData &triangleAABBData);
 
     // AABB-Ray
     bool intersect(const AABB &aabb, const Ray &ray);
+    bool intersect(const AABB &aabb, const Ray &ray, float tMin, float tMax);
 
     // AABB-AABB
     bool intersect(const AABB& firstAABB, const AABB& secondAABB);
