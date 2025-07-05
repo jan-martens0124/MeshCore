@@ -7,6 +7,7 @@ image: ubuntu:22.04
 stages:
   - build
   - test
+  - docs
 
 build-ubuntu-2204:
   stage: build
@@ -60,3 +61,18 @@ test:
     when: always
     reports:
       junit: build/tests/report.xml
+
+# Doxygen documentation on GitLab Pages deployment
+create-docs:
+  stage: docs
+  image: ubuntu:22.04
+  pages:
+    # The folder that contains the files to be exposed at the Page URL
+    publish: docs/html
+  only:
+    - main
+    - doxygen-pages
+  before_script:
+    - apt-get update && apt-get install -y doxygen graphviz
+  script:
+    - doxygen docs/Doxyfile

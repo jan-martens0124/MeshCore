@@ -1,0 +1,68 @@
+# Doxyfile 1.9.8
+# This file describes the settings to be used by the documentation system
+# doxygen (www.doxygen.org) for a project
+
+# Project related configuration options
+PROJECT_NAME           = "MeshCore"
+PROJECT_BRIEF          = "The cutting and packing toolbox."
+OUTPUT_DIRECTORY       = docs
+CREATE_SUBDIRS         = NO
+OUTPUT_LANGUAGE        = English
+USE_MDFILE_AS_MAINPAGE = README.md
+
+# Input
+INPUT                  = include demos templates README.md
+FILE_PATTERNS          = *.h *.cpp *.md
+RECURSIVE              = YES
+EXCLUDE                = tests src cmake-build-debug cmake-build-release
+IMAGE_PATH             = icons
+
+# Build related configuration options
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = NO
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_ANON_NSPACES   = YES
+
+# If the sources are documented in Markdown
+MARKDOWN_SUPPORT       = YES
+
+# HTML output
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+
+# LaTeX output
+GENERATE_LATEX         = NO
+
+# Dot (graphviz) support
+HAVE_DOT               = YES
+DOT_NUM_THREADS        = 2
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+CLASS_DIAGRAMS         = YES
+
+# Source Browser
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+
+# Warnings
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+
+# Misc
+QUIET                  = NO
+
+# Awesome-css configuration
+GENERATE_TREEVIEW      = YES # required!
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_EXTRA_STYLESHEET  = docs/doxygen-awesome-css/doxygen-awesome.css \
+                         docs/doxygen-awesome-css/doxygen-awesome-sidebar-only.css \
+                         doxygen-awesome-sidebar-only-darkmode-toggle.css
+HTML_EXTRA_FILES: doxygen-awesome-darkmode-toggle.js
+HTML_COLORSTYLE        = LIGHT # required with Doxygen >= 1.9.5
+
+
+PROJECT_LOGO           = icons/logo3.svg
