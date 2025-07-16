@@ -149,8 +149,9 @@ std::shared_ptr<StripPackingSolution> StripPackingSolution::fromJson(nlohmann::o
     for (const auto &jsonItem: json["items"]){
 
         // Get the index of an item with this name that has not been assigned a transformation yet
-        size_t itemIndex = itemIndexMap[jsonItem["name"]].back();
-        const auto& item = solution->getItems()[itemIndex];
+        auto& entry = itemIndexMap[jsonItem["name"]];
+        size_t itemIndex = entry.back();
+        entry.pop_back();
 
         Transformation transformation;
         transformation.setRotation(Quaternion(jsonItem["transformation"]["yaw"], jsonItem["transformation"]["pitch"], jsonItem["transformation"]["roll"]));
