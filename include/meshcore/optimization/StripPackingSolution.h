@@ -20,6 +20,7 @@ class StripPackingSolution: public AbstractSolution {
     std::vector<std::shared_ptr<WorldSpaceMesh>> items;
     std::vector<std::string> itemNames;
     mutable std::vector<std::optional<AABB>> cachedAABBs;
+    float maxHeight;
 
 public:
     explicit StripPackingSolution(const std::shared_ptr<StripPackingProblem>& problem);
@@ -31,6 +32,7 @@ public:
     [[nodiscard]] const AABB& getItemAABB(size_t itemIndex) const;
     [[nodiscard]] const std::shared_ptr<StripPackingProblem>& getProblem() const;
     [[nodiscard]] const Transformation& getItemTransformation(size_t itemIndex) const;
+    [[nodiscard]] const float getMaxHeight() const;
 
     [[nodiscard]] float computeTotalHeight() const;
 

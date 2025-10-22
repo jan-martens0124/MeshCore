@@ -15,10 +15,11 @@ StripPackingSolution::StripPackingSolution(const std::shared_ptr<StripPackingPro
     for (const auto& mesh : problem->listRequiredItems()) {
         items.push_back(std::make_shared<WorldSpaceMesh>(mesh));
         itemNames.push_back(mesh->getName());
+        maxHeight += mesh->getBounds().getMaximum().z;
     }
 }
 
-StripPackingSolution::StripPackingSolution(const StripPackingSolution &other): problem(other.problem), itemNames(other.itemNames), cachedAABBs(other.cachedAABBs) {
+StripPackingSolution::StripPackingSolution(const StripPackingSolution &other): problem(other.problem), itemNames(other.itemNames), cachedAABBs(other.cachedAABBs), maxHeight(other.maxHeight) {
     items.reserve(other.items.size());
     for (const auto& item : other.items) {
         items.push_back(item->clone());
@@ -60,6 +61,10 @@ const std::shared_ptr<StripPackingProblem> & StripPackingSolution::getProblem() 
 
 const Transformation & StripPackingSolution::getItemTransformation(size_t itemIndex) const {
     return items[itemIndex]->getModelTransformation();
+}
+
+const float StripPackingSolution::getMaxHeight() const {
+    return maxHeight;
 }
 
 void StripPackingSolution::setItemTransformation(size_t itemIndex, const Transformation &transformation) {
