@@ -356,6 +356,11 @@ Vertex ModelSpaceMesh::getSurfaceCentroid() const {
     return surfaceCentroid.value();
 }
 
+/**
+ *
+ * @brief Get the axis-aligned bounding box of the mesh, calculating it not done yet
+ * @return The axis-aligned bounding box of the mesh
+ */
 const AABB &ModelSpaceMesh::getBounds() const {
     if(!this->bounds.has_value()){
         this->bounds = AABBFactory::createAABB(this->vertices);

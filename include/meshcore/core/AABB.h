@@ -34,6 +34,10 @@ public:
         return (this->maximum + this->minimum) / 2.0f;
     }
 
+    /**
+     *
+     * @return the half-size of the AABB in each dimension
+     */
     MC_FUNC_QUALIFIER [[nodiscard]] Vertex getHalf() const {
         return (this->maximum - this->minimum) / 2.0f;
     }
