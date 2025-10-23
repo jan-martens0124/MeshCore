@@ -6,6 +6,7 @@
 #define MESHCORE_IO_H
 
 #include <ostream>
+#include <sstream>
 #include "meshcore/core/Vertex.h"
 #include "meshcore/core/Ray.h"
 #include "meshcore/core/Transformation.h"
@@ -17,6 +18,24 @@
 
 static std::ostream &operator<<(std::ostream &os, const Vertex &v) {
     return os << "(" << v.x << "," << v.y << "," << v.z << ")";
+}
+
+static std::ostream & operator<<(std::ostream &os, const Quaternion &q){
+    return os << "Quaternion(" << q.w << "," << q.x << "," << q.y << "," << q.z << ")";
+}
+
+
+static std::ostream & operator<<(std::ostream &os, const std::vector<bool> &v) {
+    return os << "[ " << [&v]() {
+        std::ostringstream oss;
+        for (size_t i = 0; i < v.size(); ++i) {
+            oss << (v[i] ? "true" : "false");
+            if (i != v.size() - 1) {
+                oss << ", ";
+            }
+        }
+        return oss.str();
+    }() << " ]";
 }
 
 static std::ostream & operator<<(std::ostream & os, const Ray& ray){
