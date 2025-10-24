@@ -21,6 +21,7 @@ class StripPackingSolution: public AbstractSolution {
     std::vector<std::string> itemNames;
     mutable std::vector<std::optional<AABB>> cachedAABBs;
     float maxHeight;
+//test
 
 public:
     explicit StripPackingSolution(const std::shared_ptr<StripPackingProblem>& problem);
