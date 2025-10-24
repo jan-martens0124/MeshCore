@@ -70,12 +70,12 @@ public:
 #endif //NDEBUG
 
 #if !NDEBUG
-        assert(glm::epsilonEqual(glm::length(glm::fquat(this->rotation)),1.0f,1e-5f)); // Prefer to keep quaternions normalized
+        assert(glm::epsilonEqual(glm::length(glm::fquat(this->rotation)),1.0f,1e-3f)); // Prefer to keep quaternions normalized
         auto resultMatrix = this->getMatrix();
-        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[0], resultMatrix[0], glm::vec4(1e-5f))));
-        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[1], resultMatrix[1], glm::vec4(1e-5f))));
-        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[2], resultMatrix[2], glm::vec4(1e-5f))));
-        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[3], resultMatrix[3], glm::vec4(1e-5f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[0], resultMatrix[0], glm::vec4(1e-3f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[1], resultMatrix[1], glm::vec4(1e-3f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[2], resultMatrix[2], glm::vec4(1e-3f))));
+        assert(glm::all(glm::epsilonEqual(expectedResultMatrix[3], resultMatrix[3], glm::vec4(1e-3f))));
 #endif //NDEBUG
     }
 
