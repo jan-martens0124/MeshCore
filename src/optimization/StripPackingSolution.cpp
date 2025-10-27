@@ -13,9 +13,22 @@ StripPackingSolution::StripPackingSolution(const std::shared_ptr<StripPackingPro
     // Initialize items and item names
     items.reserve(problem->getTotalNumberOfItems());
     itemNames.reserve(problem->getTotalNumberOfItems());
+
+    std::unordered_map<std::string, int> nameCounts; // To handle duplicate names
+
     for (const auto& mesh : problem->listRequiredItems()) {
         items.push_back(std::make_shared<WorldSpaceMesh>(mesh));
-        itemNames.push_back(mesh->getName());
+
+        std::string name = mesh->getName();
+        auto it = nameCounts.find(name);
+        if (it == nameCounts.end()) {
+            nameCounts[name] = 0;  // first occurrence
+        } else {
+            ++(it->second);        // duplicate found
+            name += "_" + std::to_string(it->second);
+        }
+        itemNames.push_back(name);
+
         maxHeight += mesh->getBounds().getMaximum().z;
     }
 }
@@ -37,6 +50,15 @@ const std::shared_ptr<WorldSpaceMesh> & StripPackingSolution::getItem(size_t ite
 
 const std::string & StripPackingSolution::getItemName(size_t itemIndex) const {
     return itemNames[itemIndex];
+}
+
+const size_t StripPackingSolution::getItemIndexByName(const std::string &name) const {
+    for (size_t itemIndex = 0; itemIndex < itemNames.size(); ++itemIndex) {
+        if (itemNames[itemIndex] == name) {
+            return (itemIndex);
+        }
+    }
+    return -1; // Return -1 if the item name is not found
 }
 
 const AABB & StripPackingSolution::getItemAABB(size_t itemIndex) const {

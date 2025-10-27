@@ -20,6 +20,9 @@ class StripPackingSolution: public AbstractSolution {
     std::vector<std::shared_ptr<WorldSpaceMesh>> items;
     std::vector<std::string> itemNames;
     mutable std::vector<std::optional<AABB>> cachedAABBs;
+    /**
+     * Precomputed maximum height of all items stacked vertically.
+     */
     float maxHeight;
 //test
 
@@ -30,6 +33,7 @@ public:
     [[nodiscard]] const std::vector<std::shared_ptr<WorldSpaceMesh>>& getItems() const;
     [[nodiscard]] const std::shared_ptr<WorldSpaceMesh>& getItem(size_t itemIndex) const;
     [[nodiscard]] const std::string& getItemName(size_t itemIndex) const;
+    [[nodiscard]] const size_t getItemIndexByName(const std::string& name) const;
     [[nodiscard]] const AABB& getItemAABB(size_t itemIndex) const;
     [[nodiscard]] const std::shared_ptr<StripPackingProblem>& getProblem() const;
     [[nodiscard]] const Transformation& getItemTransformation(size_t itemIndex) const;
