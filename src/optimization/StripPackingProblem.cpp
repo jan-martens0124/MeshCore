@@ -91,7 +91,7 @@ std::shared_ptr<StripPackingProblem> StripPackingProblem::fromInstancePath(const
     float containerSizeY;
 
     // Test if the problem file exists
-    if (auto completePath = instancePath; std::filesystem::exists(completePath)) {
+    if (auto completePath = MESHCORE_DATA_DIR + instancePath; std::filesystem::exists(completePath)) {
         // Parse the JSON file
         std::ifstream stream(completePath);
         std::string problemJsonString;
