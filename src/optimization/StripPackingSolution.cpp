@@ -14,7 +14,7 @@ StripPackingSolution::StripPackingSolution(const std::shared_ptr<StripPackingPro
     items.reserve(problem->getTotalNumberOfItems());
     itemNames.reserve(problem->getTotalNumberOfItems());
 
-    bool uniqueNames = true;
+    bool uniqueNames = false;
 
     if (uniqueNames){
         std::unordered_map<std::string, int> nameCounts; // To handle duplicate names
