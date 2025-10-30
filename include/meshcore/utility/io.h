@@ -38,6 +38,29 @@ static std::ostream & operator<<(std::ostream &os, const std::vector<bool> &v) {
     }() << " ]";
 }
 
+// 1. Define the custom operator<< for std::vector<size_t>
+static std::ostream & operator<<(std::ostream& os, const std::vector<size_t>& vec) {
+    // 2. Start with an opening bracket for readability
+    os << "[";
+
+    // 3. Iterate through the vector elements
+    for (size_t i = 0; i < vec.size(); ++i) {
+        os << vec[i]; // Print the element
+
+        // 4. Add a separator (like a comma and space) after each element
+        //    except the last one.
+        if (i < vec.size() - 1) {
+            os << ", ";
+        }
+    }
+
+    // 5. End with a closing bracket
+    os << "]";
+
+    // 6. Return the stream reference to allow chaining (e.g., std::cout << a << b;)
+    return os;
+}
+
 static std::ostream & operator<<(std::ostream & os, const Ray& ray){
     return os << "Ray(Origin" << ray.origin << ", Direction " << ray.direction << ")";
 }
