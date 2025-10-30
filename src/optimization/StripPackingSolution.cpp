@@ -14,22 +14,34 @@ StripPackingSolution::StripPackingSolution(const std::shared_ptr<StripPackingPro
     items.reserve(problem->getTotalNumberOfItems());
     itemNames.reserve(problem->getTotalNumberOfItems());
 
-    std::unordered_map<std::string, int> nameCounts; // To handle duplicate names
+    bool uniqueNames = true;
 
-    for (const auto& mesh : problem->listRequiredItems()) {
-        items.push_back(std::make_shared<WorldSpaceMesh>(mesh));
+    if (uniqueNames){
+        std::unordered_map<std::string, int> nameCounts; // To handle duplicate names
 
-        std::string name = mesh->getName();
-        auto it = nameCounts.find(name);
-        if (it == nameCounts.end()) {
-            nameCounts[name] = 0;  // first occurrence
-        } else {
-            ++(it->second);        // duplicate found
-            name += "_" + std::to_string(it->second);
+        for (const auto& mesh : problem->listRequiredItems()) {
+            items.push_back(std::make_shared<WorldSpaceMesh>(mesh));
+
+            std::string name = mesh->getName();
+            auto it = nameCounts.find(name);
+            if (it == nameCounts.end()) {
+                nameCounts[name] = 0;  // first occurrence
+            } else {
+                ++(it->second);        // duplicate found
+                name += "_" + std::to_string(it->second);
+            }
+            itemNames.push_back(name);
+
+            maxHeight += mesh->getBounds().getMaximum().z;
         }
-        itemNames.push_back(name);
+    } else{
+        for (const auto& mesh : problem->listRequiredItems())
+        {
+            std::string name = mesh->getName();
+            items.push_back(std::make_shared<WorldSpaceMesh>(mesh));
+            itemNames.push_back(name);
+        }
 
-        maxHeight += mesh->getBounds().getMaximum().z;
     }
 }
 
@@ -58,6 +70,19 @@ const size_t StripPackingSolution::getItemIndexByName(const std::string &name) c
             return (itemIndex);
         }
     }
+    return -1; // Return -1 if the item name is not found
+}
+
+const size_t StripPackingSolution::getItemIndexByID(const std::string &id) const
+{
+    std::cout << "Number of items in problem: " <<items.size() << std::endl;
+    for (size_t itemIndex = 0; itemIndex < items.size(); ++itemIndex) {
+        if (items[itemIndex]->getId() == id) {
+            std::cout << "ItemIndex of item with id " << id << " = " << itemIndex << std::endl;
+            return (itemIndex);
+        }
+    }
+    std::cout << "Item with id " << id << " is not found" << std::endl;
     return -1; // Return -1 if the item name is not found
 }
 

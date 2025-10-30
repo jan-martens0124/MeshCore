@@ -34,6 +34,7 @@ public:
     [[nodiscard]] const std::shared_ptr<WorldSpaceMesh>& getItem(size_t itemIndex) const;
     [[nodiscard]] const std::string& getItemName(size_t itemIndex) const;
     [[nodiscard]] const size_t getItemIndexByName(const std::string& name) const;
+    [[nodiscard]] const size_t getItemIndexByID(const std::string& id) const;
     [[nodiscard]] const AABB& getItemAABB(size_t itemIndex) const;
     [[nodiscard]] const std::shared_ptr<StripPackingProblem>& getProblem() const;
     [[nodiscard]] const Transformation& getItemTransformation(size_t itemIndex) const;
