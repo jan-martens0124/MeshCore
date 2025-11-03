@@ -40,6 +40,7 @@ StripPackingSolution::StripPackingSolution(const std::shared_ptr<StripPackingPro
             std::string name = mesh->getName();
             items.push_back(std::make_shared<WorldSpaceMesh>(mesh));
             itemNames.push_back(name);
+            maxHeight += mesh->getBounds().getMaximum().z;
         }
 
     }
