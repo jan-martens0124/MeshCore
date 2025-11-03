@@ -22,6 +22,7 @@ add_library(MeshCoreBase STATIC ${SOURCES})
 target_link_libraries(MeshCoreBase PUBLIC TBB::tbb TBB::tbbmalloc Boost::boost GSL::gsl glm::glm)
 target_include_directories(MeshCoreBase PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include) # include this directory
 target_compile_definitions(MeshCoreBase PUBLIC MESHCORE_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/datasets/")
+target_compile_definitions(MeshCoreBase PUBLIC OTHER_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../materialise_data/")
 
 ### Tests ###
 # Only uses MeshCoreBase

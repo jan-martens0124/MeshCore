@@ -384,7 +384,7 @@ namespace Distance{
             for (auto vertexB : triangleB.vertices){
                 auto delta = vertexA - vertexB;
                 auto distance = glm::dot(delta, delta);
-                assert(distance/result >= 1 - 1e-5f);
+                assert(distance/result >= 1 - 1e-6f);
             }
         }
 #endif

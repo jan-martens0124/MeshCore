@@ -43,6 +43,7 @@ public:
                          const std::vector<size_t>& requiredItemCounts, const ObjectOrigin& itemOrigin);
 
     static std::shared_ptr<StripPackingProblem> fromInstancePath(const std::string& instancePath, ObjectOrigin itemOrigin=ObjectOrigin::AlignToCenter);
+    static std::shared_ptr<StripPackingProblem> fromFilePath(const std::string& instancePath, ObjectOrigin itemOrigin=ObjectOrigin::AlignToCenter);
     static Color getItemColor(const std::string& itemName);
 
     [[nodiscard]] const AABB &getContainer() const;

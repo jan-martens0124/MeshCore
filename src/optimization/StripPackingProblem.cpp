@@ -197,6 +197,78 @@ std::shared_ptr<StripPackingProblem> StripPackingProblem::fromInstancePath(const
     return std::make_shared<StripPackingProblem>(instancePath, name, container, itemTypes, itemDemand, itemOrigin);
 }
 
+std::shared_ptr<StripPackingProblem> StripPackingProblem::fromFilePath(const std::string &instancePath, ObjectOrigin itemOrigin) {
+
+    std::vector<std::shared_ptr<ModelSpaceMesh>> items ;
+    std::string name;
+    AABB container;
+
+    // Test if the problem file exists
+    if (auto completePath = OTHER_DATA_DIR + instancePath; std::filesystem::exists(completePath)) {
+        name = instancePath;
+        items = FileParser::parseFolder(completePath);
+        if(itemOrigin == ObjectOrigin::AlignToCenter){
+            // Center the items in their own coordinate space
+            std::cerr << "AlignToCenter is not implemented!" << std::endl;
+        }
+        else if(itemOrigin == ObjectOrigin::AlignToMinimum){
+            // Align to minimum
+            std::vector<std::shared_ptr<ModelSpaceMesh>> translatedItems;
+            for (const auto& item : items){
+                std::vector<Vertex> translatedVertices;
+                translatedVertices.reserve(item->getVertices().size());
+                auto minimum = item->getBounds().getMinimum();
+                for (const auto &vertex: item->getVertices()){
+                    translatedVertices.emplace_back(vertex - minimum);
+                }
+                auto translatedModelSpaceMesh = std::make_shared<ModelSpaceMesh>(translatedVertices, item->getTriangles());
+                translatedModelSpaceMesh->setName(item->getName());
+                translatedItems.emplace_back(translatedModelSpaceMesh);
+            }
+            items = translatedItems;
+        }
+        else if(itemOrigin == ObjectOrigin::AlignToCentroid){
+            std::cerr << "AlignToCentroid is not implemented!" << std::endl;
+        }
+
+        // must fit into container with dimensions 380 x 284 x 330 mm, but remain 1mm from the edges.
+        container = AABB(Vertex(1, 1, 0), Vertex(379, 283, 330));
+
+    }
+    else {
+        float containerSizeX;
+        float containerSizeY;
+        std::vector<std::shared_ptr<ModelSpaceMesh>> itemTypes;
+        std::vector<size_t> itemDemand;
+
+        // Return a fake problem if the instance file doesn't exist
+        auto absolutePath = std::filesystem::absolute(completePath);
+        std::cout << "Warning: File " << absolutePath.string() << " does not exist, returning dummy!" << std::endl;
+
+        std::vector<Vertex> dummyVertices = {glm::vec3(0,0,0), glm::vec3(1,0,0), glm::vec3(0,1,0), glm::vec3(1,1,0),
+                                             glm::vec3(0,0,1), glm::vec3(1,0,1), glm::vec3(0,1,1), glm::vec3(1,1,1)};
+        itemTypes = {ModelSpaceMesh(dummyVertices).getConvexHull()};
+        itemTypes[0]->setName("Unit Cube");
+        itemDemand = {6};
+
+        name = "DUMMY_PROBLEM";
+
+        containerSizeX = 2;
+        containerSizeY = 2;
+
+        float maximumContainerHeight = 0;
+        for (int i = 0; i < itemTypes.size(); ++i){
+            auto& item = itemTypes[i];
+            auto itemHeight = item->getBounds().getMaximum().z - item->getBounds().getMinimum().z;
+            maximumContainerHeight += itemHeight * static_cast<float>(itemDemand[i]);
+        }
+
+        container = AABB(glm::vec3(0,0,0), glm::vec3(containerSizeX, containerSizeY, maximumContainerHeight));
+    }
+
+    return std::make_shared<StripPackingProblem>(instancePath, name, container, items, std::vector<size_t>(items.size(), 1), itemOrigin);
+}
+
 const std::string &StripPackingProblem::getName() const {
     return name;
 }

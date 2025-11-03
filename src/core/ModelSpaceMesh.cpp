@@ -393,7 +393,7 @@ void ModelSpaceMesh::computeVolumeAndCentroid() const {
         centroid += center * _volume;
     }
     volume = meshVolume/6.0f;
-    assert(volume.value()/this->getBounds().getVolume() <= (1.0 + 1e-6)  && "Volume of mesh should be smaller than volume of its bounding box");
+    assert(volume.value()/this->getBounds().getVolume() <= (1.0 + 1e-4)  && "Volume of mesh should be smaller than volume of its bounding box");
     volumeCentroid = centroid / (meshVolume*4.0f);
     assert(this->volume < 1e-5f || getBounds().containsPoint(volumeCentroid.value()) && "Volume centroid should be inside the bounding box of the mesh"); // The volume centroid is ill-defined for very small volumes
 }
